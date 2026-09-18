@@ -198,15 +198,14 @@ class LeaveController extends Controller {
         try {
             $user = auth()->user();
 
-            if (!$this->isEligible($user)) {
-                return response()->json(['message' => 'Non autorisé'], 403);
-            }
-
+            // Tous les utilisateurs peuvent voir leur propre historique de congés, les managers peuvent voir tous
             $query = LeaveRequest::with(['leaveType', 'approvedBy', 'user']);
 
             if (!$this->canManageAll($user)) {
+                // Les utilisateurs réguliers voient uniquement leurs propres demandes
                 $query->where('user_id', $user->id);
             } elseif ($request->filled('user_id')) {
+                // Les managers peuvent filtrer par utilisateur
                 $query->where('user_id', $request->user_id);
             }
 
@@ -233,12 +232,10 @@ class LeaveController extends Controller {
             $end = Carbon::parse($validated['end_date']);
 
             $requestedUser = User::with('roles')->findOrFail($validated['user_id']);
-            if (!$this->isEligible($requestedUser)) {
-                return response()->json(['message' => 'Les enseignants ne peuvent pas bénéficier du module congés'], 422);
-            }
 
+            // Tout utilisateur peut créer une demande pour son propre compte, les managers peuvent en créer pour d'autres
             if (!$this->canManageAll($user) && $requestedUser->id !== $user->id) {
-                return response()->json(['message' => 'Vous ne pouvez créer un congé que pour votre propre compte'], 403);
+                return response()->json(['message' => 'Vous ne pouvez créer une demande de congé que pour votre propre compte'], 403);
             }
 
             if ($start->year !== $end->year) {

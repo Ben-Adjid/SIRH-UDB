@@ -70,7 +70,11 @@ class PayrollController extends Controller {
 
             $attendanceSummary = $this->attendanceHours($teacher, $validated['year'], $validated['month']);
             $requestedHours = (float) ($validated['hours_worked'] ?? 0);
-            $hoursWorked = $attendanceSummary['hours'] > 0 ? $attendanceSummary['hours'] : $requestedHours;
+            // Utiliser les heures manuelles si fournies, sinon utiliser les heures du pointage
+            $hoursWorked = $requestedHours > 0 ? $requestedHours : $attendanceSummary['hours'];
+            if ($hoursWorked <= 0) {
+                return response()->json(['message' => 'Aucune heure de travail trouvée. Vérifiez les pointages ou entrez les heures manuellement.'], 422);
+            }
             $incompleteAttendances = $attendanceSummary['incomplete'];
             $baseAmount = $hoursWorked * $teacher->hourly_rate;
 
