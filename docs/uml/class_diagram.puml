@@ -1,0 +1,332 @@
+@startuml Gestion_Universitaire_Class_Diagram
+' Style
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam backgroundColor #F8FAFC
+skinparam packageStyle rectangle
+skinparam class {
+    BackgroundColor #FFFFFF
+    BorderColor #334155
+    FontColor #0F172A
+    HeaderBackgroundColor #2563EB
+    HeaderFontColor #FFFFFF
+}
+skinparam arrow {
+    Color #475569
+    Thickness 1.5
+}
+
+' ──────────────────────────────
+' PACKAGES (Couches)
+' ──────────────────────────────
+package "Utilisateurs & Authentification" {
+    class User {
+        - id: BigInt
+        - name: String
+        - email: String
+        - phone: String
+        - password: String
+        - status: Enum {active, inactive, suspended}
+        - must_change_password: Boolean
+        - last_login_at: DateTime
+        - two_factor_enabled_at: DateTime
+        + hasRole(role: String): Boolean
+        + hasPermission(perm: String): Boolean
+    }
+
+    class Role {
+        - id: BigInt
+        - name: String
+        - guard_name: String
+    }
+
+    class Permission {
+        - id: BigInt
+        - name: String
+        - guard_name: String
+    }
+}
+
+package "Structure Académique" {
+    class Ufr {
+        - id: BigInt
+        - name: String
+        - code: String
+        - description: Text
+        + getDepartments(): Collection
+    }
+
+    class Department {
+        - id: BigInt
+        - name: String
+        - code: String
+        - description: Text
+        + getTeachers(): Collection
+    }
+
+    class Subject {
+        - id: BigInt
+        - name: String
+        - code: String
+        - level: Enum {L1, L2, M1, M2}
+        - credit_hours: Int
+        + getSchedules(): Collection
+    }
+
+    class Classroom {
+        - id: BigInt
+        - name: String
+        - code: String
+        - capacity: Int
+        - type: Enum {classroom, lab, amphitheater}
+        + getSchedules(): Collection
+    }
+
+    class AcademicYear {
+        - id: BigInt
+        - name: String
+        - start_year: Int
+        - end_year: Int
+        - is_active: Boolean
+    }
+}
+
+package "Enseignants & Ressources Humaines" {
+    class Teacher {
+        - id: BigInt
+        - employee_id: String
+        - phone: String
+        - hire_date: Date
+        - base_salary: Decimal
+        - volume_hours: Int
+        - hourly_rate: Decimal
+        - status: Enum {active, inactive, on_leave}
+        - contract_type: Enum {CDI, CDD, vacataire}
+        - contract_start_date: Date
+        - contract_end_date: Date
+        + getFullName(): String
+        + getContractLabel(): String
+        + getActiveSchedules(): Collection
+    }
+
+    class Document {
+        - id: BigInt
+        - name: String
+        - type: Enum {cv, contract, diploma, other}
+        - file_path: String
+        - mime_type: String
+        - file_size: Int
+    }
+
+    class TeachingType {
+        - id: BigInt
+        - name: String
+        - code: String
+        - hourly_rate: Decimal
+    }
+}
+
+package "Planification & Cours" {
+    class Schedule {
+        - id: BigInt
+        - start_date: Date
+        - end_date: Date
+        - day_of_week: String
+        - start_time: Time
+        - end_time: Time
+        - status: Enum {scheduled, cancelled, completed}
+        - level: Enum {L1, L2, L3, M1, M2}
+        - semester: Enum {S1, S2}
+        - type: Enum {course, exam}
+        - coefficient: Decimal
+        + getDurationMinutes(): Int
+    }
+
+    class Homework {
+        - id: BigInt
+        - title: String
+        - description: Text
+        - scheduled_date: Date
+        - start_time: Time
+        - end_time: Time
+        - duration_minutes: Int
+        - status: Enum {planned, published, completed, cancelled, approved}
+        - max_score: Int
+    }
+
+    class Grade {
+        - id: BigInt
+        - student_id: String
+        - student_name: String
+        - score: Decimal
+        - feedback: Text
+        - status: Enum {pending, graded, reviewed}
+    }
+}
+
+package "Présences & Absences" {
+    class Attendance {
+        - id: BigInt
+        - attendance_date: Date
+        - check_in_time: Time
+        - check_out_time: Time
+        - status: Enum {present, absent, late, half_day}
+        - hours_worked: Decimal
+        - is_justified: Boolean
+        - justification_status: String
+        - justified_at: DateTime
+    }
+
+    class AttendanceCode {
+        - id: BigInt
+        - code: String
+        - status: Enum {active, inactive, expired}
+        - generated_at: DateTime
+        - expires_at: DateTime
+        - validity_hours: Int
+    }
+
+    class LeaveRequest {
+        - id: BigInt
+        - start_date: Date
+        - end_date: Date
+        - duration_days: Int
+        - status: Enum {pending, approved, rejected}
+        - reason: Text
+        - rejection_reason: Text
+        - approved_at: DateTime
+    }
+
+    class LeaveType {
+        - id: BigInt
+        - name: String
+        - code: String
+        - days_per_year: Int
+    }
+
+    class LeaveBalance {
+        - id: BigInt
+        - year: Int
+        - total_days: Int
+        - used_days: Int
+        - pending_days: Int
+    }
+}
+
+package "Paie & Finance" {
+    class Payroll {
+        - id: BigInt
+        - year: Int
+        - month: Int
+        - base_salary: Decimal
+        - honorarium_amount: Decimal
+        - brs_amount: Decimal
+        - gross_salary: Decimal
+        - deductions: Decimal
+        - net_salary: Decimal
+        - payment_method: Enum {check, cash}
+        - status: Enum {draft, calculated, validated, paid}
+        - validated_at: DateTime
+        + getTaxRate(): Decimal
+    }
+
+    class PayrollDetail {
+        - id: BigInt
+        - description: String
+        - type: Enum {earning, deduction}
+        - amount: Decimal
+    }
+}
+
+package "Communication & Audit" {
+    class Notification {
+        - id: BigInt
+        - type: Enum {info, success, warning, danger}
+        - title: String
+        - message: Text
+        - link: String
+        - read_at: DateTime
+        + markAsRead(): void
+    }
+
+    class AuditLog {
+        - id: BigInt
+        - action: String {login, create, update, delete, export}
+        - model: String
+        - model_id: BigInt
+        - old_values: Json
+        - new_values: Json
+        - ip_address: String
+        - user_agent: String
+    }
+}
+
+' ──────────────────────────────
+' RELATIONS (Associations)
+' ──────────────────────────────
+
+' User & Roles
+User "1" *-- "many" Role : has >
+User "1" *-- "many" Permission : has >
+
+' UFR & Department
+Ufr "1" --> "*" Department : compose >
+Ufr "*" --> "0..1" User : dirigé par >
+
+' Department
+Department "*" --> "0..1" User : dirigé par >
+Department "1" --> "*" Teacher : regroupe >
+Department "*" --> "1" Ufr : appartient à >
+
+' Teacher
+Teacher "1" --> "1" User : est un >
+Teacher "*" --> "1" Department : affecté à >
+Teacher "1" --> "*" Document : possède >
+Teacher "1" --> "*" LeaveBalance : a >
+Teacher "1" --> "*" Schedule : planifie >
+Teacher "1" --> "*" Homework : crée >
+Teacher "1" --> "*" LeaveRequest : soumet >
+Teacher "1" --> "*" Payroll : reçoit >
+Teacher "1" --> "*" Attendance : enregistre >
+
+' Schedule
+Schedule "*" --> "1" Teacher : par >
+Schedule "*" --> "1" Subject : porte sur >
+Schedule "*" --> "1" Classroom : dans >
+Schedule "*" --> "0..1" TeachingType : type de >
+Schedule "*" --> "0..1" AcademicYear : année >
+
+' Homework & Grade
+Homework "*" --> "1" Teacher : créé par >
+Homework "*" --> "1" Subject : matière >
+Homework "*" --> "1" Classroom : classe >
+Homework "1" --> "*" Grade : contient >
+Grade "*" --> "1" Teacher : noté par >
+
+' Attendance
+Attendance "*" --> "1" User : lié à >
+Attendance "*" --> "0..1" Teacher : enseignant >
+Attendance "*" --> "0..1" User : justifié par >
+AttendanceCode "*" --> "0..1" Teacher : généré par >
+
+' Leave
+LeaveRequest "*" --> "1" Teacher : demandé par >
+LeaveRequest "*" --> "1" LeaveType : type >
+LeaveRequest "*" --> "0..1" User : approuvé par >
+LeaveBalance "*" --> "1" Teacher : pour >
+LeaveBalance "*" --> "1" LeaveType : type >
+
+' Payroll
+Payroll "*" --> "1" Teacher : pour >
+Payroll "1" --> "*" PayrollDetail : détail >
+Payroll "*" --> "0..1" User : validé par >
+
+' Document
+Document "*" --> "1" Teacher : appartient à >
+Document "*" --> "0..1" User : uploadé par >
+
+' Notification & Audit
+Notification "*" --> "1" User : destiné à >
+AuditLog "*" --> "0..1" User : effectué par >
+
+@enduml

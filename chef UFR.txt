@@ -1,0 +1,90 @@
+chef UFR
+
+quand je veux ajouter une UFR ya probleme, ça me fait de recherche plutôt que de cree et affiche le UFR que j'ai cree
+meme chose quand je veux cree une matiere
+meme chose pour la salle
+pour cree un emploi du temps de l'examen ya probleme aussi 
+quand je cree un devoir au lieu d'affiche directement sur la liste il me fait plutôt sur forme de recherche
+quand je fais une demande de conge il y'a pas de formulaire et aussi je vois pas la liste de mes conges demandes ni savoir qui doit valide la demande
+quand je cree un devoir au lieu d'affiche la liste il me remplir le recherche comme si je faisais de recherche alors que il devrait juste m'affiche seulement la liste des enseignants
+Est-ce que  c'est logique que un chef UFR ne pointe pas pour dire qu'il est present?? je pense que il doit aussi signale sa presence,son absence,retard
+y'a probleme lors que je veux televerse un document et je peux pas ni supprime ou modifier ça 
+y'a probleme de notification d'evenement en temps reel lors d'une demande de confirmation,annulation,rejet etc.…..
+
+
+RH
+
+quand je cree un enseingant au lieu d'affiche la liste il me remplir le recherche comme si je faisais de recherche alors que il devrait juste m'affiche seulement la liste des enseignants
+quand je fais une demande de conge il y'a pas de formulaire et aussi je vois pas la liste de mes conges demandes ni savoir qui doit valide la demande
+pour telecharge les documents y'a probleme
+Est-ce que c'est logique que un rh ne peut pas cree un emploi du temps,emploi de l'examen ni approuve,annule,modifier,valide si le devoir est fait  le devoir qui ont été programme par le prof
+Quand je veux supprime un element on m'affiche de confirmation des je confirme que je veux suprime l'lement c'est supprime mais le message de confirmation est toujours là
+quand je cree un devoir au lieu d'affiche la liste il me remplir le recherche comme si je faisais de recherche alors que il devrait juste m'affiche seulement la liste des enseignants
+Est-ce que  c'est logique que un rh ne pointe pas pour dire qu'il est present?? je pense que il doit aussi signale sa presence,son absence,retard
+y'a probleme lors que je veux televerse un document et je peux pas ni supprime ou modifier ça 
+y'a probleme de notification d'evenement en temps reel lors d'une demande de confirmation,annulation,rejet etc.…..
+
+
+
+
+
+Secretaire 
+
+quand je cree un enseingant au lieu d'affiche la liste il me remplir le recherche comme si je faisais de recherche alors que il devrait juste m'affiche seulement la liste des enseignants
+Quand je veux supprime un element on m'affiche de confirmation des je confirme que je veux suprime l'lement c'est supprime mais le message de confirmation est toujours là
+quand je fais une demande de conge il y'a pas de formulaire et aussi je vois pas la liste de mes conges demandes ni savoir qui doit valide la demande
+pour telecharge les documents y'a probleme
+Est-ce que c'est logique que un secretaire ne peut pas cree un emploi du temps,emploi de l'examen ni approuve,annule,modifier,valide si le devoir est fait  le devoir qui ont été programme par le prof
+quand je cree un devoir au lieu d'affiche la liste il me remplir le recherche comme si je faisais de recherche alors que il devrait juste m'affiche seulement la liste des enseignants
+Est-ce que  c'est logique que un secretaire ne pointe pas pour dire qu'il est present?? je pense que il doit aussi signale sa presence,son absence,retard
+y'a probleme lors que je veux televerse un document et je peux pas ni supprime ou modifier ça 
+y'a probleme de notification d'evenement en temps reel lors d'une demande de confirmation,annulation,rejet etc.…..
+
+
+
+
+
+Administrateur
+quand je cree un enseingant au lieu d'affiche la liste il me remplir le recherche comme si je faisais de recherche alors que il devrait juste m'affiche seulement la liste des enseignants
+Quand je veux supprime un element on m'affiche de confirmation des je confirme que je veux suprime l'lement c'est supprime mais le message de confirmation est toujours là
+quand je valide la demande de conge ou si je rejet y'a un probleme la demande reste toujours sous demande de validation
+pour telecharge les documents y'a probleme
+y'a probleme lorsque je cree l'emploi du temps pour examen ça s'affiche pas et aussi y'a un probleme faut revoir
+y'a aussi le probleme lors de creation d'emploi du temps, rien s'affiche,et aussi on voit pas l'option de choisir UFR que on veut etablir son emploi du temps
+Est-ce que c'est logique que un admin ne peut pas cree un devoir ni approuve,annule,modifier,valide si le devoir est fait  le devoir qui ont été programme par le prof
+quand je cree un devoir au lieu d'affiche la liste il me remplir le recherche comme si je faisais de recherche alors que il devrait juste m'affiche seulement la liste des devoirs
+quand je cree un UFR au lieu d'affiche la liste il me remplir le recherche comme si je faisais de recherche alors que il devrait juste m'affiche seulement la liste des UFR et aussi souvent un petit bug lors de suppression
+quand je cree une matiere au lieu d'affiche la liste il me remplir le recherche comme si je faisais de recherche alors que il devrait juste m'affiche seulement la liste des matiere
+quand je cree une salle au lieu d'affiche la liste il me remplir le recherche comme si je faisais de recherche alors que il devrait juste m'affiche seulement la liste des salles
+pour gestion des honoraire y'a probleme, il prend pas l'heure du prof et applique le regle qui a eete fixe ...etc...
+Quand je veux supprime un element on m'affiche de confirmation des je confirme que je veux suprime l'lement c'est supprime mais le message de confirmation est toujours la
+y'a probleme lors que je veux televerse un document et je peux pas ni supprime ou modifier ça 
+y'a probleme de notification d'evenement en temps reel lors d'une demande de confirmation,annulation,rejet etc.…..
+
+
+
+
+
+Comptable
+
+quand je fais une demande de conge il y'a pas de formulaire et aussi je vois pas la liste de mes conges demandes ni savoir qui doit valide la demande
+pour gestion des honoraire y'a probleme, il prend pas l'heure du prof et applique le regle qui a eete fixe ...etc...
+et aussi pour le telecharge des honoraire il y'a probleme
+Est-ce que  c'est logique que un comptable ne pointe pas pour dire qu'il est present?? je pense que il doit aussi signale sa presence,son absence,retard
+il y'a aussi probleme lorsque je choisir de filtre les enseignant inactif
+y'a probleme lors que je veux televerse un document et je peux pas ni supprime ou modifier ça 
+y'a probleme de notification d'evenement en temps reel lors d'une demande de confirmation,annulation,rejet etc.…..
+
+
+
+
+
+Enseignant
+quand je cree un devoir au lieu d'affiche la liste il me remplir le recherche comme si je faisais de recherche alors que il devrait juste m'affiche seulement la liste des devoirs
+quand je veux declare une disponibilite au lieu d'affiche la liste il me remplir le recherche comme si je faisais de recherche alors que il devrait juste m'affiche seulement la liste des declaration des disponibilités
+je vois la fonctionnalite mes honoraire est-ce que c'est utile alors que ce n'est pas fonctionnelle
+y'a probleme lors que je veux televerse un document et je peux pas ni supprime ou modifier ça 
+y'a probleme de notification d'evenement en temps reel lors d'une demande de confirmation,annulation,rejet etc.…..
+
+
+

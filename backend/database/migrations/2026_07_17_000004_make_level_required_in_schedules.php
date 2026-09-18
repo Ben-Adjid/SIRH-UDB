@@ -1,0 +1,23 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
+
+return new class extends Migration {
+    public function up(): void {
+        // Update any existing NULL level records to a default before making NOT NULL
+        DB::table('schedules')->whereNull('level')->update(['level' => 'L1']);
+        
+        Schema::table('schedules', function (Blueprint $table) {
+            $table->enum('level', ['L1', 'L2', 'L3', 'M1', 'M2'])->nullable(false)->change();
+        });
+    }
+
+    public function down(): void {
+        Schema::table('schedules', function (Blueprint $table) {
+            $table->enum('level', ['L1', 'L2', 'L3', 'M1', 'M2'])->nullable()->change();
+        });
+    }
+};

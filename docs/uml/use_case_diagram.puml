@@ -1,0 +1,158 @@
+@startuml Gestion_Universitaire_Use_Case_Diagram
+' Style
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam backgroundColor #F8FAFC
+skinparam usecase {
+    BackgroundColor #EFF6FF
+    BorderColor #2563EB
+    FontColor #1E293B
+}
+skinparam actor {
+    BackgroundColor #1E293B
+    BorderColor #0F172A
+    FontColor #0F172A
+    FontStyle bold
+}
+skinparam arrow {
+    Color #475569
+    Thickness 1.5
+}
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #CBD5E1
+    FontColor #334155
+    FontStyle bold
+}
+
+' ──────────── ACTEURS ────────────
+actor "Administrateur\nSystème" as Admin #2563EB
+actor "Gestionnaire\nRH" as HR #059669
+actor "Comptable" as Accountant #D97706
+actor "Directeur\n des Études" as Academic #7C3AED
+actor "Enseignant" as Teacher #DC2626
+actor "Système" as System #64748B <<system>>
+
+' ──────────── PAQUETS / DOMAINES ────────────
+
+package "Gestion des Utilisateurs" #F8FAFC {
+    usecase "Créer un utilisateur" as UC1
+    usecase "Modifier un utilisateur" as UC2
+    usecase "Désactiver un utilisateur" as UC3
+    usecase "Attribuer un rôle" as UC4
+    usecase "Consulter la liste" as UC5
+    usecase "Se connecter" as UC6
+    usecase "Réinitialiser mot de passe" as UC7
+}
+
+package "Gestion des Enseignants" #F0FDF4 {
+    usecase "Inscrire un enseignant" as UC8
+    usecase "Modifier le profil" as UC9
+    usecase "Gérer le contrat\n(CDI/CDD/Vacataire)" as UC10
+    usecase "Consulter la liste" as UC11
+    usecase "Voir les documents" as UC12
+}
+
+package "Structure Académique" #EFF6FF {
+    usecase "Gérer les UFR" as UC13
+    usecase "Gérer les Départements" as UC14
+    usecase "Gérer les Matières" as UC15
+    usecase "Gérer les Salles" as UC16
+}
+
+package "Planification" #FDF4FF {
+    usecase "Créer un emploi du temps" as UC17
+    usecase "Modifier une séance" as UC18
+    usecase "Annuler une séance" as UC19
+    usecase "Consulter mon emploi\ndu temps" as UC20
+    usecase "Planifier un devoir" as UC21
+    usecase "Noter les devoirs" as UC22
+}
+
+package "Présences & Absences" #FFF7ED {
+    usecase "Pointer (check-in/out)" as UC23
+    usecase "Générer un code\nd'émargement" as UC24
+    usecase "Saisir une absence" as UC25
+    usecase "Justifier une absence" as UC26
+    usecase "Approuver/Refuser\nune demande" as UC27
+    usecase "Consulter le tableau\nde bord" as UC28
+    usecase "Voir ses pointages" as UC29
+}
+
+package "Paie" #FEF2F2 {
+    usecase "Générer les bulletins" as UC30
+    usecase "Valider la paie" as UC31
+    usecase "Marquer comme payé" as UC32
+    usecase "Télécharger son bulletin" as UC33
+    usecase "Exporter les données" as UC34
+}
+
+package "Communication" #ECFEFF {
+    usecase "Envoyer notification" as UC35
+    usecase "Voir les notifications" as UC36
+    usecase "Consulter le journal\nd'audit" as UC37
+}
+
+' ──────────── RELATIONS ACTEURS → CAS D'USAGE ────────────
+
+' Admin
+Admin --> UC1
+Admin --> UC2
+Admin --> UC3
+Admin --> UC4
+Admin --> UC5
+Admin --> UC37
+Admin --> UC13
+Admin --> UC14
+Admin --> UC35
+
+' HR
+HR --> UC8
+HR --> UC9
+HR --> UC10
+HR --> UC11
+HR --> UC12
+HR --> UC25
+HR --> UC26
+HR --> UC27
+HR --> UC28
+
+' Accountant
+Accountant --> UC30
+Accountant --> UC31
+Accountant --> UC32
+Accountant --> UC34
+
+' Academic Manager
+Academic --> UC15
+Academic --> UC16
+Academic --> UC17
+Academic --> UC18
+Academic --> UC19
+Academic --> UC21
+
+' Teacher
+Teacher --> UC20
+Teacher --> UC22
+Teacher --> UC23
+Teacher --> UC24
+Teacher --> UC29
+Teacher --> UC33
+Teacher --> UC36
+Teacher --> UC6
+
+' System
+System --> UC7
+
+' ──────────── EXTENDS / INCLUDES ────────────
+UC23 .left.> UC24 : <<inclut>>
+UC27 .right.> UC25 : <<étend>>
+UC28 .left.> UC23 : <<inclut>>
+UC31 .right.> UC30 : <<inclut>>
+UC32 .right.> UC31 : <<inclut>>
+UC34 .right.> UC30 : <<étend>>
+UC3 .left.> UC2 : <<étend>>
+UC10 .right.> UC9 : <<étend>>
+UC4 .right.> UC1 : <<inclut>>
+
+@enduml
