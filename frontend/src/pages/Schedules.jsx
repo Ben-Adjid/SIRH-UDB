@@ -154,7 +154,10 @@ const Schedules = () => {
         try {
             if (isEditing) { await api.put(`/schedules/${selectedSchedule.id}`, formData); toast.success('Cours mis à jour'); }
             else { await api.post('/schedules', formData); toast.success('Cours ajouté'); }
-            setShowModal(false); fetchData();
+            setShowModal(false);
+            setSelectedSchedule(null);
+            setFormData({ ...emptyForm });
+            fetchData();
         } catch (err) {
             if (err.response?.data?.errors) setFieldErrors(err.response.data.errors);
             else toast.error(err.response?.data?.message || 'Erreur');
@@ -195,9 +198,15 @@ const Schedules = () => {
             title: 'Supprimer cet examen ?',
             message: `L examen de ${exam.subject?.name || 'cette matière'} sera supprimé définitivement.`,
             onConfirm: async () => {
-                await api.delete(`/exams/${exam.id}`);
-                toast.success('Examen supprimé');
-                fetchData();
+                try {
+                    await api.delete(`/exams/${exam.id}`);
+                    toast.success('Examen supprimé');
+                    setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+                    fetchData();
+                } catch (err) {
+                    toast.error(err.response?.data?.message || 'Erreur de suppression');
+                    setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+                }
             },
         });
     };

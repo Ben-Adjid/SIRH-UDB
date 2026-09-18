@@ -258,6 +258,7 @@ const Attendance = () => {
             await api.post('/attendance/report-absence', { attendance_date: absenceForm.attendance_date, status: absenceForm.status, reason: absenceForm.reason || null });
             toast.success('Signalement enregistre');
             setShowAbsenceModal(false);
+            setAbsenceForm({ attendance_date: new Date().toISOString().split('T')[0], status: 'absent', reason: '' });
             fetchMyAttendance();
             if (isManagement) {
                 const response = await api.get('/attendance', { params: { self: 1 } });
@@ -277,6 +278,7 @@ const Attendance = () => {
             await api.post('/attendance/declare-availability', { date: availabilityForm.date, available: availabilityForm.available, time_slots: slots });
             toast.success('Disponibilite enregistree');
             setShowAvailabilityModal(false);
+            setAvailabilityForm({ date: new Date().toISOString().split('T')[0], available: true, time_slots: '' });
             fetchMyAttendance();
         } catch (error) {
             const data = error.response?.data;
@@ -291,6 +293,7 @@ const Attendance = () => {
             await api.post('/attendance/record-absence', { teacher_id: recordAbsenceForm.teacher_id, attendance_date: recordAbsenceForm.attendance_date, status: recordAbsenceForm.status, reason: recordAbsenceForm.reason || null });
             toast.success('Absence enregistree');
             setShowRecordAbsenceModal(false);
+            setRecordAbsenceForm({ teacher_id: '', attendance_date: new Date().toISOString().split('T')[0], status: 'absent', reason: '' });
             const c = new AbortController();
             loadManagementData(c.signal, page);
         } catch (error) {
@@ -306,6 +309,8 @@ const Attendance = () => {
             await api.patch(`/attendance/${selectedAttendance.id}/validate-absence`, { justified: validateForm.justified, notes: validateForm.notes || null });
             toast.success('Absence ' + (validateForm.justified ? 'justifiee' : 'non justifiee'));
             setShowValidateAbsenceModal(false);
+            setSelectedAttendance(null);
+            setValidateForm({ justified: true, notes: '' });
             const c = new AbortController();
             loadManagementData(c.signal, page);
         } catch (error) {
