@@ -127,11 +127,11 @@ const UsersPage = () => {
             }
             const res = await api.post('/auth/users', payload);
             toast.success(res.data?.message || 'Compte cree. Un SMS avec le mot de passe temporaire a ete envoye.');
+            await fetchUsers(1);
             setShowCreateModal(false);
             setCreateForm({ name: '', email: '', phone: '', roles: [], ufr_id: '' });
             setSearchTerm('');
             setPage(1);
-            fetchUsers(1);
         } catch (error) {
             const errors = error.response?.data?.errors;
             if (errors) {

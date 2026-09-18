@@ -50,9 +50,9 @@ const Leaves = () => {
         try {
             await api.post('/leaves', { ...form, user_id: user.id });
             toast.success('Demande de conge envoyee');
+            await loadLeaves();
             setShowForm(false);
             setForm(emptyForm);
-            loadLeaves();
         } catch (error) {
             toast.error(error.response?.data?.message || 'Impossible d envoyer la demande');
         }

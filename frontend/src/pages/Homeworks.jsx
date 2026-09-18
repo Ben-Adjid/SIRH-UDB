@@ -213,10 +213,16 @@ const Homeworks = () => {
                 await api.post('/homeworks', formData);
                 toast.success(isTeacher ? 'Devoir soumis à validation' : 'Devoir créé');
             }
+            await fetchHomeworks(1);
             setShowModal(false);
+            setSelectedHomework(null);
+            setFormData({
+                title: '', description: '', teacher_id: isTeacher ? currentTeacherId : '',
+                subject_id: '', classroom_id: '', scheduled_date: '',
+                start_time: '08:00', end_time: '09:00', max_score: 20
+            });
             setSearchTerm('');
             setPage(1);
-            fetchHomeworks(1);
         } catch {
             toast.error('Erreur lors de la publication');
         }

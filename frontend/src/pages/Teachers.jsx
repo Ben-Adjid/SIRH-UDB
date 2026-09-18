@@ -142,12 +142,15 @@ const Teachers = () => {
                 await api.post('/teachers', cleanPayload(payload, { stripEmpty: false }));
                 toast.success('Enseignant ajoute avec succes');
             }
+            await fetchTeachers(1);
             setShowModal(false);
+            setSelectedTeacher(null);
+            setFormData({ ...emptyForm });
+            setFieldErrors({});
             setSearchTerm('');
             setUfrFilter('');
             setStatusFilter('');
             setPage(1);
-            fetchTeachers(1);
         } catch (error) {
             if (error.response?.status === 422 && (error.response?.data?.errors || error.response?.data?.messages)) {
                 setFieldErrors(error.response.data.errors || error.response.data.messages);
