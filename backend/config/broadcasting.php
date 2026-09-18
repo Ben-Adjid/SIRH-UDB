@@ -15,7 +15,7 @@ return [
     |
     */
 
-    'default' => env('BROADCAST_CONNECTION', 'null'),
+    'default' => env('BROADCAST_CONNECTION', 'reverb'),  // Utiliser reverb par défaut pour les notifications en temps réel
 
     /*
     |--------------------------------------------------------------------------
