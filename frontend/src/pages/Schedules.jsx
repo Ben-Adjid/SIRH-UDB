@@ -154,10 +154,12 @@ const Schedules = () => {
         try {
             if (isEditing) { await api.put(`/schedules/${selectedSchedule.id}`, formData); toast.success('Cours mis à jour'); }
             else { await api.post('/schedules', formData); toast.success('Cours ajouté'); }
+            await fetchData();
             setShowModal(false);
             setSelectedSchedule(null);
             setFormData({ ...emptyForm });
-            fetchData();
+            setFieldErrors({});
+            setSelectedUfrIdx(0);
         } catch (err) {
             if (err.response?.data?.errors) setFieldErrors(err.response.data.errors);
             else toast.error(err.response?.data?.message || 'Erreur');
@@ -171,7 +173,12 @@ const Schedules = () => {
             } else {
                 await api.post('/exams', examForm); toast.success('Examen créé');
             }
-            setShowExamModal(false); setEditingExam(null); setExamForm({ ...emptyForm, type: 'exam', exam_type: 'DS' }); fetchData();
+            await fetchData();
+            setShowExamModal(false);
+            setEditingExam(null);
+            setExamForm({ ...emptyForm, type: 'exam', exam_type: 'DS' });
+            setFieldErrors({});
+            setSelectedUfrIdx(0);
         } catch (err) {
             if (err.response?.data?.errors) setFieldErrors(err.response.data.errors);
             else toast.error(err.response?.data?.message || 'Erreur');
