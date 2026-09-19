@@ -83,6 +83,29 @@ const Payroll = () => {
         }
     }, [isAccountant, showIndividualCalculateModal]);
 
+    const calculatePreview = useCallback((teacherId, month, year, attData) => {
+        const selectedTeacher = teachers.find(t => t.id == teacherId);
+        if (!selectedTeacher) return;
+
+        const hoursWorked = parseFloat(individualForm.hours_worked) || attData?.hours || 0;
+        const baseAmount = hoursWorked * (selectedTeacher.hourly_rate || 0);
+        const brsAmount = baseAmount >= 25000 ? baseAmount * 0.05 : 0;
+        const bonus = parseFloat(individualForm.bonus) || 0;
+        const deduction = parseFloat(individualForm.deduction) || 0;
+        const netSalary = baseAmount + bonus - brsAmount - deduction;
+        const paymentMethod = netSalary >= 100000 ? 'Chèque' : 'Espèces';
+
+        setCalculationPreview({
+            hours: hoursWorked,
+            baseAmount,
+            brsAmount,
+            bonus,
+            deduction,
+            netSalary: Math.max(0, netSalary),
+            paymentMethod
+        });
+    }, [teachers, individualForm]);
+
     const loadAttendanceData = useCallback(async (teacherId, month, year) => {
         if (!teacherId) return;
         setLoadingAttendance(true);
@@ -108,29 +131,6 @@ const Payroll = () => {
             setLoadingAttendance(false);
         }
     }, [calculatePreview]);
-
-    const calculatePreview = useCallback((teacherId, month, year, attData) => {
-        const selectedTeacher = teachers.find(t => t.id == teacherId);
-        if (!selectedTeacher) return;
-
-        const hoursWorked = parseFloat(individualForm.hours_worked) || attData?.hours || 0;
-        const baseAmount = hoursWorked * (selectedTeacher.hourly_rate || 0);
-        const brsAmount = baseAmount >= 25000 ? baseAmount * 0.05 : 0;
-        const bonus = parseFloat(individualForm.bonus) || 0;
-        const deduction = parseFloat(individualForm.deduction) || 0;
-        const netSalary = baseAmount + bonus - brsAmount - deduction;
-        const paymentMethod = netSalary >= 100000 ? 'Chèque' : 'Espèces';
-
-        setCalculationPreview({
-            hours: hoursWorked,
-            baseAmount,
-            brsAmount,
-            bonus,
-            deduction,
-            netSalary: Math.max(0, netSalary),
-            paymentMethod
-        });
-    }, [teachers, individualForm]);
 
     const handleCalculateIndividual = useCallback(async (e) => {
         e.preventDefault();
