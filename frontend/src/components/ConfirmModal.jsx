@@ -26,16 +26,21 @@ const configs = {
     },
 };
 
-const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText = "Supprimer", loadingText = "Chargement...", type = "danger" }) => {
+const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText = "Supprimer", loadingText = "Chargement...", type = "danger", requireConfirmation = false }) => {
     const [loading, setLoading] = useState(false);
+    const [confirmValue, setConfirmValue] = useState('');
     const overlayRef = useRef(null);
 
     const cfg = configs[type] || configs.danger;
     const Icon = cfg.icon;
     const displayText = loading ? loadingText : confirmText;
+    const isConfirmDisabled = requireConfirmation && confirmValue.toUpperCase() !== 'CONFIRMER';
 
     useEffect(() => {
-        if (!isOpen) setLoading(false);
+        if (!isOpen) {
+            setLoading(false);
+            setConfirmValue('');
+        }
     }, [isOpen]);
 
     useEffect(() => {
@@ -74,9 +79,22 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText 
                         <Icon size={32} />
                     </div>
                     <h2 id="confirm-modal-title" className="text-xl font-black text-slate-800 mb-2">{title}</h2>
-                    <p className="text-slate-500 text-sm leading-relaxed mb-8">
+                    <p className="text-slate-500 text-sm leading-relaxed mb-6">
                         {message}
                     </p>
+                    {requireConfirmation && (
+                        <div className="w-full mb-6 p-4 bg-rose-50 border border-rose-200 rounded-xl">
+                            <p className="text-xs font-semibold text-rose-700 mb-2">⚠️ Action permanente</p>
+                            <input
+                                type="text"
+                                placeholder='Tapez "CONFIRMER" pour continuer'
+                                value={confirmValue}
+                                onChange={(e) => setConfirmValue(e.target.value)}
+                                className="w-full px-3 py-2 text-sm border border-rose-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500/20 bg-white"
+                                disabled={loading}
+                            />
+                        </div>
+                    )}
                     <div className="flex w-full gap-3">
                         <button
                             onClick={onClose}
@@ -86,13 +104,13 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText 
                             Annuler
                         </button>
                         <button
-                            disabled={loading}
+                            disabled={loading || isConfirmDisabled}
                             onClick={async () => {
                                 setLoading(true);
                                 try {
                                     await onConfirm();
                                 } catch (e) {
-                                    toast.error(e?.response?.data?.message || 'Erreur lors de la suppression');
+                                    toast.error(e?.response?.data?.message || 'Erreur lors de l\'action');
                                 } finally {
                                     setLoading(false);
                                     onClose();

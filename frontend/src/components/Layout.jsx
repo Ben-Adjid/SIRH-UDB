@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import NotificationBell from './NotificationBell';
+import Breadcrumb from './Breadcrumb';
 import { Search, Plus, MoreHorizontal, User, Settings, HelpCircle, LogOut, Menu, X } from 'lucide-react';
 import useAuthStore from '../store/authStore';
 import toast from '../utils/toast';
@@ -196,6 +197,7 @@ const Layout = () => {
                 {/* MAIN CONTENT */}
                 <main className="px-4 sm:px-6 md:px-8 pt-[96px] pb-10 min-h-screen">
                     <div className="max-w-7xl mx-auto animate-fadeIn" key={location.pathname}>
+                        <Breadcrumb />
                         <Outlet />
                     </div>
                     <footer className="py-8 text-center">
