@@ -100,14 +100,19 @@ const Payroll = () => {
         e.preventDefault();
         try {
             const [year, month] = salaryForm.month.split('-').map(Number);
+            const hoursToUse = salaryForm.hours_worked > 0 ? salaryForm.hours_worked : attendanceSummary.hours;
             const response = await api.post('/payroll/calculate', {
                 teacher_id: salaryForm.teacher_id, month, year,
                 bonus: salaryForm.bonus ?? 0, deduction: salaryForm.deduction ?? 0,
-                hours_worked: attendanceSummary.hours,
+                hours_worked: hoursToUse,
             });
             toast.success('Honoraire calcule avec succes');
             if (response.data?.summary?.incomplete_attendances > 0) {
                 toast.error(`${response.data.summary.incomplete_attendances} pointage(s) sans sortie restent à clôturer.`);
+            }
+            if (response.data?.summary?.approved_leaves_deducted) {
+                const hours = response.data.summary.approved_leaves_hours || 0;
+                toast.warning(`Congés approuvés détectés: ${hours}h déduites du salaire.`);
             }
             setShowCalcModal(false);
             setCalcTeacherInfo(null);
@@ -493,11 +498,17 @@ const Payroll = () => {
                                 value={salaryForm.month} onChange={e => setSalaryForm({...salaryForm, month: e.target.value})} />
                         </div>
                         <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
-                            <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center justify-between gap-3 mb-3">
                                 <div><p className="text-xs font-black uppercase tracking-wider text-indigo-700">Heures de cours pointées</p><p className="text-xs text-indigo-500 mt-1">Calcul automatique selon les pointages du mois</p></div>
                                 <span className="text-2xl font-black text-indigo-700">{attendanceSummary.hours} h</span>
                             </div>
-                            {attendanceSummary.incomplete > 0 && <p className="text-xs font-bold text-amber-700 mt-3">{attendanceSummary.incomplete} pointage(s) sans sortie seront signalés.</p>}
+                            {attendanceSummary.incomplete > 0 && <p className="text-xs font-bold text-amber-700 mb-3">{attendanceSummary.incomplete} pointage(s) sans sortie seront signalés.</p>}
+                            <div className="border-t border-indigo-200 pt-3">
+                                <label className="form-label text-indigo-700 mb-2">Heures manuelles (optionnel)</label>
+                                <input type="number" className="input-field" min="0" step="0.5" placeholder="Saisir si pas de pointages"
+                                    value={salaryForm.hours_worked} onChange={e => setSalaryForm({...salaryForm, hours_worked: Number(e.target.value) || 0})} />
+                                <p className="text-xs text-indigo-600 mt-1">Laissez à 0 pour utiliser les heures pointées automatiquement</p>
+                            </div>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                             <div className="form-group">

@@ -9,6 +9,7 @@ use App\Models\PayrollDetail;
 use App\Models\Teacher;
 use App\Models\Attendance;
 use App\Models\AuditLog;
+use App\Models\LeaveRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,40 @@ class PayrollController extends Controller {
     const BRS_RATE = 0.05;
     const BRS_THRESHOLD = 25000;
     const CHECK_THRESHOLD = 100000;
+    const HOURS_PER_DAY = 8;
+
+    private function getApprovedLeaveDays(Teacher $teacher, int $year, int $month): array
+    {
+        $monthStart = Carbon::create($year, $month, 1)->startOfDay();
+        $monthEnd = $monthStart->copy()->endOfMonth()->endOfDay();
+
+        $leaves = LeaveRequest::where('teacher_id', $teacher->id)
+            ->where('status', 'approved')
+            ->whereNotNull('approved_at')
+            ->where(function ($q) use ($monthStart, $monthEnd) {
+                $q->whereBetween('start_date', [$monthStart, $monthEnd])
+                  ->orWhereBetween('end_date', [$monthStart, $monthEnd])
+                  ->orWhere([['start_date', '<=', $monthStart], ['end_date', '>=', $monthEnd]]);
+            })
+            ->get();
+
+        $totalDays = 0;
+        $leaveDetails = [];
+        foreach ($leaves as $leave) {
+            $start = Carbon::parse($leave->start_date)->max($monthStart);
+            $end = Carbon::parse($leave->end_date)->min($monthEnd);
+            $days = $start->diffInDays($end) + 1;
+            $totalDays += $days;
+            $leaveDetails[] = [
+                'type' => $leave->leaveType->name ?? 'Congé',
+                'days' => $days,
+                'start' => $start->format('Y-m-d'),
+                'end' => $end->format('Y-m-d'),
+            ];
+        }
+
+        return ['total_days' => $totalDays, 'details' => $leaveDetails];
+    }
 
     private function attendanceHours(Teacher $teacher, int $year, int $month): array
     {
@@ -70,16 +105,21 @@ class PayrollController extends Controller {
 
             $attendanceSummary = $this->attendanceHours($teacher, $validated['year'], $validated['month']);
             $requestedHours = (float) ($validated['hours_worked'] ?? 0);
-            // Utiliser les heures manuelles si fournies, sinon utiliser les heures du pointage
             $hoursWorked = $requestedHours > 0 ? $requestedHours : $attendanceSummary['hours'];
             if ($hoursWorked <= 0) {
                 return response()->json(['message' => 'Aucune heure de travail trouvée. Vérifiez les pointages ou entrez les heures manuellement.'], 422);
             }
             $incompleteAttendances = $attendanceSummary['incomplete'];
+
+            $approvedLeaves = $this->getApprovedLeaveDays($teacher, $validated['year'], $validated['month']);
+            $deductedLeaveDays = $approvedLeaves['total_days'];
+            $deductedLeaveHours = $deductedLeaveDays * self::HOURS_PER_DAY;
+            $hoursWorked = max(0, $hoursWorked - $deductedLeaveHours);
+
             $baseAmount = $hoursWorked * $teacher->hourly_rate;
 
             $brsAmount = 0;
-            if ($baseAmount > self::BRS_THRESHOLD) {
+            if ($baseAmount >= self::BRS_THRESHOLD) {
                 $brsAmount = round($baseAmount * self::BRS_RATE, 2);
             }
 
@@ -92,7 +132,7 @@ class PayrollController extends Controller {
 
             $paymentMethod = $grossSalary >= self::CHECK_THRESHOLD ? 'check' : 'cash';
 
-            return DB::transaction(function () use ($validated, $teacher, $hoursWorked, $incompleteAttendances, $baseAmount, $brsAmount, $grossSalary, $totalEarnings, $totalDeductions, $netSalary, $paymentMethod, $manualBonus, $manualDeduction) {
+            return DB::transaction(function () use ($validated, $teacher, $hoursWorked, $incompleteAttendances, $baseAmount, $brsAmount, $grossSalary, $totalEarnings, $totalDeductions, $netSalary, $paymentMethod, $manualBonus, $manualDeduction, $approvedLeaves, $deductedLeaveHours, $attendanceSummary) {
                 // Create audit logs before deleting draft payrolls
                 Payroll::where([
                     'teacher_id' => $teacher->id,
@@ -129,6 +169,8 @@ class PayrollController extends Controller {
                     'status' => 'calculated',
                     'calculation_details' => [
                         'type' => 'vacataire',
+                        'hours_attendance' => $attendanceSummary['hours'],
+                        'hours_deducted_leaves' => $deductedLeaveHours,
                         'hours_worked' => $hoursWorked,
                         'hourly_rate' => $teacher->hourly_rate,
                         'brs_applied' => $brsAmount > 0,
@@ -137,6 +179,7 @@ class PayrollController extends Controller {
                         'manual_deduction' => $manualDeduction,
                         'payment_method' => $paymentMethod,
                         'incomplete_attendances' => $incompleteAttendances,
+                        'approved_leaves' => $approvedLeaves,
                     ]
                 ]);
 
@@ -189,6 +232,9 @@ class PayrollController extends Controller {
                         'payment_method' => $paymentMethod,
                         'payment_label' => $paymentMethod === 'check' ? 'Chèque' : 'Espèces',
                         'incomplete_attendances' => $incompleteAttendances,
+                        'approved_leaves_deducted' => $deductedLeaveHours > 0,
+                        'approved_leaves_hours' => $deductedLeaveHours,
+                        'approved_leaves_details' => $approvedLeaves['details'],
                     ]
                 ]);
             });
@@ -228,7 +274,7 @@ class PayrollController extends Controller {
             $totalDeductions = $details->where('type', 'deduction')->sum('amount');
 
             $brsAmount = 0;
-            if ($totalEarnings > self::BRS_THRESHOLD) {
+            if ($totalEarnings >= self::BRS_THRESHOLD) {
                 $brsAmount = round($totalEarnings * self::BRS_RATE, 2);
             }
 
