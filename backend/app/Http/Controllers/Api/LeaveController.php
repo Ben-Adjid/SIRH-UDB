@@ -8,6 +8,7 @@ use App\Models\LeaveType;
 use App\Models\LeaveBalance;
 use App\Models\User;
 use App\Models\AuditLog;
+use App\Models\Holiday;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Carbon\Carbon;
@@ -249,10 +250,16 @@ class LeaveController extends Controller {
             if ($start->year !== $end->year) {
                 return response()->json(['message' => 'Une demande de congé doit rester dans la même année'], 422);
             }
+
             $durationDays = 0;
             $current = $start->copy();
+            $holidays = Holiday::whereDate('date', '>=', $start)
+                ->whereDate('date', '<=', $end)
+                ->pluck('date')
+                ->map(fn($d) => $d->format('Y-m-d'));
+
             while ($current->lte($end)) {
-                if ($current->isWeekday()) {
+                if ($current->isWeekday() && !$holidays->contains($current->format('Y-m-d'))) {
                     $durationDays++;
                 }
                 $current->addDay();
@@ -268,7 +275,7 @@ class LeaveController extends Controller {
                 ->first();
 
             if (!$balance) {
-                return response()->json(['message' => 'Solde de congés non trouvé pour cet enseignant et ce type de congé'], 422);
+                return response()->json(['message' => 'Solde de congés non trouvé pour ce personnel administratif et ce type de congé'], 422);
             }
 
             $availableDays = $balance->total_days - $balance->used_days - $balance->pending_days;

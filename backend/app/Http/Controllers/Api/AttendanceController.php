@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
 use App\Services\NotificationService;
 
 class AttendanceController extends Controller {
@@ -117,7 +118,7 @@ class AttendanceController extends Controller {
             'pin' => 'required|string|min:4|max:6',
         ]);
 
-        if (!$teacher->pin_code || !hash_equals((string)$teacher->pin_code, (string)$validated['pin'])) {
+        if (!$teacher->pin_code || !Hash::check($validated['pin'], $teacher->pin_code)) {
             return response()->json(['message' => 'Code PIN invalide'], 422);
         }
 

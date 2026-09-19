@@ -409,6 +409,10 @@ class ScheduleController extends Controller {
 
     public function updateExam(Request $request, Schedule $schedule): JsonResponse
     {
+        if (!auth()->user()->hasAnyRole(['admin', 'academic_manager'])) {
+            return response()->json(['message' => 'Non autorisé'], 403);
+        }
+
         if ($schedule->type !== 'exam') {
             return response()->json(['message' => 'Examen introuvable'], 404);
         }
@@ -434,6 +438,10 @@ class ScheduleController extends Controller {
 
     public function destroyExam(Schedule $schedule): JsonResponse
     {
+        if (!auth()->user()->hasAnyRole(['admin', 'academic_manager'])) {
+            return response()->json(['message' => 'Non autorisé'], 403);
+        }
+
         if ($schedule->type !== 'exam') {
             return response()->json(['message' => 'Examen introuvable'], 404);
         }

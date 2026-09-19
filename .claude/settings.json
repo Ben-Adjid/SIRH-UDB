@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git commit -m 'fix: Corriger bugs critiques et majeurs de sécurité *)"
+      "Bash(git commit -m 'fix: Corriger bugs critiques et majeurs de sécurité *)",
+      "Bash(git commit -m 'docs: Rapport complet des corrections appliquées et restantes *)",
+      "Bash(git commit -m 'fix: Hasher PIN codes et implémenter jours fériés pour congés *)"
     ]
   }
 }
