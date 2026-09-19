@@ -49,7 +49,7 @@ $baseAmount = $hoursWorked * $teacher->hourly_rate;
 
 ```php
 $brsAmount = 0;
-if ($baseAmount > 25000) {  // ← SEUIL: 25,000 FCFA
+if ($baseAmount >= 25000) {  // ← SEUIL: 25,000 FCFA (INCLUS)
     $brsAmount = round($baseAmount * 0.05, 2);  // ← 5%
 }
 
@@ -246,7 +246,7 @@ Manuel: 40h
 ### **Cas 2: BRS Seuil** ✅ CORRECT
 ```
 Salaire = 24,999 FCFA → BRS = 0
-Salaire = 25,000 FCFA → BRS = 0
+Salaire = 25,000 FCFA → BRS = 1,250 FCFA ✅
 Salaire = 25,001 FCFA → BRS = 1,250.05 ✅
 ```
 

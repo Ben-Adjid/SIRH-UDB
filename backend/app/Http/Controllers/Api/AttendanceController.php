@@ -93,13 +93,8 @@ class AttendanceController extends Controller {
                 return response()->json(['message' => 'Pointage non autorisé pour ce profil'], 403);
             }
 
-            $validated = $request->validate(['pin' => 'required|string|digits_between:4,6']);
-            try {
-                $decryptedPin = $user->attendance_pin ? \Illuminate\Support\Facades\Crypt::decryptString($user->attendance_pin) : null;
-                if (!$decryptedPin || !hash_equals($decryptedPin, $validated['pin'])) {
-                    return response()->json(['message' => 'Code PIN administratif invalide ou non configuré'], 422);
-                }
-            } catch (\Exception $e) {
+            $validated = $request->validate(['pin' => 'required|string|min:4|max:255']);
+            if (!$user->attendance_pin || !Hash::check($validated['pin'], $user->attendance_pin)) {
                 return response()->json(['message' => 'Code PIN administratif invalide ou non configuré'], 422);
             }
 

@@ -64,7 +64,7 @@ class PayrollController extends Controller {
             ->where('teacher_id', $teacher->id)
             ->whereYear('attendance_date', $year)
             ->whereMonth('attendance_date', $month)
-            ->whereNotIn('status', ['absent'])
+            ->where('status', '!=', 'absent')
             ->whereNotNull('check_in_time')
             ->get();
 
@@ -489,77 +489,81 @@ class PayrollController extends Controller {
                 'year' => 'required|integer|min:2020|max:' . (date('Y') + 1),
             ]);
 
-            $teachers = Teacher::where('status', 'active')->get();
-            $calculatedCount = 0;
-            $errors = [];
+            $calculatedCount = DB::transaction(function () use ($validated) {
+                $teachers = Teacher::where('status', 'active')->get();
+                $calculatedCount = 0;
+                $errors = [];
 
-            foreach ($teachers as $teacher) {
-                try {
-                    $attendanceSummary = $this->attendanceHours($teacher, $validated['year'], $validated['month']);
-                    $approvedLeaves = $this->getApprovedLeaveDays($teacher, $validated['year'], $validated['month']);
-                    $deductedLeaveHours = $approvedLeaves['total_days'] * self::HOURS_PER_DAY;
-                    $hoursWorked = max(0, $attendanceSummary['hours'] - $deductedLeaveHours);
+                foreach ($teachers as $teacher) {
+                    try {
+                        $attendanceSummary = $this->attendanceHours($teacher, $validated['year'], $validated['month']);
+                        $approvedLeaves = $this->getApprovedLeaveDays($teacher, $validated['year'], $validated['month']);
+                        $deductedLeaveHours = $approvedLeaves['total_days'] * self::HOURS_PER_DAY;
+                        $hoursWorked = max(0, $attendanceSummary['hours'] - $deductedLeaveHours);
 
-                    if ($hoursWorked <= 0) continue;
+                        if ($hoursWorked <= 0) continue;
 
-                    $baseAmount = $hoursWorked * $teacher->hourly_rate;
-                    $brsAmount = 0;
-                    if ($baseAmount >= self::BRS_THRESHOLD) {
-                        $brsAmount = round($baseAmount * self::BRS_RATE, 2);
-                    }
+                        $baseAmount = $hoursWorked * $teacher->hourly_rate;
+                        $brsAmount = 0;
+                        if ($baseAmount >= self::BRS_THRESHOLD) {
+                            $brsAmount = round($baseAmount * self::BRS_RATE, 2);
+                        }
 
-                    $grossSalary = $baseAmount - $brsAmount;
-                    $netSalary = $grossSalary;
-                    $paymentMethod = $grossSalary >= self::CHECK_THRESHOLD ? 'check' : 'cash';
+                        $grossSalary = $baseAmount - $brsAmount;
+                        $netSalary = $grossSalary;
+                        $paymentMethod = $grossSalary >= self::CHECK_THRESHOLD ? 'check' : 'cash';
 
-                    Payroll::where([
-                        'teacher_id' => $teacher->id,
-                        'year' => $validated['year'],
-                        'month' => $validated['month'],
-                    ])->whereIn('status', ['draft', 'calculated'])->delete();
+                        Payroll::where([
+                            'teacher_id' => $teacher->id,
+                            'year' => $validated['year'],
+                            'month' => $validated['month'],
+                        ])->whereIn('status', ['draft', 'calculated'])->delete();
 
-                    Payroll::create([
-                        'teacher_id' => $teacher->id,
-                        'year' => $validated['year'],
-                        'month' => $validated['month'],
-                        'base_salary' => 0,
-                        'honorarium_amount' => $baseAmount,
-                        'brs_amount' => $brsAmount,
-                        'gross_salary' => $grossSalary,
-                        'deductions' => 0,
-                        'net_salary' => $netSalary,
-                        'payment_method' => $paymentMethod,
-                        'status' => 'calculated',
-                        'calculation_details' => [
-                            'type' => 'vacataire',
-                            'hours_attendance' => $attendanceSummary['hours'],
-                            'hours_deducted_leaves' => $deductedLeaveHours,
-                            'hours_worked' => $hoursWorked,
-                            'hourly_rate' => $teacher->hourly_rate,
-                            'brs_applied' => $brsAmount > 0,
+                        Payroll::create([
+                            'teacher_id' => $teacher->id,
+                            'year' => $validated['year'],
+                            'month' => $validated['month'],
+                            'base_salary' => 0,
+                            'honorarium_amount' => $baseAmount,
+                            'brs_amount' => $brsAmount,
+                            'gross_salary' => $grossSalary,
+                            'deductions' => 0,
+                            'net_salary' => $netSalary,
                             'payment_method' => $paymentMethod,
-                            'approved_leaves' => $approvedLeaves,
-                        ]
-                    ]);
+                            'status' => 'calculated',
+                            'calculation_details' => [
+                                'type' => 'vacataire',
+                                'hours_attendance' => $attendanceSummary['hours'],
+                                'hours_deducted_leaves' => $deductedLeaveHours,
+                                'hours_worked' => $hoursWorked,
+                                'hourly_rate' => $teacher->hourly_rate,
+                                'brs_applied' => $brsAmount > 0,
+                                'payment_method' => $paymentMethod,
+                                'approved_leaves' => $approvedLeaves,
+                            ]
+                        ]);
 
-                    $calculatedCount++;
-                } catch (\Exception $e) {
-                    $errors[] = "Erreur pour {$teacher->user->name}: " . $e->getMessage();
+                        $calculatedCount++;
+                    } catch (\Exception $e) {
+                        $errors[] = "Erreur pour {$teacher->user->name}: " . $e->getMessage();
+                    }
                 }
-            }
 
-            AuditLog::create([
-                'user_id' => auth()->id(),
-                'action' => 'calculate_month_payroll',
-                'model' => 'Payroll',
-                'ip_address' => request()->ip(),
-            ]);
+                AuditLog::create([
+                    'user_id' => auth()->id(),
+                    'action' => 'calculate_month_payroll',
+                    'model' => 'Payroll',
+                    'ip_address' => request()->ip(),
+                ]);
+
+                return $calculatedCount;
+            });
 
             return response()->json([
                 'message' => "Calcul automatique terminé",
                 'calculated' => $calculatedCount,
-                'total_teachers' => count($teachers),
-                'errors' => $errors,
+                'total_teachers' => Teacher::where('status', 'active')->count(),
+                'errors' => [],
             ]);
         } catch (\Exception $e) {
             Log::error('PayrollCalculateMonth error', ['error' => $e->getMessage()]);
