@@ -52,7 +52,7 @@ class AttendanceController extends Controller {
 
     private function restrictToVisibleUfr($query, User $user): void
     {
-        if (!$user->hasRole('academic_manager') || $user->hasRole('admin')) {
+        if ($user->hasRole('admin')) {
             return;
         }
 
@@ -117,7 +117,7 @@ class AttendanceController extends Controller {
             'pin' => 'required|string|min:4|max:6',
         ]);
 
-        if (!$teacher->pin_code || $teacher->pin_code !== $validated['pin']) {
+        if (!$teacher->pin_code || !hash_equals((string)$teacher->pin_code, (string)$validated['pin'])) {
             return response()->json(['message' => 'Code PIN invalide'], 422);
         }
 

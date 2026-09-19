@@ -306,6 +306,10 @@ class ScheduleController extends Controller {
 
     public function storeExam(Request $request): JsonResponse {
         try {
+            if (!auth()->user()->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'secretary'])) {
+                return response()->json(['message' => 'Non autorisé'], 403);
+            }
+
             $validated = $request->validate([
                 'teacher_id' => 'required|exists:teachers,id',
                 'subject_id' => 'required|exists:subjects,id',

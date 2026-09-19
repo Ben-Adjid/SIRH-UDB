@@ -206,6 +206,10 @@ class TeacherController extends Controller {
 
     public function update(Request $request, Teacher $teacher): JsonResponse {
         try {
+            if (!auth()->user()->hasAnyRole(['admin', 'hr_manager', 'secretary'])) {
+                return response()->json(['message' => 'Non autorisé'], 403);
+            }
+
             $validated = $request->validate([
                 'name' => 'sometimes|string|max:255',
                 'ufr_id' => 'sometimes|exists:ufrs,id',
@@ -281,6 +285,10 @@ class TeacherController extends Controller {
 
     public function destroy(Teacher $teacher): JsonResponse {
         try {
+            if (!auth()->user()->hasAnyRole(['admin', 'hr_manager'])) {
+                return response()->json(['message' => 'Non autorisé'], 403);
+            }
+
             $relatedCount = [
                 'schedules' => \App\Models\Schedule::where('teacher_id', $teacher->id)->count(),
                 'homeworks' => \App\Models\Homework::where('teacher_id', $teacher->id)->count(),

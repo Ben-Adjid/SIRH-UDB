@@ -186,6 +186,10 @@ class PayrollController extends Controller {
 
     public function addLineItem(Request $request, Payroll $payroll): JsonResponse {
         try {
+            if (!auth()->user()->hasAnyRole(['admin', 'accountant', 'hr_manager', 'secretary'])) {
+                return response()->json(['message' => 'Non autorisé'], 403);
+            }
+
             if (in_array($payroll->status, ['paid', 'validated'])) {
                 return response()->json(['message' => 'Impossible de modifier une paie validée ou payée'], 422);
             }
