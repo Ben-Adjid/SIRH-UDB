@@ -30,6 +30,7 @@ const Users = lazy(() => import('./pages/Users'));
 const Notifications = lazy(() => import('./pages/Notifications'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Documents = lazy(() => import('./pages/Documents'));
+const AuditLogs = lazy(() => import('./pages/AuditLogs'));
 
 const PageLoader = () => (
     <div className="flex items-center justify-center h-64">
@@ -95,6 +96,7 @@ function App() {
                     <Route path="/leaves" element={<ProtectedRoute allowedRoles={['admin', 'hr_manager', 'secretary', 'academic_manager', 'accountant']}><Leaves /></ProtectedRoute>} />
                     <Route path="/payroll" element={<ProtectedRoute allowedRoles={['admin', 'accountant', 'teacher', 'hr_manager', 'secretary']}><Payroll /></ProtectedRoute>} />
                     <Route path="/documents" element={<ProtectedRoute allowedRoles={['admin', 'hr_manager', 'secretary', 'accountant', 'teacher']}><Documents /></ProtectedRoute>} />
+                    <Route path="/audit-logs" element={<ProtectedRoute allowedRoles={['admin', 'hr_manager']}><AuditLogs /></ProtectedRoute>} />
                     <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                     <Route path="*" element={<Navigate to="/dashboard" replace />} />
                 </Route>

@@ -1,9 +1,9 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { 
-    LayoutDashboard, Users, Calendar, Clock, Palmtree, 
-    CreditCard, LogOut, BookOpen, Menu, X, 
+import {
+    LayoutDashboard, Users, Calendar, Clock, Palmtree,
+    CreditCard, LogOut, BookOpen, Menu, X,
     LayoutGrid, MapPin, GraduationCap, Settings,
-    ChevronRight, FileText
+    ChevronRight, FileText, Shield
 } from 'lucide-react';
 import { getRoleLabel } from '../utils/roles';
 import useAuthStore from '../store/authStore';
@@ -78,6 +78,7 @@ const Sidebar = ({ sidebarOpen, onToggle }) => {
             roles: ['admin', 'hr_manager', 'secretary'],
             items: [
                 { icon: <Settings size={18} />, label: 'Comptes & Rôles', path: '/users', roles: ['admin', 'hr_manager', 'secretary'] },
+                { icon: <Shield size={18} />, label: 'Audit & Logs', path: '/audit-logs', roles: ['admin', 'hr_manager'] },
             ]
         },
     ];

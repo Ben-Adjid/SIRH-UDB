@@ -58,8 +58,8 @@ class UserCreationService
     private function generateUniquePinCode(): string
     {
         do {
-            $pin = str_pad(random_int(0, 9999), 4, '0', STR_PAD_LEFT);
-        } while (Teacher::where('pin_code', $pin)->exists());
+            $pin = str_pad(random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
+        } while (Teacher::where('pin_code', Hash::make($pin))->exists());
 
         return $pin;
     }

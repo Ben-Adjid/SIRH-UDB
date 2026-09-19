@@ -5,13 +5,8 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Api\AuthController;
 
-// Health check
-Route::get('/health', fn() => response()->json([
-    'status' => 'ok',
-    'timestamp' => now()->toIso8601String(),
-    'app_env' => app()->environment(),
-    'db' => DB::connection()->getPdo() ? 'connected' : 'error',
-]))->middleware('throttle:60,1');
+// Health check - Simple status without sensitive info
+Route::get('/health', fn() => response()->json(['status' => 'ok']))->middleware('throttle:60,1');
 
 // Auth
 use App\Http\Controllers\Api\NotificationController;
