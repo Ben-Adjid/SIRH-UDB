@@ -55,12 +55,14 @@ const Documents = () => {
     const submit = async (event) => {
         event.preventDefault();
         try {
+            if (!form.file && !editing) { toast.error('Selectionnez un fichier'); return; }
+            if (form.file && form.file.size > 5242880) { toast.error('Fichier trop volumineux (max 5 MB)'); return; }
             const payload = new FormData();
             payload.append('name', form.name);
             payload.append('type', form.type);
             if (form.file) payload.append('file', form.file);
             if (editing) await api.post(`/documents/${editing.id}?_method=PUT`, payload);
-            else { if (!form.file) { toast.error('Selectionnez un fichier'); return; } await api.post(`/teachers/${teacherId}/documents`, payload); }
+            else await api.post(`/teachers/${teacherId}/documents`, payload);
             toast.success(editing ? 'Document modifie' : 'Document uploade');
             setShowForm(false);
             setEditing(null);

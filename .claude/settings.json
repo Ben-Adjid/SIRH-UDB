@@ -10,7 +10,8 @@
       "Bash(git commit -m ' *)",
       "Bash(grep -r \"payroll\\\\\\\\.calculate\\\\\\\\|payroll\\\\\\\\.validate\\\\\\\\|payroll\\\\\\\\.export\" /c/Users/aboub/Desktop/DIT/backend/app)",
       "Bash(git commit -m 'fix: Corriger 3 bugs critiques du côté comptable *)",
-      "Bash(xargs wc -l)"
+      "Bash(xargs wc -l)",
+      "Bash(git commit -m 'fix: Corriger 10 bugs critiques du système \\(audit exhaustif\\) *)"
     ]
   }
 }

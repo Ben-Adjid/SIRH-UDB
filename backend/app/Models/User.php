@@ -40,6 +40,7 @@ class User extends Authenticatable
         'remember_token',
         'two_factor_secret',
         'two_factor_recovery_codes',
+        'attendance_pin',
     ];
 
     protected function casts(): array
@@ -50,7 +51,6 @@ class User extends Authenticatable
             'two_factor_enabled_at' => 'datetime',
             'last_login_at' => 'datetime',
             'deleted_at' => 'datetime',
-            'attendance_pin' => 'encrypted',
         ];
     }
 

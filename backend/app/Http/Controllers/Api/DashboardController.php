@@ -360,7 +360,7 @@ class DashboardController extends Controller {
     public function academicStats(): JsonResponse {
         try {
             $user = auth()->user();
-            $isScoped = $user->hasRole('academic_manager') && !$user->hasRole('admin');
+            $isScoped = !$user->hasRole('admin') && $user->hasRole('academic_manager');
             $visibleUfrIds = $this->academicVisibleUfrIds($user);
             $scheduleScope = function ($query) use ($isScoped, $visibleUfrIds) {
                 if ($isScoped) {

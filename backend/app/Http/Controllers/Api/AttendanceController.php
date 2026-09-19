@@ -431,8 +431,9 @@ class AttendanceController extends Controller {
         ]);
 
         $teacher = Teacher::with('user')->find($validated['teacher_id']);
-        if (auth()->user()->hasRole('academic_manager') && !auth()->user()->hasRole('admin')
-            && (!$teacher || !$this->canAccessTeacher($teacher, auth()->user()))) {
+        $user = auth()->user();
+        if (!$user->hasRole('admin') && $user->hasRole('academic_manager')
+            && (!$teacher || !$this->canAccessTeacher($teacher, $user))) {
             return response()->json(['message' => 'Vous ne pouvez gérer que les enseignants de votre UFR'], 403);
         }
 
@@ -488,7 +489,7 @@ class AttendanceController extends Controller {
         $user = auth()->user();
 
         $attendance->loadMissing('teacher');
-        if ($user->hasRole('academic_manager') && !$user->hasRole('admin')
+        if (!$user->hasRole('admin') && $user->hasRole('academic_manager')
             && (!$attendance->teacher || !$this->canAccessTeacher($attendance->teacher, $user))) {
             return response()->json(['message' => 'Vous ne pouvez traiter que les absences de votre UFR'], 403);
         }
@@ -943,7 +944,7 @@ class AttendanceController extends Controller {
                 return is_array($decoded);
             });
 
-        if ($user->hasRole('academic_manager') && !$user->hasRole('admin')) {
+        if (!$user->hasRole('admin') && $user->hasRole('academic_manager')) {
             $ufrIds = $this->visibleUfrIds($user);
             $attendances = $attendances->filter(fn($a) => in_array($a->teacher?->ufr_id, $ufrIds));
         }
