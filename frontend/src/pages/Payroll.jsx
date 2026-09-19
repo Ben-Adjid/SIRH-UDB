@@ -31,6 +31,10 @@ const Payroll = () => {
     const [showIndividualCalculateModal, setShowIndividualCalculateModal] = useState(false);
     const [teachers, setTeachers] = useState([]);
     const [individualForm, setIndividualForm] = useState({ teacher_id: '', month: selectedMonth.split('-')[1], year: selectedMonth.split('-')[0], hours_worked: '', bonus: '', deduction: '' });
+    const [attendanceData, setAttendanceData] = useState(null);
+    const [leaveData, setLeaveData] = useState(null);
+    const [calculationPreview, setCalculationPreview] = useState(null);
+    const [loadingAttendance, setLoadingAttendance] = useState(false);
 
     const userRoles = getUserRoles(user);
     const isAdmin = userRoles.includes('admin');
@@ -79,6 +83,47 @@ const Payroll = () => {
         }
     }, [isAccountant, showIndividualCalculateModal]);
 
+    const loadAttendanceData = useCallback(async (teacherId, month, year) => {
+        if (!teacherId) return;
+        setLoadingAttendance(true);
+        try {
+            const [attendResp, leaveResp] = await Promise.all([
+                api.get('/payroll/attendance-summary', { params: { teacher_id: teacherId, month: parseInt(month), year: parseInt(year) } }),
+                api.get(`/leaves?teacher_id=${teacherId}&month=${month}&year=${year}&status=approved`) // Get approved leaves
+            ]);
+            setAttendanceData(attendResp.data);
+            setLeaveData(leaveResp.data?.data || []);
+            calculatePreview(teacherId, parseInt(month), parseInt(year), attendResp.data);
+        } catch (error) {
+            toast.error('Erreur chargement données');
+        } finally {
+            setLoadingAttendance(false);
+        }
+    }, []);
+
+    const calculatePreview = useCallback((teacherId, month, year, attData) => {
+        const selectedTeacher = teachers.find(t => t.id == teacherId);
+        if (!selectedTeacher) return;
+
+        const hoursWorked = parseFloat(individualForm.hours_worked) || attData?.hours || 0;
+        const baseAmount = hoursWorked * (selectedTeacher.hourly_rate || 0);
+        const brsAmount = baseAmount >= 25000 ? baseAmount * 0.05 : 0;
+        const bonus = parseFloat(individualForm.bonus) || 0;
+        const deduction = parseFloat(individualForm.deduction) || 0;
+        const netSalary = baseAmount + bonus - brsAmount - deduction;
+        const paymentMethod = netSalary >= 100000 ? 'Chèque' : 'Espèces';
+
+        setCalculationPreview({
+            hours: hoursWorked,
+            baseAmount,
+            brsAmount,
+            bonus,
+            deduction,
+            netSalary: Math.max(0, netSalary),
+            paymentMethod
+        });
+    }, [teachers, individualForm]);
+
     const handleCalculateIndividual = useCallback(async (e) => {
         e.preventDefault();
         if (!individualForm.teacher_id) {
@@ -86,7 +131,7 @@ const Payroll = () => {
             return;
         }
         setIsCalculating(true);
-        setCalculationProgress('Calcul en cours...');
+        setCalculationProgress('Enregistrement de la paie...');
         try {
             const payload = {
                 teacher_id: parseInt(individualForm.teacher_id),
@@ -103,6 +148,9 @@ const Payroll = () => {
                 setShowIndividualCalculateModal(false);
                 setCalculationProgress('');
                 setIndividualForm({ teacher_id: '', month: selectedMonth.split('-')[1], year: selectedMonth.split('-')[0], hours_worked: '', bonus: '', deduction: '' });
+                setAttendanceData(null);
+                setLeaveData(null);
+                setCalculationPreview(null);
                 toast.success('Paie calculée');
                 fetchPayrolls(1);
             }, 1500);
@@ -255,21 +303,14 @@ const Payroll = () => {
                     </div>
                     <div className="flex gap-2 flex-wrap">
                         {isAccountant && (
-                            <>
-                                <button onClick={() => setShowIndividualCalculateModal(true)} disabled={isCalculating}
-                                    className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-xl font-semibold text-sm shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-300 active:scale-[0.97] disabled:opacity-50">
-                                    <Plus size={18} />
-                                    <span>Calculer paie</span>
-                                </button>
-                                <button onClick={() => setShowCalculateModal(true)} disabled={isCalculating}
-                                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-xl font-semibold text-sm shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-300 active:scale-[0.97] disabled:opacity-50 hover:scale-105">
-                                    <Zap size={20} />
-                                    <div className="flex flex-col items-start">
-                                        <span className="font-bold">Calculer paies</span>
-                                        <span className="text-xs opacity-90">{monthLabel} {year}</span>
-                                    </div>
-                                </button>
-                            </>
+                            <button onClick={() => setShowIndividualCalculateModal(true)} disabled={isCalculating}
+                                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-xl font-semibold text-sm shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-300 active:scale-[0.97] disabled:opacity-50 hover:scale-105">
+                                <Zap size={20} />
+                                <div className="flex flex-col items-start">
+                                    <span className="font-bold">Calculer paie</span>
+                                    <span className="text-xs opacity-90">{monthLabel} {year}</span>
+                                </div>
+                            </button>
                         )}
                         <button onClick={handleExport}
                             className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-700 text-white rounded-xl font-semibold text-sm shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all duration-300 active:scale-[0.97]">
@@ -503,44 +544,61 @@ const Payroll = () => {
                     </div>
                 )}
 
-                {/* Individual Calculate Modal */}
+                {/* Individual Calculate Modal - Automated */}
                 {showIndividualCalculateModal && (
                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
-                                    <Plus className="text-blue-600" size={24} />
+                        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 border border-slate-200">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
+                                    <Zap className="text-emerald-600" size={24} />
                                 </div>
                                 <div>
                                     <h2 className="text-xl font-bold text-slate-900">Calculer une paie</h2>
-                                    <p className="text-sm text-slate-500">Calcul individuel</p>
+                                    <p className="text-sm text-slate-500">Sélection → Calcul automatique → Validation</p>
                                 </div>
                             </div>
 
                             {!isCalculating && (
-                                <form onSubmit={handleCalculateIndividual} className="space-y-4">
-                                    <div className="form-group">
-                                        <label className="form-label">Enseignant</label>
-                                        <select required className="input-field" value={individualForm.teacher_id} onChange={(e) => setIndividualForm({...individualForm, teacher_id: e.target.value})}>
-                                            <option value="">-- Sélectionnez un enseignant --</option>
-                                            {teachers.map(t => (
-                                                <option key={t.id} value={t.id}>{t.user?.name} ({t.employee_id})</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="form-group">
-                                            <label className="form-label">Mois</label>
-                                            <select required className="input-field text-sm" value={individualForm.month} onChange={(e) => setIndividualForm({...individualForm, month: e.target.value})}>
+                                <form onSubmit={handleCalculateIndividual} className="space-y-5">
+                                    {/* Enseignant & Période */}
+                                    <div className="grid grid-cols-3 gap-4">
+                                        <div className="col-span-1">
+                                            <label className="form-label">Enseignant*</label>
+                                            <select required className="input-field" value={individualForm.teacher_id}
+                                                onChange={(e) => {
+                                                    setIndividualForm({...individualForm, teacher_id: e.target.value});
+                                                    if (e.target.value) {
+                                                        loadAttendanceData(e.target.value, individualForm.month, individualForm.year);
+                                                    } else {
+                                                        setAttendanceData(null);
+                                                        setCalculationPreview(null);
+                                                    }
+                                                }}>
+                                                <option value="">-- Sélectionner --</option>
+                                                {teachers.map(t => (
+                                                    <option key={t.id} value={t.id}>{t.user?.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="form-label">Mois*</label>
+                                            <select required className="input-field text-sm" value={individualForm.month}
+                                                onChange={(e) => {
+                                                    setIndividualForm({...individualForm, month: e.target.value});
+                                                    if (individualForm.teacher_id) loadAttendanceData(individualForm.teacher_id, e.target.value, individualForm.year);
+                                                }}>
                                                 {[1,2,3,4,5,6,7,8,9,10,11,12].map(m => (
                                                     <option key={m} value={m}>{MONTH_NAMES[m-1]}</option>
                                                 ))}
                                             </select>
                                         </div>
-                                        <div className="form-group">
-                                            <label className="form-label">Année</label>
-                                            <select required className="input-field text-sm" value={individualForm.year} onChange={(e) => setIndividualForm({...individualForm, year: e.target.value})}>
+                                        <div>
+                                            <label className="form-label">Année*</label>
+                                            <select required className="input-field text-sm" value={individualForm.year}
+                                                onChange={(e) => {
+                                                    setIndividualForm({...individualForm, year: e.target.value});
+                                                    if (individualForm.teacher_id) loadAttendanceData(individualForm.teacher_id, individualForm.month, e.target.value);
+                                                }}>
                                                 {[2024, 2025, 2026, 2027].map(y => (
                                                     <option key={y} value={y}>{y}</option>
                                                 ))}
@@ -548,45 +606,133 @@ const Payroll = () => {
                                         </div>
                                     </div>
 
-                                    <div className="form-group">
-                                        <label className="form-label">Heures travaillées (optionnel)</label>
-                                        <input type="number" className="input-field text-sm" placeholder="Laisser vide pour utiliser le pointage"
-                                            value={individualForm.hours_worked} onChange={(e) => setIndividualForm({...individualForm, hours_worked: e.target.value})} />
-                                    </div>
+                                    {/* Données chargées */}
+                                    {loadingAttendance && (
+                                        <div className="p-4 bg-blue-50 rounded-xl text-center">
+                                            <div className="inline-block mb-2">
+                                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                                            </div>
+                                            <p className="text-sm text-blue-900">Chargement données...</p>
+                                        </div>
+                                    )}
 
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="form-group">
-                                            <label className="form-label">Prime (optionnel)</label>
-                                            <input type="number" className="input-field text-sm" placeholder="0" min="0" step="0.01"
-                                                value={individualForm.bonus} onChange={(e) => setIndividualForm({...individualForm, bonus: e.target.value})} />
+                                    {attendanceData && !loadingAttendance && (
+                                        <div className="space-y-4">
+                                            {/* Heures pointées */}
+                                            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                                <div className="grid grid-cols-3 gap-4">
+                                                    <div>
+                                                        <p className="text-xs text-slate-500 font-semibold">Heures pointées</p>
+                                                        <p className="text-2xl font-bold text-slate-900">{attendanceData.hours}h</p>
+                                                    </div>
+                                                    {leaveData.length > 0 && (
+                                                        <div>
+                                                            <p className="text-xs text-slate-500 font-semibold">Absences approuvées</p>
+                                                            <p className="text-lg font-bold text-amber-600">{leaveData.length} jour(s)</p>
+                                                        </div>
+                                                    )}
+                                                    <div>
+                                                        <label className="text-xs text-slate-500 font-semibold block mb-1">Heures manuelles (optionnel)</label>
+                                                        <input type="number" className="input-field text-sm" placeholder={`${attendanceData.hours}`}
+                                                            value={individualForm.hours_worked}
+                                                            onChange={(e) => {
+                                                                setIndividualForm({...individualForm, hours_worked: e.target.value});
+                                                                calculatePreview(individualForm.teacher_id, parseInt(individualForm.month), parseInt(individualForm.year), {hours: e.target.value || attendanceData.hours});
+                                                            }} />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Prévisualisation du calcul */}
+                                            {calculationPreview && (
+                                                <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
+                                                    <p className="text-xs font-bold text-emerald-900 mb-3">📊 PRÉVISUALISATION DU CALCUL</p>
+                                                    <div className="space-y-2 text-sm">
+                                                        <div className="flex justify-between">
+                                                            <span className="text-slate-600">{calculationPreview.hours}h × taux horaire</span>
+                                                            <span className="font-bold text-slate-900">{new Intl.NumberFormat('fr-FR').format(calculationPreview.baseAmount)} FCFA</span>
+                                                        </div>
+                                                        {calculationPreview.brsAmount > 0 && (
+                                                            <div className="flex justify-between text-red-600">
+                                                                <span>BRS (5%)</span>
+                                                                <span className="font-bold">- {new Intl.NumberFormat('fr-FR').format(calculationPreview.brsAmount)} FCFA</span>
+                                                            </div>
+                                                        )}
+                                                        {calculationPreview.bonus > 0 && (
+                                                            <div className="flex justify-between text-emerald-600">
+                                                                <span>Prime</span>
+                                                                <span className="font-bold">+ {new Intl.NumberFormat('fr-FR').format(calculationPreview.bonus)} FCFA</span>
+                                                            </div>
+                                                        )}
+                                                        {calculationPreview.deduction > 0 && (
+                                                            <div className="flex justify-between text-red-600">
+                                                                <span>Retenue</span>
+                                                                <span className="font-bold">- {new Intl.NumberFormat('fr-FR').format(calculationPreview.deduction)} FCFA</span>
+                                                            </div>
+                                                        )}
+                                                        <div className="border-t border-emerald-300 pt-2 flex justify-between font-bold text-lg">
+                                                            <span className="text-emerald-900">NET À PAYER</span>
+                                                            <span className="text-emerald-600">{new Intl.NumberFormat('fr-FR').format(calculationPreview.netSalary)} FCFA</span>
+                                                        </div>
+                                                        <div className="flex justify-between text-xs text-slate-500 mt-2">
+                                                            <span>Mode de paiement</span>
+                                                            <span className="font-bold text-slate-700">{calculationPreview.paymentMethod}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Ajustements optionnels */}
+                                            <details className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                                <summary className="font-semibold text-slate-700 cursor-pointer text-sm">⚙️ Ajustements optionnels</summary>
+                                                <div className="grid grid-cols-2 gap-3 mt-4">
+                                                    <div className="form-group">
+                                                        <label className="form-label text-xs">Prime supplémentaire</label>
+                                                        <input type="number" className="input-field text-sm" placeholder="0" min="0" step="0.01"
+                                                            value={individualForm.bonus}
+                                                            onChange={(e) => {
+                                                                setIndividualForm({...individualForm, bonus: e.target.value});
+                                                                calculatePreview(individualForm.teacher_id, parseInt(individualForm.month), parseInt(individualForm.year), attendanceData);
+                                                            }} />
+                                                    </div>
+                                                    <div className="form-group">
+                                                        <label className="form-label text-xs">Retenue supplémentaire</label>
+                                                        <input type="number" className="input-field text-sm" placeholder="0" min="0" step="0.01"
+                                                            value={individualForm.deduction}
+                                                            onChange={(e) => {
+                                                                setIndividualForm({...individualForm, deduction: e.target.value});
+                                                                calculatePreview(individualForm.teacher_id, parseInt(individualForm.month), parseInt(individualForm.year), attendanceData);
+                                                            }} />
+                                                    </div>
+                                                </div>
+                                            </details>
                                         </div>
-                                        <div className="form-group">
-                                            <label className="form-label">Retenue (optionnel)</label>
-                                            <input type="number" className="input-field text-sm" placeholder="0" min="0" step="0.01"
-                                                value={individualForm.deduction} onChange={(e) => setIndividualForm({...individualForm, deduction: e.target.value})} />
-                                        </div>
-                                    </div>
+                                    )}
 
                                     <div className="flex gap-3 pt-4">
-                                        <button type="button" onClick={() => setShowIndividualCalculateModal(false)} disabled={isCalculating}
+                                        <button type="button" onClick={() => {
+                                            setShowIndividualCalculateModal(false);
+                                            setAttendanceData(null);
+                                            setCalculationPreview(null);
+                                        }} disabled={isCalculating}
                                             className="flex-1 px-4 py-2.5 border border-slate-300 text-slate-700 rounded-xl font-semibold hover:bg-slate-50 transition-all disabled:opacity-50">
                                             Annuler
                                         </button>
-                                        <button type="submit" disabled={isCalculating}
-                                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50">
-                                            <Plus size={18} />
-                                            <span>{isCalculating ? 'Calcul...' : 'Calculer'}</span>
+                                        <button type="submit" disabled={isCalculating || !attendanceData}
+                                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50">
+                                            <Zap size={18} />
+                                            <span>{isCalculating ? 'Calcul...' : 'Calculer & Enregistrer'}</span>
                                         </button>
                                     </div>
                                 </form>
                             )}
 
                             {isCalculating && (
-                                <div className="bg-blue-50 rounded-xl p-4 text-center">
-                                    <div className="inline-block mb-3">
-                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                <div className="bg-emerald-50 rounded-xl p-6 text-center">
+                                    <div className="inline-block mb-4">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
                                     </div>
-                                    <p className="text-sm font-semibold text-blue-900">{calculationProgress || 'Calcul en cours...'}</p>
+                                    <p className="text-sm font-semibold text-emerald-900">{calculationProgress || 'Calcul en cours...'}</p>
                                 </div>
                             )}
                         </div>
