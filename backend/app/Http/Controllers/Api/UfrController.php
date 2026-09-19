@@ -56,6 +56,9 @@ class UfrController extends Controller {
     }
 
     public function store(Request $request): JsonResponse {
+        if (!auth()->user()->hasRole('admin')) {
+            return response()->json(['message' => 'Seul un administrateur peut créer un département'], 403);
+        }
         $validated = $request->validate([
             'name' => 'required|string|unique:ufrs',
             'code' => 'required|string|unique:ufrs',

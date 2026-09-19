@@ -137,10 +137,10 @@ class PayrollController extends Controller {
             $manualDeduction = (float) ($validated['deduction'] ?? 0);
             $totalEarnings = $baseAmount + $manualBonus;
             $totalDeductions = $brsAmount + $manualDeduction;
-            $grossSalary = $totalEarnings - $brsAmount;
+            $grossSalary = $totalEarnings;
             $netSalary = max(0, $totalEarnings - $totalDeductions);
 
-            $paymentMethod = $grossSalary >= self::CHECK_THRESHOLD ? 'check' : 'cash';
+            $paymentMethod = $netSalary >= self::CHECK_THRESHOLD ? 'check' : 'cash';
 
             return DB::transaction(function () use ($validated, $teacher, $hoursWorked, $incompleteAttendances, $baseAmount, $brsAmount, $grossSalary, $totalEarnings, $totalDeductions, $netSalary, $paymentMethod, $manualBonus, $manualDeduction, $approvedLeaves, $deductedLeaveHours, $attendanceSummary) {
                 // Create audit logs before deleting draft payrolls
@@ -283,14 +283,15 @@ class PayrollController extends Controller {
             $totalEarnings = $details->where('type', 'earning')->sum('amount');
             $totalDeductions = $details->where('type', 'deduction')->sum('amount');
 
+            $honorariumAmount = $payroll->honorarium_amount;
             $brsAmount = 0;
-            if ($totalEarnings >= self::BRS_THRESHOLD) {
-                $brsAmount = round($totalEarnings * self::BRS_RATE, 2);
+            if ($honorariumAmount >= self::BRS_THRESHOLD) {
+                $brsAmount = round($honorariumAmount * self::BRS_RATE, 2);
             }
 
-            $grossSalary = $totalEarnings - $brsAmount;
+            $grossSalary = $totalEarnings;
             $netSalary = max(0, $totalEarnings - $brsAmount - $totalDeductions);
-            $paymentMethod = $grossSalary >= self::CHECK_THRESHOLD ? 'check' : 'cash';
+            $paymentMethod = $netSalary >= self::CHECK_THRESHOLD ? 'check' : 'cash';
 
             $payroll->update([
                 'brs_amount' => $brsAmount,
@@ -509,8 +510,8 @@ class PayrollController extends Controller {
                             $brsAmount = round($baseAmount * self::BRS_RATE, 2);
                         }
 
-                        $grossSalary = $baseAmount - $brsAmount;
-                        $netSalary = $grossSalary;
+                        $grossSalary = $baseAmount;
+                        $netSalary = $baseAmount - $brsAmount;
                         $paymentMethod = $grossSalary >= self::CHECK_THRESHOLD ? 'check' : 'cash';
 
                         Payroll::where([

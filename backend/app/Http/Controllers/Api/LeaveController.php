@@ -275,7 +275,7 @@ class LeaveController extends Controller {
                 ->first();
 
             if (!$balance) {
-                return response()->json(['message' => 'Solde de congés non trouvé pour ce personnel administratif et ce type de congé'], 422);
+                return response()->json(['message' => 'Solde de congés non configuré pour ce type de congé. Contactez l\'administration.'], 422);
             }
 
             $availableDays = $balance->total_days - $balance->used_days - $balance->pending_days;

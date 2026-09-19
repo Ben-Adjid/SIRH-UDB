@@ -31,7 +31,7 @@ class SubjectController extends Controller {
     public function index(Request $request): JsonResponse {
         $query = Subject::query();
         $user = auth()->user();
-        if ($user->hasRole('academic_manager') && !$user->hasRole('admin')) {
+        if (!$user->hasRole('admin')) {
             $query->whereHas('schedules.teacher', fn($teacher) => $teacher->whereIn('ufr_id', $this->visibleUfrIds($user)));
         }
         if ($request->filled('search')) {
@@ -48,6 +48,9 @@ class SubjectController extends Controller {
     }
 
     public function store(Request $request): JsonResponse {
+        if (!auth()->user()->hasRole('admin')) {
+            return response()->json(['message' => 'Seul un administrateur peut créer une matière'], 403);
+        }
         try {
             $validated = $request->validate([
                 'name' => 'required|string|max:255|unique:subjects,name',

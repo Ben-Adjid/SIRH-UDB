@@ -313,8 +313,8 @@ class DashboardController extends Controller {
             $grossTrend = [];
             for ($i = 5; $i >= 0; $i--) {
                 $date = Carbon::today()->subMonths($i);
-                $gross = Payroll::where('year', $date->year)->where('month', $date->month)->sum('gross_salary');
-                $net = Payroll::where('year', $date->year)->where('month', $date->month)->sum('net_salary');
+                $gross = Payroll::where('year', $date->year)->where('month', $date->month)->where('status', 'paid')->sum('gross_salary');
+                $net = Payroll::where('year', $date->year)->where('month', $date->month)->where('status', 'paid')->sum('net_salary');
                 $grossTrend[] = ['label' => $date->translatedFormat('M'), 'value' => $gross / 1000000];
                 $payrollTrend[] = ['label' => $date->translatedFormat('M'), 'gross' => $gross / 1000000, 'net' => $net / 1000000];
             }
@@ -380,7 +380,7 @@ class DashboardController extends Controller {
             $homeworkScope($homeworks);
             $totalHomeworks = (clone $homeworks)->count();
             $pendingHomeworks = (clone $homeworks)->where('status', 'planned')->count();
-            $submittedHomeworks = (clone $homeworks)->where('status', 'planned')->count();
+            $submittedHomeworks = (clone $homeworks)->where('status', 'completed')->count();
 
             $ufrQuery = Ufr::with('teachers');
             if ($isScoped) $ufrQuery->whereIn('id', $visibleUfrIds);

@@ -26,6 +26,9 @@ class ClassroomController extends Controller {
     }
 
     public function store(Request $request): JsonResponse {
+        if (!auth()->user()->hasAnyRole(['admin', 'academic_manager'])) {
+            return response()->json(['message' => 'Non autorisé'], 403);
+        }
         try {
             $validated = $request->validate([
                 'name' => 'required|unique:classrooms',
@@ -60,6 +63,9 @@ class ClassroomController extends Controller {
     }
 
     public function update(Request $request, Classroom $classroom): JsonResponse {
+        if (!auth()->user()->hasAnyRole(['admin', 'academic_manager'])) {
+            return response()->json(['message' => 'Non autorisé'], 403);
+        }
         try {
             $validated = $request->validate([
                 'name' => 'sometimes|unique:classrooms,name,' . $classroom->id,
@@ -92,6 +98,9 @@ class ClassroomController extends Controller {
     }
 
     public function destroy(Classroom $classroom): JsonResponse {
+        if (!auth()->user()->hasAnyRole(['admin', 'academic_manager'])) {
+            return response()->json(['message' => 'Non autorisé'], 403);
+        }
         try {
             $scheduleCount = $classroom->schedules()->count();
 

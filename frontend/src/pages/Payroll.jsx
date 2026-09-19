@@ -28,6 +28,9 @@ const Payroll = () => {
     const [showConfirm, setShowConfirm] = useState({ isOpen: false, action: null, payroll: null });
     const [showCalculateModal, setShowCalculateModal] = useState(false);
     const [calculationProgress, setCalculationProgress] = useState('');
+    const [showIndividualCalculateModal, setShowIndividualCalculateModal] = useState(false);
+    const [teachers, setTeachers] = useState([]);
+    const [individualForm, setIndividualForm] = useState({ teacher_id: '', month: selectedMonth.split('-')[1], year: selectedMonth.split('-')[0], hours_worked: '', bonus: '', deduction: '' });
 
     const userRoles = getUserRoles(user);
     const isAdmin = userRoles.includes('admin');
@@ -61,6 +64,55 @@ const Payroll = () => {
     useEffect(() => {
         fetchPayrolls(page);
     }, [page, selectedMonth, fetchPayrolls]);
+
+    useEffect(() => {
+        if (isAccountant && showIndividualCalculateModal) {
+            const fetchTeachers = async () => {
+                try {
+                    const response = await api.get('/teachers', { params: { per_page: 100 } });
+                    setTeachers(response.data.data || []);
+                } catch {
+                    toast.error('Erreur chargement enseignants');
+                }
+            };
+            fetchTeachers();
+        }
+    }, [isAccountant, showIndividualCalculateModal]);
+
+    const handleCalculateIndividual = useCallback(async (e) => {
+        e.preventDefault();
+        if (!individualForm.teacher_id) {
+            toast.error('Sélectionnez un enseignant');
+            return;
+        }
+        setIsCalculating(true);
+        setCalculationProgress('Calcul en cours...');
+        try {
+            const payload = {
+                teacher_id: parseInt(individualForm.teacher_id),
+                month: parseInt(individualForm.month),
+                year: parseInt(individualForm.year),
+            };
+            if (individualForm.hours_worked) payload.hours_worked = parseFloat(individualForm.hours_worked);
+            if (individualForm.bonus) payload.bonus = parseFloat(individualForm.bonus);
+            if (individualForm.deduction) payload.deduction = parseFloat(individualForm.deduction);
+
+            const response = await api.post('/payroll/calculate', payload);
+            setCalculationProgress(`✅ Paie calculée avec succès`);
+            setTimeout(() => {
+                setShowIndividualCalculateModal(false);
+                setCalculationProgress('');
+                setIndividualForm({ teacher_id: '', month: selectedMonth.split('-')[1], year: selectedMonth.split('-')[0], hours_worked: '', bonus: '', deduction: '' });
+                toast.success('Paie calculée');
+                fetchPayrolls(1);
+            }, 1500);
+        } catch (error) {
+            setCalculationProgress('❌ Erreur lors du calcul');
+            toast.error(error.response?.data?.message || 'Erreur lors du calcul');
+        } finally {
+            setIsCalculating(false);
+        }
+    }, [individualForm, selectedMonth, fetchPayrolls]);
 
     const handleCalculateMonth = useCallback(async () => {
         if (!selectedMonth) return;
@@ -203,14 +255,21 @@ const Payroll = () => {
                     </div>
                     <div className="flex gap-2 flex-wrap">
                         {isAccountant && (
-                            <button onClick={() => setShowCalculateModal(true)} disabled={isCalculating}
-                                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-xl font-semibold text-sm shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-300 active:scale-[0.97] disabled:opacity-50 hover:scale-105">
-                                <Zap size={20} />
-                                <div className="flex flex-col items-start">
-                                    <span className="font-bold">Calculer paies</span>
-                                    <span className="text-xs opacity-90">{monthLabel} {year}</span>
-                                </div>
-                            </button>
+                            <>
+                                <button onClick={() => setShowIndividualCalculateModal(true)} disabled={isCalculating}
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-xl font-semibold text-sm shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-300 active:scale-[0.97] disabled:opacity-50">
+                                    <Plus size={18} />
+                                    <span>Calculer paie</span>
+                                </button>
+                                <button onClick={() => setShowCalculateModal(true)} disabled={isCalculating}
+                                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-xl font-semibold text-sm shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-300 active:scale-[0.97] disabled:opacity-50 hover:scale-105">
+                                    <Zap size={20} />
+                                    <div className="flex flex-col items-start">
+                                        <span className="font-bold">Calculer paies</span>
+                                        <span className="text-xs opacity-90">{monthLabel} {year}</span>
+                                    </div>
+                                </button>
+                            </>
                         )}
                         <button onClick={handleExport}
                             className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-700 text-white rounded-xl font-semibold text-sm shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all duration-300 active:scale-[0.97]">
@@ -440,6 +499,96 @@ const Payroll = () => {
                                     <span>{isCalculating ? 'Calcul...' : 'Calculer'}</span>
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Individual Calculate Modal */}
+                {showIndividualCalculateModal && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+                                    <Plus className="text-blue-600" size={24} />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-slate-900">Calculer une paie</h2>
+                                    <p className="text-sm text-slate-500">Calcul individuel</p>
+                                </div>
+                            </div>
+
+                            {!isCalculating && (
+                                <form onSubmit={handleCalculateIndividual} className="space-y-4">
+                                    <div className="form-group">
+                                        <label className="form-label">Enseignant</label>
+                                        <select required className="input-field" value={individualForm.teacher_id} onChange={(e) => setIndividualForm({...individualForm, teacher_id: e.target.value})}>
+                                            <option value="">-- Sélectionnez un enseignant --</option>
+                                            {teachers.map(t => (
+                                                <option key={t.id} value={t.id}>{t.user?.name} ({t.employee_id})</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="form-group">
+                                            <label className="form-label">Mois</label>
+                                            <select required className="input-field text-sm" value={individualForm.month} onChange={(e) => setIndividualForm({...individualForm, month: e.target.value})}>
+                                                {[1,2,3,4,5,6,7,8,9,10,11,12].map(m => (
+                                                    <option key={m} value={m}>{MONTH_NAMES[m-1]}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Année</label>
+                                            <select required className="input-field text-sm" value={individualForm.year} onChange={(e) => setIndividualForm({...individualForm, year: e.target.value})}>
+                                                {[2024, 2025, 2026, 2027].map(y => (
+                                                    <option key={y} value={y}>{y}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label className="form-label">Heures travaillées (optionnel)</label>
+                                        <input type="number" className="input-field text-sm" placeholder="Laisser vide pour utiliser le pointage"
+                                            value={individualForm.hours_worked} onChange={(e) => setIndividualForm({...individualForm, hours_worked: e.target.value})} />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="form-group">
+                                            <label className="form-label">Prime (optionnel)</label>
+                                            <input type="number" className="input-field text-sm" placeholder="0" min="0" step="0.01"
+                                                value={individualForm.bonus} onChange={(e) => setIndividualForm({...individualForm, bonus: e.target.value})} />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Retenue (optionnel)</label>
+                                            <input type="number" className="input-field text-sm" placeholder="0" min="0" step="0.01"
+                                                value={individualForm.deduction} onChange={(e) => setIndividualForm({...individualForm, deduction: e.target.value})} />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-3 pt-4">
+                                        <button type="button" onClick={() => setShowIndividualCalculateModal(false)} disabled={isCalculating}
+                                            className="flex-1 px-4 py-2.5 border border-slate-300 text-slate-700 rounded-xl font-semibold hover:bg-slate-50 transition-all disabled:opacity-50">
+                                            Annuler
+                                        </button>
+                                        <button type="submit" disabled={isCalculating}
+                                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50">
+                                            <Plus size={18} />
+                                            <span>{isCalculating ? 'Calcul...' : 'Calculer'}</span>
+                                        </button>
+                                    </div>
+                                </form>
+                            )}
+
+                            {isCalculating && (
+                                <div className="bg-blue-50 rounded-xl p-4 text-center">
+                                    <div className="inline-block mb-3">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                    </div>
+                                    <p className="text-sm font-semibold text-blue-900">{calculationProgress || 'Calcul en cours...'}</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
