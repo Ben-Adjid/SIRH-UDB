@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import api from '../services/api';
 import useAuthStore from '../store/authStore';
-import { CreditCard, Download, DollarSign, Percent, FileText, CheckCircle, AlertCircle, Zap, Plus, TrendingUp, TrendingDown, Users, Calendar, Eye } from 'lucide-react';
+import { CreditCard, Download, DollarSign, Percent, FileText, CheckCircle, AlertCircle, Zap, Plus, TrendingUp, TrendingDown, Users, Calendar, Eye, Play, ChevronRight } from 'lucide-react';
 import toast from '../utils/toast';
 import ConfirmModal from '../components/ConfirmModal';
 import FormModal from '../components/FormModal';
@@ -26,6 +26,8 @@ const Payroll = () => {
     const [isCalculating, setIsCalculating] = useState(false);
     const [stats, setStats] = useState({ total: 0, calculated: 0, validated: 0, paid: 0, totalAmount: 0 });
     const [showConfirm, setShowConfirm] = useState({ isOpen: false, action: null, payroll: null });
+    const [showCalculateModal, setShowCalculateModal] = useState(false);
+    const [calculationProgress, setCalculationProgress] = useState('');
 
     const userRoles = getUserRoles(user);
     const isAdmin = userRoles.includes('admin');
@@ -44,7 +46,6 @@ const Payroll = () => {
             setPayrolls(data.data || []);
             setPagination({ current_page: data.current_page, last_page: data.last_page, total: data.total });
 
-            // Calculate stats
             const calculated = data.data?.filter(p => p.status === 'calculated').length || 0;
             const validated = data.data?.filter(p => p.status === 'validated').length || 0;
             const paid = data.data?.filter(p => p.status === 'paid').length || 0;
@@ -64,12 +65,20 @@ const Payroll = () => {
     const handleCalculateMonth = useCallback(async () => {
         if (!selectedMonth) return;
         setIsCalculating(true);
+        setCalculationProgress('Préparation du calcul...');
         try {
             const [year, month] = selectedMonth.split('-').map(Number);
+            setCalculationProgress('Calcul en cours...');
             const response = await api.post('/payroll/calculate-month', { month, year });
-            toast.success(`${response.data.calculated} paies calculées automatiquement`);
-            fetchPayrolls(1);
+            setCalculationProgress(`✅ ${response.data.calculated} paies calculées avec succès`);
+            setTimeout(() => {
+                setShowCalculateModal(false);
+                setCalculationProgress('');
+                toast.success(`${response.data.calculated} paies calculées automatiquement`);
+                fetchPayrolls(1);
+            }, 1500);
         } catch (error) {
+            setCalculationProgress('❌ Erreur lors du calcul');
             toast.error(error.response?.data?.message || 'Erreur lors du calcul automatique');
         } finally {
             setIsCalculating(false);
@@ -176,6 +185,9 @@ const Payroll = () => {
 
     const AVATAR_GRADIENTS = ['from-indigo-500 to-violet-600', 'from-emerald-500 to-teal-600', 'from-blue-500 to-indigo-600', 'from-amber-500 to-orange-600'];
 
+    const [year, month] = selectedMonth.split('-').map(Number);
+    const monthLabel = MONTH_NAMES[month - 1] || '';
+
     return (
         <div className="min-h-screen">
             <div className="max-w-[1400px] mx-auto space-y-6 px-2 sm:px-4">
@@ -191,10 +203,13 @@ const Payroll = () => {
                     </div>
                     <div className="flex gap-2 flex-wrap">
                         {isAccountant && (
-                            <button onClick={handleCalculateMonth} disabled={isCalculating}
-                                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-xl font-semibold text-sm shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-300 active:scale-[0.97] disabled:opacity-50">
-                                <Zap size={18} />
-                                <span>{isCalculating ? 'Calcul...' : 'Calculer paies'}</span>
+                            <button onClick={() => setShowCalculateModal(true)} disabled={isCalculating}
+                                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-xl font-semibold text-sm shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-300 active:scale-[0.97] disabled:opacity-50 hover:scale-105">
+                                <Zap size={20} />
+                                <div className="flex flex-col items-start">
+                                    <span className="font-bold">Calculer paies</span>
+                                    <span className="text-xs opacity-90">{monthLabel} {year}</span>
+                                </div>
                             </button>
                         )}
                         <button onClick={handleExport}
@@ -250,7 +265,8 @@ const Payroll = () => {
                     <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <Calendar size={20} className="text-slate-400" />
-                            <label className="font-semibold text-slate-700">Sélectionner le mois:</label>
+                            <label className="font-semibold text-slate-700">Mois actuel:</label>
+                            <span className="text-lg font-bold text-emerald-600">{monthLabel} {year}</span>
                         </div>
                         <input type="month" value={selectedMonth} onChange={(e) => { setSelectedMonth(e.target.value); setPage(1); }}
                             className="px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500" />
@@ -352,6 +368,81 @@ const Payroll = () => {
                 )}
 
                 <Pagination page={pagination.current_page} totalPages={pagination.last_page} onPageChange={setPage} totalItems={pagination.total} perPage={perPage} />
+
+                {/* Calculate Month Modal */}
+                {showCalculateModal && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
+                                    <Play className="text-emerald-600" size={24} />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-slate-900">Calculer les paies</h2>
+                                    <p className="text-sm text-slate-500">{monthLabel} {year}</p>
+                                </div>
+                            </div>
+
+                            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-6 space-y-3">
+                                <div className="flex items-start gap-3">
+                                    <AlertCircle className="text-emerald-600 flex-shrink-0 mt-1" size={20} />
+                                    <div>
+                                        <p className="font-semibold text-emerald-900">Calcul automatique</p>
+                                        <p className="text-sm text-emerald-700 mt-1">Le système va automatiquement:</p>
+                                        <ul className="text-sm text-emerald-700 mt-2 space-y-1 ml-4">
+                                            <li>✓ Récupérer les heures pointées</li>
+                                            <li>✓ Déduire les congés approuvés</li>
+                                            <li>✓ Calculer le brut (heures × taux)</li>
+                                            <li>✓ Appliquer la BRS si nécessaire</li>
+                                            <li>✓ Déterminer le mode de paiement</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {!isCalculating && (
+                                <div className="bg-slate-50 rounded-xl p-4 mb-6">
+                                    <p className="text-sm font-semibold text-slate-700 mb-2">Résumé:</p>
+                                    <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-600">Enseignants actifs:</span>
+                                            <span className="font-bold text-slate-900">{stats.total}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-600">Déjà calculées:</span>
+                                            <span className="font-bold text-amber-600">{stats.calculated}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-600">À calculer:</span>
+                                            <span className="font-bold text-emerald-600">{stats.total - stats.calculated}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {isCalculating && (
+                                <div className="bg-blue-50 rounded-xl p-4 mb-6 text-center">
+                                    <div className="inline-block mb-3">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                    </div>
+                                    <p className="text-sm font-semibold text-blue-900">{calculationProgress || 'Calcul en cours...'}</p>
+                                </div>
+                            )}
+
+                            <div className="flex gap-3">
+                                <button onClick={() => { setShowCalculateModal(false); setCalculationProgress(''); }} disabled={isCalculating}
+                                    className="flex-1 px-4 py-2.5 border border-slate-300 text-slate-700 rounded-xl font-semibold hover:bg-slate-50 transition-all disabled:opacity-50">
+                                    Annuler
+                                </button>
+                                <button onClick={handleCalculateMonth} disabled={isCalculating}
+                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50">
+                                    <Zap size={18} />
+                                    <span>{isCalculating ? 'Calcul...' : 'Calculer'}</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Bonus Modal */}
                 <FormModal isOpen={showBonusModal} onClose={() => setShowBonusModal(false)} onSubmit={handleAddBonus} title="Ajouter une Prime" submitText="Ajouter" submitClassName="btn-success">
