@@ -88,18 +88,26 @@ const Payroll = () => {
         setLoadingAttendance(true);
         try {
             const [attendResp, leaveResp] = await Promise.all([
-                api.get('/payroll/attendance-summary', { params: { teacher_id: teacherId, month: parseInt(month), year: parseInt(year) } }),
-                api.get(`/leaves?teacher_id=${teacherId}&month=${month}&year=${year}&status=approved`) // Get approved leaves
+                api.get('/payroll/attendance-hours', { params: { teacher_id: teacherId, month: parseInt(month), year: parseInt(year) } }),
+                api.get('/leaves', { params: { teacher_id: teacherId, month: parseInt(month), year: parseInt(year), status: 'approved' } })
             ]);
             setAttendanceData(attendResp.data);
             setLeaveData(leaveResp.data?.data || []);
             calculatePreview(teacherId, parseInt(month), parseInt(year), attendResp.data);
         } catch (error) {
-            toast.error('Erreur chargement données');
+            console.error('Erreur chargement données:', error);
+            if (error.response?.status === 401) {
+                toast.error('Session expirée, veuillez vous reconnecter');
+            } else if (error.response?.status === 404) {
+                toast.error('Données non trouvées pour ce mois');
+                setAttendanceData({ hours: 0 });
+            } else {
+                toast.error('Erreur lors du chargement des données');
+            }
         } finally {
             setLoadingAttendance(false);
         }
-    }, []);
+    }, [calculatePreview]);
 
     const calculatePreview = useCallback((teacherId, month, year, attData) => {
         const selectedTeacher = teachers.find(t => t.id == teacherId);
