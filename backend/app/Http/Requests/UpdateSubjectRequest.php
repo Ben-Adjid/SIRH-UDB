@@ -9,7 +9,7 @@ class UpdateSubjectRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->user()->hasRole(['admin', 'academic_manager', 'secretary']);
+        return auth()->user()->hasAnyRole(['admin', 'academic_manager', 'secretary']);
     }
 
     public function rules(): array

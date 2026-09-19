@@ -218,7 +218,7 @@ class UserController extends Controller {
     }
 
     public function auditLogs(Request $request): JsonResponse {
-        if (!auth()->user()->hasRole('admin')) {
+        if (!auth()->user()->hasAnyRole(['admin', 'hr_manager', 'secretary'])) {
             return response()->json(['message' => 'Non autorisé'], 403);
         }
 
@@ -243,8 +243,8 @@ class UserController extends Controller {
     }
 
     public function clearAuditLogs(): JsonResponse {
-        if (!auth()->user()->hasRole('admin')) {
-            return response()->json(['message' => 'Action réservée aux administrateurs'], 403);
+        if (!auth()->user()->hasAnyRole(['admin', 'hr_manager', 'secretary'])) {
+            return response()->json(['message' => 'Action réservée à l\'administration RH'], 403);
         }
         $deleted = AuditLog::where('created_at', '<', now()->subDays(90))->delete();
         return response()->json(['message' => "Journal purgé ({$deleted} entrées supprimées, 90 derniers jours conservés)"]);

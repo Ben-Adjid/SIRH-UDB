@@ -257,7 +257,7 @@ class PayrollController extends Controller {
 
     public function validatePayroll(Request $request, Payroll $payroll): JsonResponse {
         try {
-            if (!auth()->user()->hasAnyRole(['admin', 'accountant', 'hr_manager'])) {
+            if (!auth()->user()->hasAnyRole(['admin', 'accountant', 'hr_manager', 'secretary'])) {
                 return response()->json(['message' => 'Non autorisé'], 403);
             }
 

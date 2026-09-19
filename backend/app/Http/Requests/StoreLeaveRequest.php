@@ -8,7 +8,7 @@ class StoreLeaveRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->user()->hasRole(['admin', 'hr_manager', 'secretary']);
+        return auth()->user()->hasAnyRole(['admin', 'hr_manager', 'secretary', 'academic_manager', 'accountant']);
     }
 
     public function rules(): array

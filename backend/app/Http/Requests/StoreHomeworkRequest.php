@@ -8,7 +8,7 @@ class StoreHomeworkRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->user()->hasRole(['admin', 'academic_manager', 'teacher', 'secretary']);
+        return auth()->user()->hasAnyRole(['admin', 'academic_manager', 'teacher', 'secretary']);
     }
 
     public function rules(): array

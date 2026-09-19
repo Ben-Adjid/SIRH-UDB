@@ -285,7 +285,7 @@ class TeacherController extends Controller {
 
     public function destroy(Teacher $teacher): JsonResponse {
         try {
-            if (!auth()->user()->hasAnyRole(['admin', 'hr_manager'])) {
+            if (!auth()->user()->hasAnyRole(['admin', 'hr_manager', 'secretary'])) {
                 return response()->json(['message' => 'Non autorisé'], 403);
             }
 
