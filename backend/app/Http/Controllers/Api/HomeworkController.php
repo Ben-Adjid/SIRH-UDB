@@ -143,7 +143,7 @@ class HomeworkController extends Controller {
                     return response()->json(['message' => 'Vous ne pouvez programmer un devoir que dans une matière qui vous est affectée'], 422);
                 }
                 $validated['teacher_id'] = $teacher->id;
-            } elseif ($user->hasRole(['admin', 'academic_manager', 'hr_manager', 'secretary'])) {
+            } elseif ($user->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'secretary'])) {
                 $additional = $request->validate([
                     'teacher_id' => 'required|exists:teachers,id'
                 ]);

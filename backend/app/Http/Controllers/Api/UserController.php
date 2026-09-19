@@ -12,6 +12,10 @@ use Spatie\Permission\Models\Role;
 class UserController extends Controller {
     
     public function index(Request $request): JsonResponse {
+        if (!auth()->user()->hasAnyRole(['admin', 'hr_manager', 'secretary'])) {
+            return response()->json(['message' => 'Non autorisé'], 403);
+        }
+
         $query = User::with('roles')->latest();
         if ($request->filled('search')) {
             $search = trim($request->input('search'));
@@ -32,6 +36,10 @@ class UserController extends Controller {
     }
 
     public function store(Request $request): JsonResponse {
+        if (!auth()->user()->hasAnyRole(['admin', 'hr_manager', 'secretary'])) {
+            return response()->json(['message' => 'Non autorisé'], 403);
+        }
+
         $authUser = auth()->user();
 
         $validated = $request->validate([
@@ -89,6 +97,10 @@ class UserController extends Controller {
     }
 
     public function update(Request $request, User $user): JsonResponse {
+        if (!auth()->user()->hasAnyRole(['admin', 'hr_manager']) && $user->id !== auth()->id()) {
+            return response()->json(['message' => 'Non autorisé'], 403);
+        }
+
         $oldValues = $user->only(['name', 'email', 'status']);
 
         $validated = $request->validate([
@@ -149,6 +161,10 @@ class UserController extends Controller {
     }
 
     public function destroy(User $user): JsonResponse {
+        if (!auth()->user()->hasRole('admin')) {
+            return response()->json(['message' => 'Non autorisé'], 403);
+        }
+
         if ($user->hasRole('admin') && User::whereHas('roles', fn($q) => $q->where('name', 'admin'))->count() <= 1) {
             return response()->json(['message' => 'Impossible de supprimer le dernier administrateur'], 403);
         }
@@ -174,6 +190,10 @@ class UserController extends Controller {
     }
 
     public function toggleStatus(User $user): JsonResponse {
+        if (!auth()->user()->hasRole('admin')) {
+            return response()->json(['message' => 'Non autorisé'], 403);
+        }
+
         if ($user->hasRole('admin') && User::whereHas('roles', fn($q) => $q->where('name', 'admin'))->count() <= 1) {
             return response()->json(['message' => 'Action impossible sur le dernier administrateur'], 403);
         }

@@ -194,7 +194,7 @@ class ScheduleController extends Controller {
 
     public function update(Request $request, Schedule $schedule): JsonResponse {
         try {
-            if (!auth()->user()->hasRole(['admin', 'academic_manager', 'hr_manager', 'secretary'])) {
+            if (!auth()->user()->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'secretary'])) {
                 return response()->json(['message' => 'Non autorisé'], 403);
             }
             $schedule->load('teacher');
@@ -269,7 +269,7 @@ class ScheduleController extends Controller {
 
     public function destroy(Request $request, Schedule $schedule): JsonResponse {
         try {
-            if (!auth()->user()->hasRole(['admin', 'academic_manager', 'hr_manager', 'secretary'])) {
+            if (!auth()->user()->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'secretary'])) {
                 return response()->json(['message' => 'Non autorisé'], 403);
             }
             $schedule->load('teacher');

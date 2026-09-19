@@ -15,7 +15,7 @@ function parseTokenPayload(token) {
 function isTokenValid(token) {
     if (!token) return false;
     const payload = parseTokenPayload(token);
-    if (!payload || !payload.exp) return true;
+    if (!payload || !payload.exp) return false;
     return payload.exp * 1000 > Date.now();
 }
 

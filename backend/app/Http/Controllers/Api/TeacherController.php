@@ -134,7 +134,7 @@ class TeacherController extends Controller {
             }
             $data = $teacher->load('user', 'ufr');
 
-            if (!$user->hasRole(['admin', 'hr_manager', 'secretary', 'accountant'])) {
+            if (!$user->hasAnyRole(['admin', 'hr_manager', 'secretary', 'accountant'])) {
                 $data->setHidden(['hourly_rate']);
             }
 

@@ -19,7 +19,7 @@ class DocumentController extends Controller
     public function index(Request $request, Teacher $teacher): JsonResponse
     {
         $user = auth()->user();
-        if ($user->id !== $teacher->user_id && !$user->hasRole(['admin', 'hr_manager', 'secretary', 'accountant'])) {
+        if ($user->id !== $teacher->user_id && !$user->hasAnyRole(['admin', 'hr_manager', 'secretary', 'accountant'])) {
             return response()->json(['message' => 'Non autorisé'], 403);
         }
 
@@ -39,7 +39,7 @@ class DocumentController extends Controller
     public function store(Request $request, Teacher $teacher): JsonResponse
     {
         $user = auth()->user();
-        if ($user->id !== $teacher->user_id && !$user->hasRole(['admin', 'hr_manager', 'secretary', 'accountant'])) {
+        if ($user->id !== $teacher->user_id && !$user->hasAnyRole(['admin', 'hr_manager', 'secretary', 'accountant'])) {
             return response()->json(['message' => 'Non autorisé'], 403);
         }
 
@@ -88,7 +88,7 @@ class DocumentController extends Controller
     public function destroy(Document $document): JsonResponse
     {
         $user = auth()->user();
-        if ($user->id !== $document->teacher->user_id && !$user->hasRole(['admin', 'hr_manager', 'secretary', 'accountant'])) {
+        if ($user->id !== $document->teacher->user_id && !$user->hasAnyRole(['admin', 'hr_manager', 'secretary', 'accountant'])) {
             return response()->json(['message' => 'Non autorisé'], 403);
         }
 
@@ -107,7 +107,7 @@ class DocumentController extends Controller
     public function update(Request $request, Document $document): JsonResponse
     {
         $user = auth()->user();
-        if ($user->id !== $document->teacher->user_id && !$user->hasRole(['admin', 'hr_manager', 'secretary', 'accountant'])) {
+        if ($user->id !== $document->teacher->user_id && !$user->hasAnyRole(['admin', 'hr_manager', 'secretary', 'accountant'])) {
             return response()->json(['message' => 'Non autorisé'], 403);
         }
 
@@ -141,7 +141,7 @@ class DocumentController extends Controller
     public function download(Document $document): Response|JsonResponse
     {
         $user = auth()->user();
-        if ($user->id !== $document->teacher->user_id && !$user->hasRole(['admin', 'hr_manager', 'secretary', 'accountant'])) {
+        if ($user->id !== $document->teacher->user_id && !$user->hasAnyRole(['admin', 'hr_manager', 'secretary', 'accountant'])) {
             return response()->json(['message' => 'Non autorisé'], 403);
         }
 

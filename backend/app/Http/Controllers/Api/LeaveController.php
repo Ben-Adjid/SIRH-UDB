@@ -64,6 +64,10 @@ class LeaveController extends Controller {
 
     public function updateStatus(Request $request, LeaveRequest $leave): JsonResponse {
         try {
+            if (!auth()->user()->hasAnyRole(['admin', 'hr_manager', 'secretary'])) {
+                return response()->json(['message' => 'Non autorisé'], 403);
+            }
+
             $validated = $request->validate([
                 'status' => 'required|in:approved,rejected',
                 'rejection_reason' => 'required_if:status,rejected|string',
@@ -145,6 +149,10 @@ class LeaveController extends Controller {
 
     public function updateBalance(Request $request): JsonResponse {
         try {
+            if (!auth()->user()->hasAnyRole(['admin', 'hr_manager', 'secretary'])) {
+                return response()->json(['message' => 'Non autorisé'], 403);
+            }
+
             $validated = $request->validate([
                 'user_id' => 'required|exists:users,id',
                 'leave_type_id' => 'required|exists:leave_types,id',
