@@ -412,7 +412,7 @@ class PayrollController extends Controller {
     public function show(Payroll $payroll): JsonResponse {
         try {
             $user = auth()->user();
-            if (!$payroll->teacher || ($user->id !== $payroll->teacher->user_id && !$user->hasRole(['admin', 'accountant', 'hr_manager', 'secretary']))) {
+            if (!$payroll->teacher || ($user->id !== $payroll->teacher->user_id && !$user->hasAnyRole(['admin', 'accountant', 'hr_manager', 'secretary']))) {
                 return response()->json(['message' => 'Non autorisé'], 403);
             }
             return response()->json($payroll->load(['teacher.user', 'teacher.ufr', 'details', 'validator']));

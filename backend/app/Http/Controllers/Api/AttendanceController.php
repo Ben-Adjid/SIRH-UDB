@@ -631,7 +631,7 @@ class AttendanceController extends Controller {
             ]);
         }
 
-        if (!$user->hasRole(['admin', 'hr_manager', 'secretary', 'accountant', 'academic_manager'])) {
+        if (!$user->hasAnyRole(['admin', 'hr_manager', 'secretary', 'accountant', 'academic_manager'])) {
             $history = Attendance::with('justifiedBy')->where('user_id', $user->id)
                 ->orderBy('attendance_date', 'desc')
                 ->limit(28)
@@ -930,7 +930,7 @@ class AttendanceController extends Controller {
 
     public function getAvailabilities(Request $request): JsonResponse {
         $user = auth()->user();
-        if (!$user->hasRole(['admin', 'hr_manager', 'secretary', 'academic_manager'])) {
+        if (!$user->hasAnyRole(['admin', 'hr_manager', 'secretary', 'academic_manager'])) {
             return response()->json(['message' => 'Non autorisé'], 403);
         }
 

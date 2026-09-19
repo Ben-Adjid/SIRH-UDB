@@ -79,8 +79,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/auth/users', [App\Http\Controllers\Api\UserController::class, 'store']);
     });
     Route::middleware('role:admin|hr_manager|secretary')->get('/auth/users', [App\Http\Controllers\Api\UserController::class, 'index']);
-    Route::middleware('role:admin')->group(function () {
+    Route::middleware('role:admin|hr_manager')->group(function () {
         Route::put('/auth/users/{user}', [App\Http\Controllers\Api\UserController::class, 'update']);
+    });
+    Route::middleware('role:admin')->group(function () {
         Route::delete('/auth/users/{user}', [App\Http\Controllers\Api\UserController::class, 'destroy']);
         Route::patch('/auth/users/{user}/toggle-status', [App\Http\Controllers\Api\UserController::class, 'toggleStatus']);
     });

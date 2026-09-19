@@ -176,7 +176,7 @@ class TeacherController extends Controller {
                 ->groupBy('teacher_id')
                 ->pluck('total_attendances', 'teacher_id');
 
-            $showSalary = auth()->user()->hasRole(['admin', 'accountant']);
+            $showSalary = auth()->user()->hasAnyRole(['admin', 'accountant']);
             $reportData = $teachers->map(function ($t) use ($attendanceCounts, $showSalary) {
                 $monthlyVolume = $t->volume_hours ? $t->volume_hours / 12 : 0;
                 $monthlyRate = $monthlyVolume * ($t->hourly_rate ?? 0);

@@ -106,7 +106,7 @@ class HomeworkController extends Controller {
             if (!$this->canAccessAcademicHomework($homework, $user)) {
                 return response()->json(['message' => 'Vous ne pouvez consulter que les devoirs de votre UFR'], 403);
             }
-            if ($user->hasRole('teacher') && !$user->hasRole(['admin', 'academic_manager'])) {
+            if ($user->hasRole('teacher') && !$user->hasAnyRole(['admin', 'academic_manager'])) {
                 $teacher = Teacher::where('user_id', $user->id)->first();
                 if (!$teacher || $homework->teacher_id !== $teacher->id) {
                     return response()->json(['message' => 'Accès Interdit'], 403);
