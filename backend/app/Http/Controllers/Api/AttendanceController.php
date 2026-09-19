@@ -28,7 +28,6 @@ class AttendanceController extends Controller {
         $teacher = Teacher::where('user_id', $user->id)->first();
 
         return response()->json([
-            'pin' => $user->attendance_pin ?: $teacher?->pin_code,
             'configured' => (bool) ($user->attendance_pin || $teacher?->pin_code),
         ]);
     }
@@ -95,7 +94,12 @@ class AttendanceController extends Controller {
             }
 
             $validated = $request->validate(['pin' => 'required|string|digits_between:4,6']);
-            if (!$user->attendance_pin || !hash_equals((string) $user->attendance_pin, (string) $validated['pin'])) {
+            try {
+                $decryptedPin = $user->attendance_pin ? \Illuminate\Support\Facades\Crypt::decryptString($user->attendance_pin) : null;
+                if (!$decryptedPin || !hash_equals($decryptedPin, $validated['pin'])) {
+                    return response()->json(['message' => 'Code PIN administratif invalide ou non configuré'], 422);
+                }
+            } catch (\Exception $e) {
                 return response()->json(['message' => 'Code PIN administratif invalide ou non configuré'], 422);
             }
 

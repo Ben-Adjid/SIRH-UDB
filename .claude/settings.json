@@ -11,7 +11,9 @@
       "Bash(grep -r \"payroll\\\\\\\\.calculate\\\\\\\\|payroll\\\\\\\\.validate\\\\\\\\|payroll\\\\\\\\.export\" /c/Users/aboub/Desktop/DIT/backend/app)",
       "Bash(git commit -m 'fix: Corriger 3 bugs critiques du côté comptable *)",
       "Bash(xargs wc -l)",
-      "Bash(git commit -m 'fix: Corriger 10 bugs critiques du système \\(audit exhaustif\\) *)"
+      "Bash(git commit -m 'fix: Corriger 10 bugs critiques du système \\(audit exhaustif\\) *)",
+      "Bash(grep -rn \"try.*catch.*Exception\\\\|catch.*\\\\\\\\\\\\\\\\Exception\" backend/app/Http/Controllers/Api/PayrollController.php)",
+      "Bash(grep -B3 -A3 'max\\(0, $hoursWorked' backend/app/Http/Controllers/Api/PayrollController.php)"
     ]
   }
 }

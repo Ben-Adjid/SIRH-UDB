@@ -17,7 +17,7 @@ class CalculatePayrollRequest extends FormRequest
             'teacher_id' => 'required|exists:teachers,id',
             'month' => 'required|integer|min:1|max:12',
             'year' => 'required|integer|min:2020|max:' . (date('Y') + 1),
-            'hours_worked' => 'required|numeric|min:0',
+            'hours_worked' => 'sometimes|nullable|numeric|min:0',
             'bonus' => 'nullable|numeric|min:0',
             'deduction' => 'nullable|numeric|min:0',
         ];

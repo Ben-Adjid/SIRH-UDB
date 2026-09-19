@@ -208,7 +208,7 @@ class AuthController extends Controller {
             'new_values' => $newValues,
         ]);
 
-        $user->load('roles', 'teacher')->makeVisible('attendance_pin');
+        $user->load('roles', 'teacher');
         return response()->json(['message' => 'Profil mis à jour', 'user' => $user], 200);
     }
 
