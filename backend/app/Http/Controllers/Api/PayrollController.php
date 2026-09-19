@@ -93,6 +93,22 @@ class PayrollController extends Controller {
             $paymentMethod = $grossSalary >= self::CHECK_THRESHOLD ? 'check' : 'cash';
 
             return DB::transaction(function () use ($validated, $teacher, $hoursWorked, $incompleteAttendances, $baseAmount, $brsAmount, $grossSalary, $totalEarnings, $totalDeductions, $netSalary, $paymentMethod, $manualBonus, $manualDeduction) {
+                // Create audit logs before deleting draft payrolls
+                Payroll::where([
+                    'teacher_id' => $teacher->id,
+                    'year' => $validated['year'],
+                    'month' => $validated['month'],
+                ])->whereIn('status', ['draft', 'calculated'])->get()->each(function($payroll) {
+                    AuditLog::create([
+                        'user_id' => auth()->id(),
+                        'action' => 'delete_draft_payroll',
+                        'model' => 'Payroll',
+                        'model_id' => $payroll->id,
+                        'old_values' => $payroll->toArray(),
+                        'ip_address' => request()->ip(),
+                    ]);
+                });
+
                 Payroll::where([
                     'teacher_id' => $teacher->id,
                     'year' => $validated['year'],
@@ -210,11 +226,18 @@ class PayrollController extends Controller {
             $details = PayrollDetail::where('payroll_id', $payroll->id)->get();
             $totalEarnings = $details->where('type', 'earning')->sum('amount');
             $totalDeductions = $details->where('type', 'deduction')->sum('amount');
+
+            $brsAmount = 0;
+            if ($totalEarnings > self::BRS_THRESHOLD) {
+                $brsAmount = round($totalEarnings * self::BRS_RATE, 2);
+            }
+
+            $grossSalary = $totalEarnings - $brsAmount;
             $netSalary = max(0, $totalEarnings - $totalDeductions);
-            $grossSalary = $totalEarnings - $payroll->brs_amount;
             $paymentMethod = $grossSalary >= self::CHECK_THRESHOLD ? 'check' : 'cash';
 
             $payroll->update([
+                'brs_amount' => $brsAmount,
                 'gross_salary' => $grossSalary,
                 'deductions' => $totalDeductions,
                 'net_salary' => $netSalary,
@@ -234,6 +257,10 @@ class PayrollController extends Controller {
 
     public function validatePayroll(Request $request, Payroll $payroll): JsonResponse {
         try {
+            if (!auth()->user()->hasAnyRole(['admin', 'accountant', 'hr_manager'])) {
+                return response()->json(['message' => 'Non autorisé'], 403);
+            }
+
             if ($payroll->status === 'validated' || $payroll->status === 'paid') {
                 return response()->json(['message' => 'Paie déjà validée'], 422);
             }
@@ -263,6 +290,10 @@ class PayrollController extends Controller {
 
     public function markAsPaid(Request $request, Payroll $payroll): JsonResponse {
         try {
+            if (!auth()->user()->hasAnyRole(['admin', 'accountant', 'hr_manager'])) {
+                return response()->json(['message' => 'Non autorisé'], 403);
+            }
+
             if ($payroll->status !== 'validated') {
                 return response()->json(['message' => 'Seules les paies validées peuvent être payées'], 422);
             }
@@ -299,6 +330,10 @@ class PayrollController extends Controller {
 
     public function export(Request $request) {
         try {
+            if (!auth()->user()->hasAnyRole(['admin', 'accountant', 'hr_manager'])) {
+                return response()->json(['message' => 'Non autorisé'], 403);
+            }
+
             $query = Payroll::with('teacher.user');
 
             if ($request->filled('month') && $request->filled('year')) {

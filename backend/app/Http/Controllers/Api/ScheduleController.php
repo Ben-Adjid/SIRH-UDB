@@ -120,6 +120,10 @@ class ScheduleController extends Controller {
 
     public function store(StoreScheduleRequest $request): JsonResponse {
         try {
+            if (!auth()->user()->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'secretary', 'teacher'])) {
+                return response()->json(['message' => 'Non autorisé'], 403);
+            }
+
             $validated = $request->validated();
 
             if (auth()->user()->hasRole('teacher')) {

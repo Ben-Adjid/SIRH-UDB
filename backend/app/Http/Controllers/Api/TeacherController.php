@@ -32,7 +32,7 @@ class TeacherController extends Controller {
 
     private function canAccessTeacher(Teacher $teacher, User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'hr_manager', 'secretary', 'accountant'])
+        return $user->hasRole('admin')
             || in_array($teacher->ufr_id, $this->visibleUfrIds($user));
     }
 

@@ -230,7 +230,11 @@ class HomeworkController extends Controller {
 
             $startTime = $validated['start_time'] ?? $homework->start_time;
             $endTime = $validated['end_time'] ?? $homework->end_time;
-            if ($endTime <= $startTime) {
+
+            $start = Carbon::createFromFormat('H:i', $startTime);
+            $end = Carbon::createFromFormat('H:i', $endTime);
+
+            if ($end->lte($start)) {
                 return response()->json(['message' => 'L\'heure de fin doit être postérieure à l\'heure de début'], 422);
             }
             if (isset($validated['start_time']) || isset($validated['end_time'])) {
