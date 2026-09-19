@@ -103,7 +103,7 @@ const Leaves = () => {
                                     <div><h3 className="font-bold text-slate-900 text-sm">{leave.user?.name || leave.user_name || 'Demandeur'}</h3><p className="text-xs text-slate-400 flex items-center gap-1 mt-1"><User size={11} /> {leave.approved_by ? `Traitee par ${leave.approved_by.name}` : 'En attente de validation RH / administration'}</p></div>
                                     <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase border ${status.color}`}>{status.label}</span>
                                 </div>
-                                <p className="font-semibold text-sm text-slate-700">{leave.leave_type?.name || leave.leaveType?.name || 'Conge'}</p>
+                                <p className="font-semibold text-sm text-slate-700">{leave.leaveType?.name || 'Conge'}</p>
                                 <p className="text-xs text-slate-500 flex items-center gap-2 mt-2"><Calendar size={12} /> {leave.start_date} au {leave.end_date} ({leave.duration_days} jour(s))</p>
                                 {leave.reason && <p className="text-xs text-slate-400 mt-3 italic">{leave.reason}</p>}
                                 {leave.status === 'pending' && canManage && <div className="flex gap-2 mt-4 pt-3 border-t border-slate-100"><button onClick={() => updateStatus(leave, 'approved')} className="flex-1 flex items-center justify-center gap-1 rounded-xl py-2 text-xs font-bold text-emerald-600 bg-emerald-50"><Check size={13} /> Approuver</button><button onClick={() => { setRejecting(leave); setRejectionReason(''); }} className="flex-1 flex items-center justify-center gap-1 rounded-xl py-2 text-xs font-bold text-red-600 bg-red-50"><X size={13} /> Rejeter</button></div>}

@@ -28,7 +28,7 @@ class AuthController extends Controller {
             'role' => 'required|string|exists:roles,name',
         ]);
 
-        if (auth()->user()->hasAnyRole(['hr_manager', 'secretary']) && $validated['role'] === 'admin') {
+        if (!auth()->user()->hasRole('admin') && $validated['role'] === 'admin') {
             return response()->json(['message' => 'Vous ne pouvez pas attribuer le rôle administrateur'], 403);
         }
 

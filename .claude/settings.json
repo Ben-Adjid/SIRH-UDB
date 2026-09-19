@@ -4,7 +4,8 @@
       "Bash(git commit -m 'fix: Corriger bugs critiques et majeurs de sécurité *)",
       "Bash(git commit -m 'docs: Rapport complet des corrections appliquées et restantes *)",
       "Bash(git commit -m 'fix: Hasher PIN codes et implémenter jours fériés pour congés *)",
-      "Bash(git commit -m 'fix: Corriger bugs majeurs de logique et permissions *)"
+      "Bash(git commit -m 'fix: Corriger bugs majeurs de logique et permissions *)",
+      "Bash(git commit -m 'fix: Corriger bugs mineurs de logique et cohérence *)"
     ]
   }
 }

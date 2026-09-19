@@ -46,7 +46,7 @@ class HomeworkController extends Controller {
 
     private function canAccessAcademicHomework(Homework $homework, User $user): bool
     {
-        if (!$user->hasRole('academic_manager') || $user->hasRole('admin')) {
+        if ($user->hasRole('admin')) {
             return true;
         }
 
