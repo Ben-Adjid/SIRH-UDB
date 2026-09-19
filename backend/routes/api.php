@@ -232,6 +232,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:admin|accountant|hr_manager|secretary')->group(function () {
         Route::get('/payroll/attendance-hours', [App\Http\Controllers\Api\PayrollController::class, 'attendanceSummary']);
         Route::post('/payroll/calculate', [App\Http\Controllers\Api\PayrollController::class, 'calculate'])->middleware('throttle:30,1');
+        Route::post('/payroll/calculate-month', [App\Http\Controllers\Api\PayrollController::class, 'calculateMonth'])->middleware('throttle:30,1');
         Route::post('/payroll/{payroll}/line-item', [App\Http\Controllers\Api\PayrollController::class, 'addLineItem'])->middleware('throttle:30,1');
         Route::post('/payroll/{payroll}/validate', [App\Http\Controllers\Api\PayrollController::class, 'validatePayroll'])->middleware('throttle:30,1');
         Route::post('/payroll/{payroll}/mark-as-paid', [App\Http\Controllers\Api\PayrollController::class, 'markAsPaid'])->middleware('throttle:30,1');
