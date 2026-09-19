@@ -23,6 +23,7 @@ class PayrollController extends Controller {
     const BRS_THRESHOLD = 25000;
     const CHECK_THRESHOLD = 100000;
     const HOURS_PER_DAY = 8;
+    const GRACE_PERIOD_MINUTES = 15;
 
     private function getApprovedLeaveDays(Teacher $teacher, int $year, int $month): array
     {
@@ -72,8 +73,17 @@ class PayrollController extends Controller {
         foreach ($attendances as $attendance) {
             if (!$attendance->check_out_time) $incomplete++;
             if ($attendance->schedule?->start_time && $attendance->schedule?->end_time) {
-                $hours += Carbon::parse($attendance->schedule->start_time)
+                $dayHours = Carbon::parse($attendance->schedule->start_time)
                     ->diffInMinutes(Carbon::parse($attendance->schedule->end_time)) / 60;
+
+                if ($attendance->status === 'late' && $attendance->check_in_time) {
+                    $lateMinutes = Carbon::parse($attendance->check_in_time)
+                        ->diffInMinutes(Carbon::parse($attendance->schedule->start_time));
+                    $deductedMinutes = min($lateMinutes, self::GRACE_PERIOD_MINUTES);
+                    $dayHours -= ($deductedMinutes / 60);
+                }
+
+                $hours += max(0, $dayHours);
             } elseif ($attendance->hours_worked !== null) {
                 $hours += (float) $attendance->hours_worked;
             }
@@ -279,7 +289,7 @@ class PayrollController extends Controller {
             }
 
             $grossSalary = $totalEarnings - $brsAmount;
-            $netSalary = max(0, $totalEarnings - $totalDeductions);
+            $netSalary = max(0, $totalEarnings - $brsAmount - $totalDeductions);
             $paymentMethod = $grossSalary >= self::CHECK_THRESHOLD ? 'check' : 'cash';
 
             $payroll->update([

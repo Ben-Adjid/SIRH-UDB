@@ -22,8 +22,8 @@ class StoreTeacherRequest extends FormRequest
             'mobile' => 'nullable|string',
             'address' => 'nullable|string',
             'hire_date' => 'required|date',
-            'volume_hours' => 'nullable|integer|min:0',
-            'hourly_rate' => 'nullable|numeric|min:0',
+            'volume_hours' => 'required|integer|min:1',
+            'hourly_rate' => 'required|numeric|min:0.01',
         ];
     }
 }

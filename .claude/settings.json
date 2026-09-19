@@ -8,7 +8,9 @@
       "Bash(git commit -m 'fix: Corriger bugs mineurs de logique et cohérence *)",
       "Bash(git reset *)",
       "Bash(git commit -m ' *)",
-      "Bash(grep -r \"payroll\\\\\\\\.calculate\\\\\\\\|payroll\\\\\\\\.validate\\\\\\\\|payroll\\\\\\\\.export\" /c/Users/aboub/Desktop/DIT/backend/app)"
+      "Bash(grep -r \"payroll\\\\\\\\.calculate\\\\\\\\|payroll\\\\\\\\.validate\\\\\\\\|payroll\\\\\\\\.export\" /c/Users/aboub/Desktop/DIT/backend/app)",
+      "Bash(git commit -m 'fix: Corriger 3 bugs critiques du côté comptable *)",
+      "Bash(xargs wc -l)"
     ]
   }
 }

@@ -40,7 +40,7 @@ class UserCreationService
                 'user_id' => $user->id,
                 'ufr_id' => $teacherData['ufr_id'] ?? $ufr->id,
                 'employee_id' => $teacherData['employee_id'] ?? ('ENS-' . str_pad($user->id, 5, '0', STR_PAD_LEFT) . '-' . now()->format('ymd')),
-                'pin_code' => $pinCode,
+                'pin_code' => Hash::make($pinCode),
                 'hire_date' => $teacherData['hire_date'] ?? now(),
                 'volume_hours' => $teacherData['volume_hours'] ?? 0,
                 'hourly_rate' => $teacherData['hourly_rate'] ?? 0,

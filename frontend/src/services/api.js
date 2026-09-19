@@ -6,7 +6,8 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-    }
+    },
+    timeout: 30000,
 });
 
 let _navigate = null;

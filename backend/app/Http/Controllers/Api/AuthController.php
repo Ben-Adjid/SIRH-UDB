@@ -125,7 +125,7 @@ class AuthController extends Controller {
             'user_agent' => $request->userAgent(),
         ]);
 
-        $user->load('roles', 'teacher')->makeVisible('attendance_pin');
+        $user->load('roles', 'teacher');
 
         return response()->json([
             'message' => 'Connexion réussie',
@@ -139,7 +139,7 @@ class AuthController extends Controller {
 
     public function me(Request $request): JsonResponse {
         $user = $request->user();
-        $user->load('roles', 'teacher')->makeVisible('attendance_pin');
+        $user->load('roles', 'teacher');
         return response()->json(['user' => $user]);
     }
 

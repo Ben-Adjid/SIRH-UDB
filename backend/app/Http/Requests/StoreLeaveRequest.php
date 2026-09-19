@@ -16,7 +16,7 @@ class StoreLeaveRequest extends FormRequest
         return [
             'teacher_id' => 'required|exists:teachers,id',
             'leave_type_id' => 'required|exists:leave_types,id',
-            'start_date' => 'required|date',
+            'start_date' => 'required|date|after_or_equal:today',
             'end_date' => 'required|date|after_or_equal:start_date',
             'reason' => 'nullable|string|max:500',
         ];
