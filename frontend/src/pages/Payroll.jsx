@@ -1,10 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import api from '../services/api';
 import useAuthStore from '../store/authStore';
-import { CreditCard, Download, DollarSign, Percent, FileText, CheckCircle, AlertCircle, Zap, Plus, TrendingUp, TrendingDown, Users, Calendar, Eye, Play, ChevronRight } from 'lucide-react';
+import { CreditCard, Download, DollarSign, FileText, CheckCircle, AlertCircle, Zap, TrendingUp, TrendingDown, Users, Calendar, Eye, Play, ChevronRight } from 'lucide-react';
 import toast from '../utils/toast';
 import ConfirmModal from '../components/ConfirmModal';
-import FormModal from '../components/FormModal';
 import Pagination from '../components/Pagination';
 import { getUserRoles } from '../utils/roles';
 import { escapeHtml } from '../utils/escape';
@@ -18,10 +17,6 @@ const Payroll = () => {
     const perPage = 15;
     const [pagination, setPagination] = useState({ current_page: 1, last_page: 1, total: 0 });
     const [selectedPayroll, setSelectedPayroll] = useState(null);
-    const [showBonusModal, setShowBonusModal] = useState(false);
-    const [showDeductionModal, setShowDeductionModal] = useState(false);
-    const [bonusForm, setBonusForm] = useState({ description: '', amount: 0 });
-    const [deductionForm, setDeductionForm] = useState({ description: '', amount: 0 });
     const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().substring(0, 7));
     const [isCalculating, setIsCalculating] = useState(false);
     const [stats, setStats] = useState({ total: 0, calculated: 0, validated: 0, paid: 0, totalAmount: 0 });
@@ -30,7 +25,7 @@ const Payroll = () => {
     const [calculationProgress, setCalculationProgress] = useState('');
     const [showIndividualCalculateModal, setShowIndividualCalculateModal] = useState(false);
     const [teachers, setTeachers] = useState([]);
-    const [individualForm, setIndividualForm] = useState({ teacher_id: '', month: selectedMonth.split('-')[1], year: selectedMonth.split('-')[0], hours_worked: '', bonus: '', deduction: '' });
+    const [individualForm, setIndividualForm] = useState({ teacher_id: '', month: selectedMonth.split('-')[1], year: selectedMonth.split('-')[0] });
     const [attendanceData, setAttendanceData] = useState(null);
     const [leaveData, setLeaveData] = useState(null);
     const [calculationPreview, setCalculationPreview] = useState(null);
@@ -87,24 +82,20 @@ const Payroll = () => {
         const selectedTeacher = teachers.find(t => t.id == teacherId);
         if (!selectedTeacher) return;
 
-        const hoursWorked = parseFloat(individualForm.hours_worked) || attData?.hours || 0;
+        const hoursWorked = attData?.hours || 0;
         const baseAmount = hoursWorked * (selectedTeacher.hourly_rate || 0);
         const brsAmount = baseAmount >= 25000 ? baseAmount * 0.05 : 0;
-        const bonus = parseFloat(individualForm.bonus) || 0;
-        const deduction = parseFloat(individualForm.deduction) || 0;
-        const netSalary = baseAmount + bonus - brsAmount - deduction;
+        const netSalary = baseAmount - brsAmount;
         const paymentMethod = netSalary >= 100000 ? 'Chèque' : 'Espèces';
 
         setCalculationPreview({
             hours: hoursWorked,
             baseAmount,
             brsAmount,
-            bonus,
-            deduction,
             netSalary: Math.max(0, netSalary),
             paymentMethod
         });
-    }, [teachers, individualForm]);
+    }, [teachers]);
 
     const loadAttendanceData = useCallback(async (teacherId, month, year) => {
         if (!teacherId) return;
@@ -146,16 +137,13 @@ const Payroll = () => {
                 month: parseInt(individualForm.month),
                 year: parseInt(individualForm.year),
             };
-            if (individualForm.hours_worked) payload.hours_worked = parseFloat(individualForm.hours_worked);
-            if (individualForm.bonus) payload.bonus = parseFloat(individualForm.bonus);
-            if (individualForm.deduction) payload.deduction = parseFloat(individualForm.deduction);
 
             const response = await api.post('/payroll/calculate', payload);
             setCalculationProgress(`✅ Paie calculée avec succès`);
             setTimeout(() => {
                 setShowIndividualCalculateModal(false);
                 setCalculationProgress('');
-                setIndividualForm({ teacher_id: '', month: selectedMonth.split('-')[1], year: selectedMonth.split('-')[0], hours_worked: '', bonus: '', deduction: '' });
+                setIndividualForm({ teacher_id: '', month: selectedMonth.split('-')[1], year: selectedMonth.split('-')[0] });
                 setAttendanceData(null);
                 setLeaveData(null);
                 setCalculationPreview(null);
@@ -192,40 +180,6 @@ const Payroll = () => {
             setIsCalculating(false);
         }
     }, [selectedMonth, fetchPayrolls]);
-
-    const handleAddBonus = useCallback(async (e) => {
-        e.preventDefault();
-        if (!bonusForm.description.trim()) { toast.error('Description requise'); return; }
-        if (!bonusForm.amount || bonusForm.amount <= 0) { toast.error('Montant doit être > 0'); return; }
-        try {
-            await api.post(`/payroll/${selectedPayroll.id}/line-item`, {
-                description: bonusForm.description.trim(), amount: bonusForm.amount, type: 'earning'
-            });
-            toast.success('Prime ajoutée');
-            setBonusForm({ description: '', amount: 0 });
-            setShowBonusModal(false);
-            fetchPayrolls(page);
-        } catch (error) {
-            toast.error(error.response?.data?.message || 'Erreur');
-        }
-    }, [bonusForm, selectedPayroll, page, fetchPayrolls]);
-
-    const handleAddDeduction = useCallback(async (e) => {
-        e.preventDefault();
-        if (!deductionForm.description.trim()) { toast.error('Description requise'); return; }
-        if (!deductionForm.amount || deductionForm.amount <= 0) { toast.error('Montant doit être > 0'); return; }
-        try {
-            await api.post(`/payroll/${selectedPayroll.id}/line-item`, {
-                description: deductionForm.description.trim(), amount: deductionForm.amount, type: 'deduction'
-            });
-            toast.success('Retenue ajoutée');
-            setDeductionForm({ description: '', amount: 0 });
-            setShowDeductionModal(false);
-            fetchPayrolls(page);
-        } catch (error) {
-            toast.error(error.response?.data?.message || 'Erreur');
-        }
-    }, [deductionForm, selectedPayroll, page, fetchPayrolls]);
 
     const handleValidate = useCallback(async (id) => {
         try {
@@ -443,14 +397,6 @@ const Payroll = () => {
                                         <div className="flex items-center gap-1.5 pt-3 border-t border-slate-100">
                                             {isAccountant && p.status === 'calculated' && (
                                                 <>
-                                                    <button onClick={() => { setSelectedPayroll(p); setBonusForm({ description: '', amount: 0 }); setShowBonusModal(true); }}
-                                                        className="px-3 py-2 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-500 hover:text-white transition-all duration-200" title="Ajouter prime">
-                                                        <Plus size={12} />
-                                                    </button>
-                                                    <button onClick={() => { setSelectedPayroll(p); setDeductionForm({ description: '', amount: 0 }); setShowDeductionModal(true); }}
-                                                        className="px-3 py-2 bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all duration-200" title="Ajouter retenue">
-                                                        <Percent size={12} />
-                                                    </button>
                                                     <button onClick={() => setShowConfirm({ isOpen: true, action: 'validate', payroll: p })}
                                                         className="px-3 py-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-500 hover:text-white transition-all duration-200" title="Valider">
                                                         <CheckCircle size={12} />
@@ -639,15 +585,6 @@ const Payroll = () => {
                                                             <p className="text-lg font-bold text-amber-600">{leaveData.length} jour(s)</p>
                                                         </div>
                                                     )}
-                                                    <div>
-                                                        <label className="text-xs text-slate-500 font-semibold block mb-1">Heures manuelles (optionnel)</label>
-                                                        <input type="number" className="input-field text-sm" placeholder={`${attendanceData.hours}`}
-                                                            value={individualForm.hours_worked}
-                                                            onChange={(e) => {
-                                                                setIndividualForm({...individualForm, hours_worked: e.target.value});
-                                                                calculatePreview(individualForm.teacher_id, parseInt(individualForm.month), parseInt(individualForm.year), {hours: e.target.value || attendanceData.hours});
-                                                            }} />
-                                                    </div>
                                                 </div>
                                             </div>
 
@@ -666,18 +603,6 @@ const Payroll = () => {
                                                                 <span className="font-bold">- {new Intl.NumberFormat('fr-FR').format(calculationPreview.brsAmount)} FCFA</span>
                                                             </div>
                                                         )}
-                                                        {calculationPreview.bonus > 0 && (
-                                                            <div className="flex justify-between text-emerald-600">
-                                                                <span>Prime</span>
-                                                                <span className="font-bold">+ {new Intl.NumberFormat('fr-FR').format(calculationPreview.bonus)} FCFA</span>
-                                                            </div>
-                                                        )}
-                                                        {calculationPreview.deduction > 0 && (
-                                                            <div className="flex justify-between text-red-600">
-                                                                <span>Retenue</span>
-                                                                <span className="font-bold">- {new Intl.NumberFormat('fr-FR').format(calculationPreview.deduction)} FCFA</span>
-                                                            </div>
-                                                        )}
                                                         <div className="border-t border-emerald-300 pt-2 flex justify-between font-bold text-lg">
                                                             <span className="text-emerald-900">NET À PAYER</span>
                                                             <span className="text-emerald-600">{new Intl.NumberFormat('fr-FR').format(calculationPreview.netSalary)} FCFA</span>
@@ -689,31 +614,6 @@ const Payroll = () => {
                                                     </div>
                                                 </div>
                                             )}
-
-                                            {/* Ajustements optionnels */}
-                                            <details className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                                                <summary className="font-semibold text-slate-700 cursor-pointer text-sm">⚙️ Ajustements optionnels</summary>
-                                                <div className="grid grid-cols-2 gap-3 mt-4">
-                                                    <div className="form-group">
-                                                        <label className="form-label text-xs">Prime supplémentaire</label>
-                                                        <input type="number" className="input-field text-sm" placeholder="0" min="0" step="0.01"
-                                                            value={individualForm.bonus}
-                                                            onChange={(e) => {
-                                                                setIndividualForm({...individualForm, bonus: e.target.value});
-                                                                calculatePreview(individualForm.teacher_id, parseInt(individualForm.month), parseInt(individualForm.year), attendanceData);
-                                                            }} />
-                                                    </div>
-                                                    <div className="form-group">
-                                                        <label className="form-label text-xs">Retenue supplémentaire</label>
-                                                        <input type="number" className="input-field text-sm" placeholder="0" min="0" step="0.01"
-                                                            value={individualForm.deduction}
-                                                            onChange={(e) => {
-                                                                setIndividualForm({...individualForm, deduction: e.target.value});
-                                                                calculatePreview(individualForm.teacher_id, parseInt(individualForm.month), parseInt(individualForm.year), attendanceData);
-                                                            }} />
-                                                    </div>
-                                                </div>
-                                            </details>
                                         </div>
                                     )}
 
@@ -747,37 +647,6 @@ const Payroll = () => {
                     </div>
                 )}
 
-                {/* Bonus Modal */}
-                <FormModal isOpen={showBonusModal} onClose={() => setShowBonusModal(false)} onSubmit={handleAddBonus} title="Ajouter une Prime" submitText="Ajouter" submitClassName="btn-success">
-                    <div className="space-y-5">
-                        <div className="form-group">
-                            <label className="form-label">Description</label>
-                            <input required type="text" className="input-field" placeholder="Ex: Prime de performance"
-                                value={bonusForm.description} onChange={(e) => setBonusForm({...bonusForm, description: e.target.value})} />
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Montant (FCFA)</label>
-                            <input required type="number" className="input-field" min="0.01" step="0.01"
-                                value={bonusForm.amount} onChange={(e) => setBonusForm({...bonusForm, amount: Number(e.target.value) || 0})} />
-                        </div>
-                    </div>
-                </FormModal>
-
-                {/* Deduction Modal */}
-                <FormModal isOpen={showDeductionModal} onClose={() => setShowDeductionModal(false)} onSubmit={handleAddDeduction} title="Ajouter une Retenue" submitText="Ajouter" submitClassName="btn-danger">
-                    <div className="space-y-5">
-                        <div className="form-group">
-                            <label className="form-label">Description</label>
-                            <input required type="text" className="input-field" placeholder="Ex: Avance sur honoraire"
-                                value={deductionForm.description} onChange={(e) => setDeductionForm({...deductionForm, description: e.target.value})} />
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Montant (FCFA)</label>
-                            <input required type="number" className="input-field" min="0.01" step="0.01"
-                                value={deductionForm.amount} onChange={(e) => setDeductionForm({...deductionForm, amount: Number(e.target.value) || 0})} />
-                        </div>
-                    </div>
-                </FormModal>
 
                 {/* Confirm Modal */}
                 <ConfirmModal isOpen={showConfirm.isOpen} onClose={() => setShowConfirm({ ...showConfirm, isOpen: false })}
