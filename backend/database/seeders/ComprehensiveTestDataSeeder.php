@@ -49,7 +49,7 @@ class ComprehensiveTestDataSeeder extends Seeder
         $admin = User::firstOrCreate(['email' => 'admin@sirh.local'], [
             'name' => 'Administrateur SIRH',
             'phone' => '+221771234567',
-            'password' => Hash::make('Admin@2026'),
+            'password' => Hash::make('password'),
             'status' => 'active',
             'email_verified_at' => now(),
         ]);
@@ -59,7 +59,7 @@ class ComprehensiveTestDataSeeder extends Seeder
         $hr = User::firstOrCreate(['email' => 'hr@sirh.local'], [
             'name' => 'Responsable RH',
             'phone' => '+221771234568',
-            'password' => Hash::make('HR@2026'),
+            'password' => Hash::make('password'),
             'status' => 'active',
             'email_verified_at' => now(),
         ]);
@@ -69,7 +69,7 @@ class ComprehensiveTestDataSeeder extends Seeder
         $accountant = User::firstOrCreate(['email' => 'accountant@sirh.local'], [
             'name' => 'Comptable Paie',
             'phone' => '+221771234569',
-            'password' => Hash::make('Accountant@2026'),
+            'password' => Hash::make('password'),
             'status' => 'active',
             'email_verified_at' => now(),
         ]);
@@ -79,7 +79,7 @@ class ComprehensiveTestDataSeeder extends Seeder
         $academic = User::firstOrCreate(['email' => 'academic@sirh.local'], [
             'name' => 'Chef UFR Informatique',
             'phone' => '+221771234570',
-            'password' => Hash::make('Academic@2026'),
+            'password' => Hash::make('password'),
             'status' => 'active',
             'email_verified_at' => now(),
         ]);
@@ -98,7 +98,7 @@ class ComprehensiveTestDataSeeder extends Seeder
             $user = User::firstOrCreate(['email' => $data['email']], [
                 'name' => $data['name'],
                 'phone' => $data['phone'],
-                'password' => Hash::make('Teacher@2026'),
+                'password' => Hash::make('password'),
                 'status' => 'active',
                 'email_verified_at' => now(),
             ]);

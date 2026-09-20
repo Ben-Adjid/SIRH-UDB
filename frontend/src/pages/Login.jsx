@@ -93,7 +93,7 @@ const Login = () => {
                                     type={showPassword ? 'text' : 'password'}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="••••••••"
+                                    placeholder={IS_DEMO_MODE ? "password" : "••••••••"}
                                     className="w-full pl-10 sm:pl-12 pr-10 sm:pr-12 py-3 sm:py-3.5 bg-white/5 border border-white/10 rounded-lg sm:rounded-2xl text-white text-sm sm:text-base placeholder:text-gray-600 outline-none focus:border-blue-500 focus:bg-white/[0.08] transition-all font-medium"
                                     required
                                 />
@@ -105,6 +105,7 @@ const Login = () => {
                                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                 </button>
                             </div>
+                            {IS_DEMO_MODE && <p className="text-[8px] sm:text-[9px] text-amber-400/70">💡 Mode démo: mot de passe = "password"</p>}
                         </div>
 
                         <button

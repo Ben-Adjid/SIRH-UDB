@@ -1,1 +1,0 @@
-function e(e){if(!e)return``;let t={"&":`&amp;`,"<":`&lt;`,">":`&gt;`,'"':`&quot;`,"'":`&#039;`};return String(e).replace(/[&<>"']/g,e=>t[e])}export{e as t};
