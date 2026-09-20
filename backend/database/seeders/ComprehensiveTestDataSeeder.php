@@ -99,6 +99,16 @@ class ComprehensiveTestDataSeeder extends Seeder
                 'email_verified_at' => now(),
             ]);
             $user->assignRole('teacher');
+
+            // IMPORTANT: Créer le record Teacher associé + PIN code
+            $pinCode = str_pad(random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
+            Teacher::create([
+                'user_id' => $user->id,
+                'employee_id' => 'EMP-' . str_pad($user->id, 4, '0', STR_PAD_LEFT),
+                'hourly_rate' => 3500,
+                'status' => 'active',
+                'pin_code' => Hash::make($pinCode),
+            ]);
         }
     }
 
