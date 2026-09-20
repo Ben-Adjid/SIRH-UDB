@@ -205,19 +205,19 @@ class CompleteSeeder extends Seeder
                 'name' => 'Professeur Martin', 'email' => 'prof@sirh.local',
                 'password' => Hash::make(env('SEED_PROF_PASSWORD', 'Changez-Moi-2026!')),
                 'status' => 'active', 'role' => 'teacher',
-                'teacher_data' => ['employee_id' => 'EMP001', 'pin_code' => '1001', 'ufr_id' => $ufrIds[1] ?? 1, 'hire_date' => '2023-09-01', 'volume_hours' => 300, 'hourly_rate' => 5000, 'phone' => '771234567', 'address' => 'Dakar, Sénégal'],
+                'teacher_data' => ['employee_id' => 'EMP001', 'pin_code' => Hash::make('1001'), 'ufr_id' => $ufrIds[1] ?? 1, 'hire_date' => '2023-09-01', 'volume_hours' => 300, 'hourly_rate' => 5000, 'phone' => '771234567', 'address' => 'Dakar, Sénégal'],
             ],
             [
                 'name' => 'Professeur Diop', 'email' => 'diop@sirh.local',
                 'password' => Hash::make(env('SEED_PROF_PASSWORD', 'Changez-Moi-2026!')),
                 'status' => 'active', 'role' => 'teacher',
-                'teacher_data' => ['employee_id' => 'EMP002', 'pin_code' => '1002', 'ufr_id' => $ufrIds[2] ?? 2, 'hire_date' => '2022-09-01', 'volume_hours' => 350, 'hourly_rate' => 5000, 'phone' => '772345678', 'address' => 'Dakar, Sénégal'],
+                'teacher_data' => ['employee_id' => 'EMP002', 'pin_code' => Hash::make('1002'), 'ufr_id' => $ufrIds[2] ?? 2, 'hire_date' => '2022-09-01', 'volume_hours' => 350, 'hourly_rate' => 5000, 'phone' => '772345678', 'address' => 'Dakar, Sénégal'],
             ],
             [
                 'name' => 'Professeur Sarr', 'email' => 'sarr@sirh.local',
                 'password' => Hash::make(env('SEED_PROF_PASSWORD', 'Changez-Moi-2026!')),
                 'status' => 'active', 'role' => 'teacher',
-                'teacher_data' => ['employee_id' => 'EMP003', 'pin_code' => '1003', 'ufr_id' => $ufrIds[3] ?? 3, 'hire_date' => '2024-09-01', 'volume_hours' => 200, 'hourly_rate' => 5000, 'phone' => '773456789', 'address' => 'Dakar, Sénégal'],
+                'teacher_data' => ['employee_id' => 'EMP003', 'pin_code' => Hash::make('1003'), 'ufr_id' => $ufrIds[3] ?? 3, 'hire_date' => '2024-09-01', 'volume_hours' => 200, 'hourly_rate' => 5000, 'phone' => '773456789', 'address' => 'Dakar, Sénégal'],
             ],
         ];
 

@@ -39,6 +39,8 @@ class TeacherTest extends TestCase {
                              'ufr_id' => $dept->id,
                              'employee_id' => 'TCH-TEST-001',
                              'hire_date' => '2025-01-01',
+                             'hourly_rate' => 5000,
+                             'volume_hours' => 300,
                              'base_salary' => 500000,
                              'contract_type' => 'CDI',
                              'password' => 'Changez-Moi-2026!',

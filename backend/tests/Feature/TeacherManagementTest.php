@@ -35,6 +35,8 @@ class TeacherManagementTest extends TestCase
                 'ufr_id' => $dept->id,
                 'employee_id' => 'EMP-CREATE-001',
                 'hire_date' => '2026-01-01',
+                'hourly_rate' => 5000,
+                'volume_hours' => 250,
                 'base_salary' => 400000,
                 'contract_type' => 'vacataire',
                 'password' => 'Changez-Moi-2026!',

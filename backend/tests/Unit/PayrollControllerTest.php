@@ -5,7 +5,9 @@ namespace Tests\Unit;
 use Tests\TestCase;
 use App\Models\Teacher;
 use App\Models\User;
+use App\Models\Ufr;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
 
 class PayrollControllerTest extends TestCase
 {
@@ -18,11 +20,23 @@ class PayrollControllerTest extends TestCase
     {
         parent::setUp();
 
+        Role::create(['name' => 'accountant', 'guard_name' => 'web']);
+        Role::create(['name' => 'teacher', 'guard_name' => 'web']);
+
+        $ufr = Ufr::create(['name' => 'Test UFR', 'code' => 'TEST-UFR']);
+
         $this->accountant = User::factory()->create();
         $this->accountant->assignRole('accountant');
 
-        $this->teacher = Teacher::factory()->create([
+        $teacherUser = User::factory()->create();
+        $teacherUser->assignRole('teacher');
+        $this->teacher = Teacher::create([
+            'user_id' => $teacherUser->id,
+            'employee_id' => 'EMP-TEST',
             'hourly_rate' => 2500,
+            'status' => 'active',
+            'ufr_id' => $ufr->id,
+            'hire_date' => now()->subYear(),
         ]);
     }
 
