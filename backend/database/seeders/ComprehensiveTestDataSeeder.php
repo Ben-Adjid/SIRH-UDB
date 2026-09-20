@@ -120,7 +120,6 @@ class ComprehensiveTestDataSeeder extends Seeder
                 'pin_code' => Hash::make($pinCode),
                 'ufr_id' => $ufrs[$i % $ufrs->count()]->id,
                 'hire_date' => $hireDate,
-                'start_date' => $hireDate,
             ]);
         }
     }
@@ -160,6 +159,8 @@ class ComprehensiveTestDataSeeder extends Seeder
         $classrooms = Classroom::all();
 
         $daysOfWeek = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
+        $startDate = Carbon::now()->startOfMonth();
+        $endDate = Carbon::now()->endOfMonth();
 
         foreach ($teachers->slice(0, 3) as $teacher) {
             foreach ($subjects->slice(0, 2) as $subject) {
@@ -170,6 +171,8 @@ class ComprehensiveTestDataSeeder extends Seeder
                     'day_of_week' => $daysOfWeek[rand(0, 4)],
                     'start_time' => '09:00:00',
                     'end_time' => '11:00:00',
+                    'start_date' => $startDate,
+                    'end_date' => $endDate,
                     'is_archived' => false,
                 ]);
             }
@@ -186,6 +189,10 @@ class ComprehensiveTestDataSeeder extends Seeder
 
         foreach ($teachers as $teacher) {
             $teacherSchedules = $schedules->where('teacher_id', $teacher->id);
+
+            if ($teacherSchedules->isEmpty()) {
+                continue;
+            }
 
             for ($day = 1; $day <= 20; $day++) {
                 $date = $startOfMonth->copy()->addDays($day - 1);
@@ -213,13 +220,13 @@ class ComprehensiveTestDataSeeder extends Seeder
     private function seedLeaves(): void
     {
         $leaveTypes = [
-            ['name' => 'Congé Annuel', 'code' => 'ANNUAL', 'max_days' => 30],
-            ['name' => 'Maladie', 'code' => 'SICK', 'max_days' => 15],
-            ['name' => 'Maternité', 'code' => 'MATERNITY', 'max_days' => 90],
+            ['name' => 'Congé Annuel', 'code' => 'ANNUAL', 'days_per_year' => 30],
+            ['name' => 'Maladie', 'code' => 'SICK', 'days_per_year' => 15],
+            ['name' => 'Maternité', 'code' => 'MATERNITY', 'days_per_year' => 90],
         ];
 
         foreach ($leaveTypes as $type) {
-            LeaveType::create($type);
+            LeaveType::firstOrCreate(['code' => $type['code']], $type);
         }
 
         $teachers = Teacher::all();
@@ -231,7 +238,7 @@ class ComprehensiveTestDataSeeder extends Seeder
                     'user_id' => $teacher->user_id,
                     'leave_type_id' => $type->id,
                     'year' => now()->year,
-                    'total_days' => $type->max_days,
+                    'total_days' => $type->days_per_year,
                     'used_days' => 0,
                     'pending_days' => 0,
                 ]);
@@ -239,11 +246,17 @@ class ComprehensiveTestDataSeeder extends Seeder
         }
 
         foreach ($teachers->slice(0, 2) as $teacher) {
+            $startDate = now()->addDays(5);
+            $endDate = now()->addDays(7);
+            $durationDays = $endDate->diffInDays($startDate);
+
             LeaveRequest::create([
                 'user_id' => $teacher->user_id,
+                'teacher_id' => $teacher->id,
                 'leave_type_id' => LeaveType::first()->id,
-                'start_date' => now()->addDays(5),
-                'end_date' => now()->addDays(7),
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'duration_days' => max(1, $durationDays),
                 'reason' => 'Congé personnel',
                 'status' => 'approved',
                 'approved_at' => now(),
