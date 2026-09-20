@@ -16,8 +16,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
 
-
-
 class HomeworkController extends Controller {
 
     private function teacherTeachesSubject(Teacher $teacher, int $subjectId): bool
