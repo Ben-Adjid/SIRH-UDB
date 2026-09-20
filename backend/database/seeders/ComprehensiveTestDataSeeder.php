@@ -118,6 +118,7 @@ class ComprehensiveTestDataSeeder extends Seeder
                 'status' => 'active',
                 'pin_code' => Hash::make($pinCode),
                 'ufr_id' => $ufrs[$i % $ufrs->count()]->id,
+                'hire_date' => now()->subYears(rand(1, 10)),
             ]);
         }
     }
