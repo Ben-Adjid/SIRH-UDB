@@ -46,48 +46,44 @@ class ComprehensiveTestDataSeeder extends Seeder
         }
 
         // 1. ADMIN
-        $admin = User::create([
+        $admin = User::firstOrCreate(['email' => 'admin@sirh.local'], [
             'name' => 'Administrateur SIRH',
-            'email' => 'admin@sirh.local',
             'phone' => '+221771234567',
             'password' => Hash::make('Admin@2026'),
             'status' => 'active',
             'email_verified_at' => now(),
         ]);
-        $admin->assignRole('admin');
+        if (!$admin->hasRole('admin')) $admin->assignRole('admin');
 
         // 2. HR MANAGER
-        $hr = User::create([
+        $hr = User::firstOrCreate(['email' => 'hr@sirh.local'], [
             'name' => 'Responsable RH',
-            'email' => 'hr@sirh.local',
             'phone' => '+221771234568',
             'password' => Hash::make('HR@2026'),
             'status' => 'active',
             'email_verified_at' => now(),
         ]);
-        $hr->assignRole('hr_manager');
+        if (!$hr->hasRole('hr_manager')) $hr->assignRole('hr_manager');
 
         // 3. ACCOUNTANT
-        $accountant = User::create([
+        $accountant = User::firstOrCreate(['email' => 'accountant@sirh.local'], [
             'name' => 'Comptable Paie',
-            'email' => 'accountant@sirh.local',
             'phone' => '+221771234569',
             'password' => Hash::make('Accountant@2026'),
             'status' => 'active',
             'email_verified_at' => now(),
         ]);
-        $accountant->assignRole('accountant');
+        if (!$accountant->hasRole('accountant')) $accountant->assignRole('accountant');
 
         // 4. ACADEMIC MANAGER
-        $academic = User::create([
+        $academic = User::firstOrCreate(['email' => 'academic@sirh.local'], [
             'name' => 'Chef UFR Informatique',
-            'email' => 'academic@sirh.local',
             'phone' => '+221771234570',
             'password' => Hash::make('Academic@2026'),
             'status' => 'active',
             'email_verified_at' => now(),
         ]);
-        $academic->assignRole('academic_manager');
+        if (!$academic->hasRole('academic_manager')) $academic->assignRole('academic_manager');
 
         // 5. TEACHERS (5 enseignants)
         $teacherNames = [
@@ -99,27 +95,23 @@ class ComprehensiveTestDataSeeder extends Seeder
         ];
 
         foreach ($teacherNames as $i => $data) {
-            $user = User::create([
+            $user = User::firstOrCreate(['email' => $data['email']], [
                 'name' => $data['name'],
-                'email' => $data['email'],
                 'phone' => $data['phone'],
                 'password' => Hash::make('Teacher@2026'),
                 'status' => 'active',
                 'email_verified_at' => now(),
             ]);
-            $user->assignRole('teacher');
+            if (!$user->hasRole('teacher')) $user->assignRole('teacher');
 
             // IMPORTANT: Créer le record Teacher associé + PIN code + UFR
-            $pinCode = str_pad(random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
-            $hireDate = now()->subYears(rand(1, 10));
-            Teacher::create([
-                'user_id' => $user->id,
+            Teacher::firstOrCreate(['user_id' => $user->id], [
                 'employee_id' => 'EMP-' . str_pad($user->id, 4, '0', STR_PAD_LEFT),
                 'hourly_rate' => 3500,
                 'status' => 'active',
-                'pin_code' => Hash::make($pinCode),
+                'pin_code' => Hash::make(str_pad(random_int(100000, 999999), 6, '0', STR_PAD_LEFT)),
                 'ufr_id' => $ufrs[$i % $ufrs->count()]->id,
-                'hire_date' => $hireDate,
+                'hire_date' => now()->subYears(rand(1, 10)),
             ]);
         }
     }
@@ -127,29 +119,27 @@ class ComprehensiveTestDataSeeder extends Seeder
     private function seedAcademicStructure(): void
     {
         // UFRs
-        Ufr::create([
+        Ufr::firstOrCreate(['code' => 'UFR-IT'], [
             'name' => 'UFR Informatique',
-            'code' => 'UFR-IT',
             'description' => 'Unité de Formation et de Recherche en Informatique',
         ]);
 
-        Ufr::create([
+        Ufr::firstOrCreate(['code' => 'UFR-MATH'], [
             'name' => 'UFR Mathématiques',
-            'code' => 'UFR-MATH',
             'description' => 'Unité de Formation et de Recherche en Mathématiques',
         ]);
 
         // Subjects
-        Subject::create(['name' => 'Algorithmique', 'code' => 'ALG-101', 'level' => 'L1']);
-        Subject::create(['name' => 'Programmation C', 'code' => 'PROG-101', 'level' => 'L1']);
-        Subject::create(['name' => 'Bases de Données', 'code' => 'BD-201', 'level' => 'L2']);
-        Subject::create(['name' => 'Web Development', 'code' => 'WEB-301', 'level' => 'L3']);
-        Subject::create(['name' => 'Calcul Intégral', 'code' => 'CALC-101', 'level' => 'L1']);
+        Subject::firstOrCreate(['code' => 'ALG-101'], ['name' => 'Algorithmique', 'level' => 'L1']);
+        Subject::firstOrCreate(['code' => 'PROG-101'], ['name' => 'Programmation C', 'level' => 'L1']);
+        Subject::firstOrCreate(['code' => 'BD-201'], ['name' => 'Bases de Données', 'level' => 'L2']);
+        Subject::firstOrCreate(['code' => 'WEB-301'], ['name' => 'Web Development', 'level' => 'L3']);
+        Subject::firstOrCreate(['code' => 'CALC-101'], ['name' => 'Calcul Intégral', 'level' => 'L1']);
 
         // Classrooms
-        Classroom::create(['name' => 'Amphithéâtre A1', 'code' => 'AMPH-A1', 'capacity' => 150, 'type' => 'amphitheater']);
-        Classroom::create(['name' => 'Salle TP-1', 'code' => 'TP-1', 'capacity' => 30, 'type' => 'lab']);
-        Classroom::create(['name' => 'Salle TD-2', 'code' => 'TD-2', 'capacity' => 50, 'type' => 'classroom']);
+        Classroom::firstOrCreate(['code' => 'AMPH-A1'], ['name' => 'Amphithéâtre A1', 'capacity' => 150, 'type' => 'amphitheater']);
+        Classroom::firstOrCreate(['code' => 'TP-1'], ['name' => 'Salle TP-1', 'capacity' => 30, 'type' => 'lab']);
+        Classroom::firstOrCreate(['code' => 'TD-2'], ['name' => 'Salle TD-2', 'capacity' => 50, 'type' => 'classroom']);
     }
 
     private function seedSchedules(): void
@@ -195,22 +185,23 @@ class ComprehensiveTestDataSeeder extends Seeder
             }
 
             for ($day = 1; $day <= 20; $day++) {
-                $date = $startOfMonth->copy()->addDays($day - 1);
+                $date = $startOfMonth->copy()->addDays($day - 1)->startOfDay();
 
                 if ($date->isWeekday()) {
                     $schedule = $teacherSchedules->random();
                     if ($schedule) {
                         $status = rand(0, 10) > 1 ? 'present' : (rand(0, 1) ? 'absent' : 'late');
 
-                        Attendance::create([
-                            'teacher_id' => $teacher->id,
-                            'schedule_id' => $schedule->id,
-                            'attendance_date' => $date,
-                            'status' => $status,
-                            'check_in_time' => $status === 'absent' ? null : $date->setTimeFromTimeString('09:00:00'),
-                            'check_out_time' => $status === 'absent' ? null : $date->setTimeFromTimeString('11:00:00'),
-                            'hours_worked' => $status === 'absent' ? null : 2,
-                        ]);
+                        Attendance::updateOrCreate(
+                            ['teacher_id' => $teacher->id, 'attendance_date' => $date->toDateString()],
+                            [
+                                'schedule_id' => $schedule->id,
+                                'status' => $status,
+                                'check_in_time' => $status === 'absent' ? null : $date->copy()->setTimeFromTimeString('09:00:00'),
+                                'check_out_time' => $status === 'absent' ? null : $date->copy()->setTimeFromTimeString('11:00:00'),
+                                'hours_worked' => $status === 'absent' ? null : 2,
+                            ]
+                        );
                     }
                 }
             }
@@ -234,14 +225,18 @@ class ComprehensiveTestDataSeeder extends Seeder
 
         foreach ($teachers as $teacher) {
             foreach ($leaveTypes as $type) {
-                LeaveBalance::create([
-                    'user_id' => $teacher->user_id,
-                    'leave_type_id' => $type->id,
-                    'year' => now()->year,
-                    'total_days' => $type->days_per_year,
-                    'used_days' => 0,
-                    'pending_days' => 0,
-                ]);
+                LeaveBalance::firstOrCreate(
+                    [
+                        'user_id' => $teacher->user_id,
+                        'leave_type_id' => $type->id,
+                        'year' => now()->year,
+                    ],
+                    [
+                        'total_days' => $type->days_per_year,
+                        'used_days' => 0,
+                        'pending_days' => 0,
+                    ]
+                );
             }
         }
 
@@ -277,34 +272,46 @@ class ComprehensiveTestDataSeeder extends Seeder
             $brsAmount = $baseAmount >= 25000 ? round($baseAmount * 0.05, 2) : 0;
             $netSalary = $baseAmount - $brsAmount;
 
-            $payroll = Payroll::create([
-                'teacher_id' => $teacher->id,
-                'year' => now()->year,
-                'month' => now()->month,
-                'base_salary' => 0,
-                'honorarium_amount' => $baseAmount,
-                'brs_amount' => $brsAmount,
-                'gross_salary' => $baseAmount,
-                'deductions' => $brsAmount,
-                'net_salary' => $netSalary,
-                'payment_method' => $netSalary >= 100000 ? 'check' : 'cash',
-                'status' => ['calculated', 'validated', 'paid'][rand(0, 2)],
-            ]);
+            $payroll = Payroll::updateOrCreate(
+                [
+                    'teacher_id' => $teacher->id,
+                    'year' => now()->year,
+                    'month' => now()->month,
+                ],
+                [
+                    'base_salary' => 0,
+                    'honorarium_amount' => $baseAmount,
+                    'brs_amount' => $brsAmount,
+                    'gross_salary' => $baseAmount,
+                    'deductions' => $brsAmount,
+                    'net_salary' => $netSalary,
+                    'payment_method' => $netSalary >= 100000 ? 'check' : 'cash',
+                    'status' => ['calculated', 'validated', 'paid'][rand(0, 2)],
+                ]
+            );
 
-            PayrollDetail::create([
-                'payroll_id' => $payroll->id,
-                'description' => 'Honoraire : ' . round($baseAmount / $teacher->hourly_rate, 1) . 'h × ' . number_format($teacher->hourly_rate, 0) . ' F',
-                'type' => 'earning',
-                'amount' => $baseAmount,
-            ]);
+            PayrollDetail::firstOrCreate(
+                [
+                    'payroll_id' => $payroll->id,
+                    'description' => 'Honoraire : ' . round($baseAmount / $teacher->hourly_rate, 1) . 'h × ' . number_format($teacher->hourly_rate, 0) . ' F',
+                ],
+                [
+                    'type' => 'earning',
+                    'amount' => $baseAmount,
+                ]
+            );
 
             if ($brsAmount > 0) {
-                PayrollDetail::create([
-                    'payroll_id' => $payroll->id,
-                    'description' => 'BRS (5 %)',
-                    'type' => 'deduction',
-                    'amount' => $brsAmount,
-                ]);
+                PayrollDetail::firstOrCreate(
+                    [
+                        'payroll_id' => $payroll->id,
+                        'description' => 'BRS (5 %)',
+                    ],
+                    [
+                        'type' => 'deduction',
+                        'amount' => $brsAmount,
+                    ]
+                );
             }
         }
     }
