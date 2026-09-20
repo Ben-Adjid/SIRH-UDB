@@ -8,10 +8,10 @@ const IS_DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true';
 
 const QUICK_ACCOUNTS = IS_DEMO_MODE ? [
     { label: 'Admin', email: 'admin@sirh.local', color: 'from-red-500 to-rose-600' },
-    { label: 'Responsable RH', email: 'hr@sirh.local', color: 'from-blue-500 to-indigo-600' },
-    { label: 'Comptable', email: 'accountant@sirh.local', color: 'from-amber-500 to-orange-600' },
+    { label: 'Responsable RH', email: 'rh@sirh.local', color: 'from-blue-500 to-indigo-600' },
+    { label: 'Comptable', email: 'compta@sirh.local', color: 'from-amber-500 to-orange-600' },
     { label: 'Chef d\'UFR', email: 'academic@sirh.local', color: 'from-violet-500 to-purple-600' },
-    { label: 'Enseignant', email: 'abdoulaye@sirh.local', color: 'from-emerald-500 to-teal-600' },
+    { label: 'Enseignant', email: 'prof@sirh.local', color: 'from-emerald-500 to-teal-600' },
 ] : [];
 
 const Login = () => {
