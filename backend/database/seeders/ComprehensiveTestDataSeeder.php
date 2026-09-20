@@ -23,6 +23,9 @@ class ComprehensiveTestDataSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->call([RoleAndPermissionSeeder::class]);
+        $this->call([UfrAndTeachingTypeSeeder::class]);
+
         DB::transaction(function () {
             $this->seedActors();
             $this->seedAcademicStructure();
