@@ -27,8 +27,8 @@ class ComprehensiveTestDataSeeder extends Seeder
         $this->call([UfrAndTeachingTypeSeeder::class]);
 
         DB::transaction(function () {
-            $this->seedActors();
             $this->seedAcademicStructure();
+            $this->seedActors();
             $this->seedSchedules();
             $this->seedAttendance();
             $this->seedLeaves();
@@ -39,6 +39,12 @@ class ComprehensiveTestDataSeeder extends Seeder
 
     private function seedActors(): void
     {
+        // Récupérer les UFRs déjà créés
+        $ufrs = Ufr::all();
+        if ($ufrs->isEmpty()) {
+            throw new \Exception('Les UFRs doivent être créées avant les acteurs. Appelez seedAcademicStructure() d\'abord.');
+        }
+
         // 1. ADMIN
         $admin = User::create([
             'name' => 'Administrateur SIRH',
@@ -92,7 +98,7 @@ class ComprehensiveTestDataSeeder extends Seeder
             ['name' => 'Dr. Modou Fall', 'email' => 'modou@sirh.local', 'phone' => '+221771234575'],
         ];
 
-        foreach ($teacherNames as $data) {
+        foreach ($teacherNames as $i => $data) {
             $user = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
@@ -103,7 +109,7 @@ class ComprehensiveTestDataSeeder extends Seeder
             ]);
             $user->assignRole('teacher');
 
-            // IMPORTANT: Créer le record Teacher associé + PIN code
+            // IMPORTANT: Créer le record Teacher associé + PIN code + UFR
             $pinCode = str_pad(random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
             Teacher::create([
                 'user_id' => $user->id,
@@ -111,6 +117,7 @@ class ComprehensiveTestDataSeeder extends Seeder
                 'hourly_rate' => 3500,
                 'status' => 'active',
                 'pin_code' => Hash::make($pinCode),
+                'ufr_id' => $ufrs[$i % $ufrs->count()]->id,
             ]);
         }
     }
@@ -118,13 +125,13 @@ class ComprehensiveTestDataSeeder extends Seeder
     private function seedAcademicStructure(): void
     {
         // UFRs
-        $ufrIT = Ufr::create([
+        Ufr::create([
             'name' => 'UFR Informatique',
             'code' => 'UFR-IT',
             'description' => 'Unité de Formation et de Recherche en Informatique',
         ]);
 
-        $ufrMath = Ufr::create([
+        Ufr::create([
             'name' => 'UFR Mathématiques',
             'code' => 'UFR-MATH',
             'description' => 'Unité de Formation et de Recherche en Mathématiques',
@@ -141,12 +148,6 @@ class ComprehensiveTestDataSeeder extends Seeder
         Classroom::create(['name' => 'Amphithéâtre A1', 'code' => 'AMPH-A1', 'capacity' => 150, 'type' => 'amphitheater']);
         Classroom::create(['name' => 'Salle TP-1', 'code' => 'TP-1', 'capacity' => 30, 'type' => 'lab']);
         Classroom::create(['name' => 'Salle TD-2', 'code' => 'TD-2', 'capacity' => 50, 'type' => 'classroom']);
-
-        // Link teachers to UFR
-        $teachers = Teacher::all();
-        foreach ($teachers as $i => $teacher) {
-            $teacher->update(['ufr_id' => $i % 2 == 0 ? $ufrIT->id : $ufrMath->id]);
-        }
     }
 
     private function seedSchedules(): void
