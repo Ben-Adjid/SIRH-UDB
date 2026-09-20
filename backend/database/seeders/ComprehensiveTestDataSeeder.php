@@ -24,19 +24,6 @@ class ComprehensiveTestDataSeeder extends Seeder
     public function run(): void
     {
         DB::transaction(function () {
-            DB::table('attendances')->truncate();
-            DB::table('leave_requests')->truncate();
-            DB::table('leave_balances')->truncate();
-            DB::table('payroll_details')->truncate();
-            DB::table('payroll')->truncate();
-            DB::table('schedules')->truncate();
-            DB::table('classrooms')->truncate();
-            DB::table('subjects')->truncate();
-            DB::table('teachers')->truncate();
-            DB::table('model_has_roles')->truncate();
-            DB::table('users')->truncate();
-            DB::table('ufrs')->truncate();
-
             $this->seedActors();
             $this->seedAcademicStructure();
             $this->seedSchedules();
