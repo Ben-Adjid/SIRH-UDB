@@ -14,7 +14,8 @@
       "Bash(git commit -m 'fix: Corriger 10 bugs critiques du système \\(audit exhaustif\\) *)",
       "Bash(grep -rn \"try.*catch.*Exception\\\\|catch.*\\\\\\\\\\\\\\\\Exception\" backend/app/Http/Controllers/Api/PayrollController.php)",
       "Bash(grep -B3 -A3 'max\\(0, $hoursWorked' backend/app/Http/Controllers/Api/PayrollController.php)",
-      "Bash(git commit -m 'fix: Corriger les 5 erreurs restantes - audit complet *)"
+      "Bash(git commit -m 'fix: Corriger les 5 erreurs restantes - audit complet *)",
+      "Bash(curl -s -X POST http://localhost:8000/api/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@sirh.local\",\"password\":\"password\"}')"
     ]
   }
 }
