@@ -20,7 +20,7 @@ class AuthenticationTest extends TestCase
     {
         $response = $this->postJson('/api/auth/login', [
             'email' => 'admin@sirh.local',
-            'password' => 'Changez-Moi-2026!',
+            'password' => 'password',
         ]);
 
         $response->assertOk()
@@ -91,7 +91,7 @@ class AuthenticationTest extends TestCase
 
         $response = $this->postJson('/api/auth/login', [
             'email' => 'admin@sirh.local',
-            'password' => 'Changez-Moi-2026!',
+            'password' => 'password',
         ]);
 
         $response->assertStatus(403);

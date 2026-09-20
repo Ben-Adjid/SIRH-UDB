@@ -27,7 +27,7 @@ class AuthSeederTest extends TestCase
         foreach ($accounts as $email) {
             $response = $this->postJson('/api/auth/login', [
                 'email'    => $email,
-                'password' => 'Changez-Moi-2026!',
+                'password' => 'password',
             ]);
 
             $this->assertTrue(
