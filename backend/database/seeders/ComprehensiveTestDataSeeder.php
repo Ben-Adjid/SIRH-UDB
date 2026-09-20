@@ -111,6 +111,7 @@ class ComprehensiveTestDataSeeder extends Seeder
 
             // IMPORTANT: Créer le record Teacher associé + PIN code + UFR
             $pinCode = str_pad(random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
+            $hireDate = now()->subYears(rand(1, 10));
             Teacher::create([
                 'user_id' => $user->id,
                 'employee_id' => 'EMP-' . str_pad($user->id, 4, '0', STR_PAD_LEFT),
@@ -118,7 +119,8 @@ class ComprehensiveTestDataSeeder extends Seeder
                 'status' => 'active',
                 'pin_code' => Hash::make($pinCode),
                 'ufr_id' => $ufrs[$i % $ufrs->count()]->id,
-                'hire_date' => now()->subYears(rand(1, 10)),
+                'hire_date' => $hireDate,
+                'start_date' => $hireDate,
             ]);
         }
     }
