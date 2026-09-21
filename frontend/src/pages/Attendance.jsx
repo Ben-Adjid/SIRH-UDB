@@ -131,6 +131,8 @@ const Attendance = () => {
     const [showValidateAbsenceModal, setShowValidateAbsenceModal] = useState(false);
     const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
     const [selectedAttendance, setSelectedAttendance] = useState(null);
+    const [activeSchedule, setActiveSchedule] = useState(null);
+    const [currentSchedule, setCurrentSchedule] = useState(null);
     const [teachers, setTeachers] = useState([]);
 
     const [absenceForm, setAbsenceForm] = useState({ attendance_date: new Date().toISOString().split('T')[0], status: 'absent', reason: '' });
@@ -224,6 +226,16 @@ const Attendance = () => {
             setHistory(attRes.data.history || (Array.isArray(histData) ? histData : []));
         } catch { toast.error('Erreur chargement'); }
     }, []);
+
+    useEffect(() => {
+        if (todaySchedules && todaySchedules.length > 0) {
+            setActiveSchedule(todaySchedules.find(s => s.check_in_time && !s.check_out_time) || null);
+            setCurrentSchedule(todaySchedules.find(s => !s.check_in_time) || null);
+        } else {
+            setActiveSchedule(null);
+            setCurrentSchedule(null);
+        }
+    }, [todaySchedules]);
 
     const handleCheckIn = useCallback(async (e) => {
         e.preventDefault();
@@ -376,8 +388,6 @@ const Attendance = () => {
     );
 
     if (isTeacher) {
-        const activeSchedule = todaySchedules.find(s => s.check_in_time && !s.check_out_time);
-        const currentSchedule = todaySchedules.find(s => !s.check_in_time);
         const hasAnyCourse = todaySchedules.length > 0;
 
         return (
