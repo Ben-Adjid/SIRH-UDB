@@ -186,7 +186,7 @@ const Payroll = () => {
             toast.success('Paie validée');
             fetchPayrolls(page);
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Erreur validation');
+            toast.error(error?.response?.data?.message || 'Erreur lors de la validation');
         }
     }, [page, fetchPayrolls]);
 
@@ -196,7 +196,7 @@ const Payroll = () => {
             toast.success('Paie marquée comme payée');
             fetchPayrolls(page);
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Erreur');
+            toast.error(error?.response?.data?.message || 'Erreur lors du marquage comme payée');
         }
     }, [page, fetchPayrolls]);
 
@@ -214,7 +214,7 @@ const Payroll = () => {
             toast.success('Bulletin PDF téléchargé');
         } catch (error) {
             console.error('PDF download error:', error);
-            toast.error('Erreur téléchargement PDF');
+            toast.error(error?.response?.data?.message || 'Erreur lors du téléchargement du PDF');
         }
     }, []);
 
@@ -229,8 +229,8 @@ const Payroll = () => {
             link.click();
             window.URL.revokeObjectURL(url);
             toast.success('Export réussi');
-        } catch {
-            toast.error('Erreur export');
+        } catch (error) {
+            toast.error(error?.response?.data?.message || 'Erreur lors de l\'export');
         }
     }, [selectedMonth]);
 
@@ -263,11 +263,13 @@ const Payroll = () => {
                                 </div>
                             </button>
                         )}
-                        <button onClick={handleExport}
-                            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-700 text-white rounded-xl font-semibold text-sm shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all duration-300 active:scale-[0.97]">
-                            <Download size={18} />
-                            <span>Exporter</span>
-                        </button>
+                        {isAccountant && (
+                            <button onClick={handleExport}
+                                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-700 text-white rounded-xl font-semibold text-sm shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all duration-300 active:scale-[0.97]">
+                                <Download size={18} />
+                                <span>Exporter</span>
+                            </button>
+                        )}
                     </div>
                 </div>
 
