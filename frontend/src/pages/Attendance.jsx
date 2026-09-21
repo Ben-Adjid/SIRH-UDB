@@ -133,6 +133,7 @@ const Attendance = () => {
     const [selectedAttendance, setSelectedAttendance] = useState(null);
     const [activeSchedule, setActiveSchedule] = useState(null);
     const [currentSchedule, setCurrentSchedule] = useState(null);
+    const [attendanceMode, setAttendanceMode] = useState(null); // 'physical' ou 'online'
     const [teachers, setTeachers] = useState([]);
 
     const [absenceForm, setAbsenceForm] = useState({ attendance_date: new Date().toISOString().split('T')[0], status: 'absent', reason: '' });
@@ -481,34 +482,61 @@ const Attendance = () => {
                                     <span className="font-mono font-bold">{currentSchedule.start_time?.substring(0, 5)} - {currentSchedule.end_time?.substring(0, 5)}</span>
                                 </div>
                             </div>
-                            <div className="w-full space-y-4">
-                                <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 space-y-3">
-                                    <div className="flex items-center justify-center gap-2 text-xs text-blue-600 font-semibold">
-                                        <span>⚡ Cours en ligne?</span>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <button type="button" onClick={handleCheckInOnline} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-blue-200">
-                                            📱 Démarrer session
+
+                            {!attendanceMode ? (
+                                <div className="w-full space-y-4 bg-gradient-to-b from-purple-50 to-transparent p-6 rounded-2xl">
+                                    <p className="text-sm font-black text-gray-700 uppercase tracking-widest">Aujourd'hui, je fais mon cours:</p>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <button type="button" onClick={() => setAttendanceMode('physical')} className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-orange-200">
+                                            <span className="text-3xl">🏫</span>
+                                            <span>En présentiel</span>
                                         </button>
-                                        <button type="button" onClick={handleCheckOutOnline} className="flex-1 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-blue-200">
-                                            ✓ Terminer
+                                        <button type="button" onClick={() => setAttendanceMode('online')} className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-blue-200">
+                                            <span className="text-3xl">📱</span>
+                                            <span>En ligne</span>
                                         </button>
                                     </div>
                                 </div>
-                                <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
-                                    <Fingerprint size={16} className="text-indigo-400" />
-                                    <span>OU: Saisissez votre code PIN personnel</span>
+                            ) : attendanceMode === 'physical' ? (
+                                <div className="w-full space-y-4">
+                                    <div className="flex items-center justify-center gap-2 mb-4">
+                                        <span className="text-2xl">🏫</span>
+                                        <p className="text-sm font-black text-gray-600 uppercase">Pointage en présentiel</p>
+                                        <button type="button" onClick={() => setAttendanceMode(null)} className="ml-auto text-xs text-gray-400 hover:text-gray-600 underline">Changer</button>
+                                    </div>
+                                    <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
+                                        <Fingerprint size={16} className="text-indigo-400" />
+                                        <span>Saisissez votre code PIN personnel</span>
+                                    </div>
+                                    <form onSubmit={handleCheckIn} className="space-y-4">
+                                        <input type="password" inputMode="numeric" pattern="[0-9]*" placeholder="Code PIN (4-6 chiffres)"
+                                            className="w-full text-center text-4xl font-mono p-6 bg-gray-50 border-2 border-transparent focus:border-indigo-500 rounded-[2rem] outline-none transition-all font-black tracking-widest"
+                                            maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, ''))} />
+                                        <button type="submit" disabled={!code || code.length < 4}
+                                            className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[2rem] font-black text-sm uppercase tracking-widest transition-all active:scale-95 shadow-xl shadow-indigo-200 disabled:opacity-40 disabled:cursor-not-allowed">
+                                            Pointer mon arrivée
+                                        </button>
+                                    </form>
                                 </div>
-                                <form onSubmit={handleCheckIn} className="space-y-4">
-                                    <input type="password" inputMode="numeric" pattern="[0-9]*" placeholder="Code PIN (4-6 chiffres)"
-                                        className="w-full text-center text-4xl font-mono p-6 bg-gray-50 border-2 border-transparent focus:border-indigo-500 rounded-[2rem] outline-none transition-all font-black tracking-widest"
-                                        maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, ''))} />
-                                    <button type="submit" disabled={!code || code.length < 4}
-                                        className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[2rem] font-black text-sm uppercase tracking-widest transition-all active:scale-95 shadow-xl shadow-indigo-200 disabled:opacity-40 disabled:cursor-not-allowed">
-                                        Pointer mon arrivée
-                                    </button>
-                                </form>
-                            </div>
+                            ) : (
+                                <div className="w-full space-y-4">
+                                    <div className="flex items-center justify-center gap-2 mb-4">
+                                        <span className="text-2xl">📱</span>
+                                        <p className="text-sm font-black text-gray-600 uppercase">Pointage en ligne</p>
+                                        <button type="button" onClick={() => setAttendanceMode(null)} className="ml-auto text-xs text-gray-400 hover:text-gray-600 underline">Changer</button>
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <button type="button" onClick={handleCheckInOnline} className="flex-1 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-blue-200 flex items-center justify-center gap-2">
+                                            <span>▶️</span>
+                                            <span>Démarrer session</span>
+                                        </button>
+                                        <button type="button" onClick={handleCheckOutOnline} className="flex-1 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-emerald-200 flex items-center justify-center gap-2">
+                                            <span>⏹️</span>
+                                            <span>Terminer</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
