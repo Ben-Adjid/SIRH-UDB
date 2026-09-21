@@ -105,7 +105,6 @@ const Login = () => {
                                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                 </button>
                             </div>
-                            {IS_DEMO_MODE && <p className="text-[8px] sm:text-[9px] text-amber-400/70">💡 Mode démo: mot de passe = "password"</p>}
                         </div>
 
                         <button
@@ -130,29 +129,6 @@ const Login = () => {
                         </Link>
                     </div>
 
-                    {IS_DEMO_MODE && QUICK_ACCOUNTS.length > 0 && (
-                    <div className="mt-5 sm:mt-6 pt-5 sm:pt-6 border-t border-white/10">
-                        <div className="flex items-center gap-2 justify-center mb-3 sm:mb-4">
-                            <Zap size={12} className="text-yellow-400" />
-                            <p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest">Accès rapide (Mode Démo)</p>
-                        </div>
-                        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                            {QUICK_ACCOUNTS.map((account) => (
-                                <button
-                                    key={account.email}
-                                    type="button"
-                                    onClick={() => { setEmail(account.email); setPassword(''); toast.info('Saisissez le mot de passe du compte ' + account.label); }}
-                                    className={`group flex flex-col items-center gap-1.5 p-2 rounded-xl bg-gradient-to-br ${account.color} text-white text-[9px] font-bold uppercase tracking-wider hover:scale-105 hover:shadow-lg transition-all duration-200 active:scale-95 cursor-pointer`}
-                                >
-                                    <span className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center text-[10px] font-black">
-                                        {account.label.charAt(0)}
-                                    </span>
-                                    <span>{account.label}</span>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                    )}
 
                     <div className="mt-5 text-center">
                         <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">

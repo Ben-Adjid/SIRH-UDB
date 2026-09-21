@@ -467,22 +467,26 @@ const Teachers = () => {
                 size="xl"
                 disableSubmit={submitting}
                 submitText={submitting ? 'Envoi...' : isEditing ? 'Enregistrer les modifications' : 'Creer le profil enseignant'}>
-                <div className="max-w-lg mx-auto space-y-6">
-                    <div className="space-y-4">
+                <div className="max-w-4xl mx-auto space-y-5">
+                    <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="form-label">Nom complet</label>
-                            <input required type="text" className="input-field" placeholder="Ex: Dr. Moussa Kasse"
+                            <input required type="text" className="input-field" placeholder="Dr. Moussa Kasse"
                                 value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                             {fieldErrors.name && <p className="text-xs text-red-500 mt-1">{fieldErrors.name[0]}</p>}
                         </div>
                         {!isEditing && (
                             <div>
-                                <label className="form-label">Email professionnel</label>
+                                <label className="form-label">Email</label>
                                 <input required type="email" className="input-field" placeholder="email@sirh.local"
                                     value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
                                 {fieldErrors.email && <p className="text-xs text-red-500 mt-1">{fieldErrors.email[0]}</p>}
                             </div>
                         )}
+                        {isEditing && <div/>}
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
                         <div>
                             <label className="form-label">Matricule</label>
                             <input required type="text" className="input-field" placeholder="PROF-XXXX"
@@ -500,17 +504,28 @@ const Teachers = () => {
                             {fieldErrors.ufr_id && <p className="text-xs text-red-500 mt-1">{fieldErrors.ufr_id[0]}</p>}
                         </div>
                         <div>
-                            <label className="form-label">Volume d'heures annuel</label>
-                            <input required type="number" min="0" className="input-field" placeholder="Ex: 120"
+                            <label className="form-label">Date embauche</label>
+                            <input required type="date" className="input-field"
+                                value={formData.hire_date} onChange={e => setFormData({...formData, hire_date: e.target.value})} />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="form-label">Volume horaire/an</label>
+                            <input required type="number" min="0" className="input-field" placeholder="120"
                                 value={formData.volume_hours} onChange={e => setFormData({...formData, volume_hours: e.target.value})} />
                             {fieldErrors.volume_hours && <p className="text-xs text-red-500 mt-1">{fieldErrors.volume_hours[0]}</p>}
                         </div>
                         <div>
-                            <label className="form-label">Taux horaire (FCFA/h)</label>
-                            <input required type="number" min="0" className="input-field" placeholder="Ex: 15000"
+                            <label className="form-label">Taux horaire FCFA</label>
+                            <input required type="number" min="0" className="input-field" placeholder="15000"
                                 value={formData.hourly_rate} onChange={e => setFormData({...formData, hourly_rate: e.target.value})} />
                             {fieldErrors.hourly_rate && <p className="text-xs text-red-500 mt-1">{fieldErrors.hourly_rate[0]}</p>}
                         </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="form-label">Telephone</label>
                             <input type="text" className="input-field" placeholder="+221 XX XXX XX XX"
@@ -523,17 +538,13 @@ const Teachers = () => {
                                 value={formData.mobile} onChange={e => setFormData({...formData, mobile: e.target.value})} />
                             {fieldErrors.mobile && <p className="text-xs text-red-500 mt-1">{fieldErrors.mobile[0]}</p>}
                         </div>
-                        <div>
-                            <label className="form-label">Adresse</label>
-                            <input type="text" className="input-field" placeholder="Adresse complete"
-                                value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} />
-                            {fieldErrors.address && <p className="text-xs text-red-500 mt-1">{fieldErrors.address[0]}</p>}
-                        </div>
-                        <div>
-                            <label className="form-label">Date d'embauche</label>
-                            <input required type="date" className="input-field"
-                                value={formData.hire_date} onChange={e => setFormData({...formData, hire_date: e.target.value})} />
-                        </div>
+                    </div>
+
+                    <div>
+                        <label className="form-label">Adresse</label>
+                        <input type="text" className="input-field" placeholder="Adresse complete"
+                            value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} />
+                        {fieldErrors.address && <p className="text-xs text-red-500 mt-1">{fieldErrors.address[0]}</p>}
                     </div>
 
                     {!isEditing && (

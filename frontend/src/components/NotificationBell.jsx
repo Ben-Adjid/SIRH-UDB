@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import useAuthStore from '../store/authStore';
 import { Bell, Check } from 'lucide-react';
 import toast from '../utils/toast';
 
@@ -10,6 +11,7 @@ const NotificationBell = () => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
     const navigate = useNavigate();
+    const user = useAuthStore((state) => state.user);
 
     const fetchNotifications = async () => {
         try {
@@ -22,6 +24,8 @@ const NotificationBell = () => {
     };
 
     useEffect(() => {
+        if (!user) return;
+
         let cancelled = false;
         const controller = new AbortController();
         const load = async () => {
@@ -38,7 +42,7 @@ const NotificationBell = () => {
         load();
         const interval = setInterval(load, 60000);
         return () => { cancelled = true; controller.abort(); clearInterval(interval); };
-    }, []);
+    }, [user]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {

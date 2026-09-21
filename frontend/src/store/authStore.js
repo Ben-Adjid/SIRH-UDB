@@ -22,13 +22,21 @@ function isTokenValid(token) {
 function loadStoredAuth() {
     try {
         const token = localStorage.getItem('token');
-        if (!token || !isTokenValid(token)) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            return { user: null, token: null, isAuthenticated: false };
+        const userStr = localStorage.getItem('user');
+
+        // Si on a un token et un user, on les restaure (même si token semble expiré, l'API le validera)
+        if (token && userStr) {
+            try {
+                const user = JSON.parse(userStr);
+                return { user, token, isAuthenticated: true };
+            } catch {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                return { user: null, token: null, isAuthenticated: false };
+            }
         }
-        const user = JSON.parse(localStorage.getItem('user') || 'null');
-        return { user, token, isAuthenticated: true };
+
+        return { user: null, token: null, isAuthenticated: false };
     } catch {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
@@ -60,12 +68,18 @@ const useAuthStore = create((set) => ({
                 return { success: true, must_change_password: true };
             }
 
+            // IMPORTANT: Sauvegarder AVANT d'update le store
             localStorage.setItem('token', token);
             localStorage.setItem('user', JSON.stringify(user));
 
+            // Ensuite update le store (utilise aussi localStorage.getItem pour être sûr)
             set({ user, token, isAuthenticated: true });
             return { success: true, email_verified };
         } catch (error) {
+            // En cas d'erreur, nettoyer la session
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            set({ user: null, token: null, isAuthenticated: false });
             return {
                 success: false,
                 message: error.response?.data?.message || 'Identifiants invalides'
@@ -173,6 +187,10 @@ const useAuthStore = create((set) => ({
                 message: error.response?.data?.message || 'Erreur de mise à jour'
             };
         }
+    },
+
+    setUser: (user) => {
+        set({ user, token: localStorage.getItem('token'), isAuthenticated: !!user });
     }
 }));
 

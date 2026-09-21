@@ -48,7 +48,7 @@ const Leaves = () => {
     const submitLeave = async (event) => {
         event.preventDefault();
         try {
-            await api.post('/leaves', { ...form, user_id: user.id });
+            await api.post('/leaves', form);
             toast.success('Demande de conge envoyee');
             await loadLeaves();
             setShowForm(false);

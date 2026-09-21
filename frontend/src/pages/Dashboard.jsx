@@ -152,9 +152,9 @@ const WelcomeHero = memo(({ user, userRole, onRefresh, loading }) => {
 });
 
 const AnimatedStatValue = ({ value, duration = 800 }) => {
-    const animatedValue = useAnimatedNumber(typeof value === 'number' ? value : 0, duration);
-    if (typeof value === 'number') return animatedValue.toLocaleString('fr-FR');
-    return value;
+    const numValue = typeof value === 'number' ? value : (typeof value === 'string' ? parseInt(value, 10) || 0 : 0);
+    const animatedValue = useAnimatedNumber(numValue, duration);
+    return animatedValue.toLocaleString('fr-FR');
 };
 
 const ACCENT_COLORS = {

@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use App\Services\NotificationService;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class PayrollController extends Controller {
 
@@ -569,6 +570,50 @@ class PayrollController extends Controller {
         } catch (\Exception $e) {
             Log::error('PayrollCalculateMonth error', ['error' => $e->getMessage()]);
             return response()->json(['message' => 'Erreur lors du calcul'], 500);
+        }
+    }
+
+    public function downloadPDF($id): \Symfony\Component\HttpFoundation\Response
+    {
+        try {
+            $payroll = Payroll::with(['teacher.user', 'details'])->findOrFail($id);
+
+            $teacher = $payroll->teacher;
+            if (!$teacher) {
+                return response()->json(['message' => 'Enseignant non trouvé'], 404);
+            }
+
+            $logoPath = public_path('spa/logo.jpg');
+            $logoBase64 = '';
+            if (file_exists($logoPath)) {
+                $logoBase64 = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoPath));
+            }
+
+            $data = [
+                'payroll' => $payroll,
+                'teacher_name' => $teacher->user->name,
+                'employee_id' => $teacher->employee_id,
+                'month' => $payroll->month,
+                'year' => $payroll->year,
+                'gross_salary' => $payroll->gross_salary,
+                'deductions' => $payroll->deductions,
+                'net_salary' => $payroll->net_salary,
+                'details' => $payroll->details,
+                'generated_at' => now()->format('d/m/Y H:i'),
+                'logo' => $logoBase64,
+            ];
+
+            $pdf = PDF::loadView('payroll.bulletin', $data)
+                ->setPaper('a4')
+                ->setOptions([
+                    'defaultFont' => 'Helvetica',
+                    'isHtml5ParserEnabled' => true,
+                ]);
+
+            return $pdf->download("bulletin_paie_{$payroll->month}_{$payroll->year}.pdf");
+        } catch (\Exception $e) {
+            Log::error('PDF generation error', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Erreur lors de la génération du PDF'], 500);
         }
     }
 }

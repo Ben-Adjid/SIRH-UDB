@@ -3,7 +3,7 @@ import {
     LayoutDashboard, Users, Calendar, Clock, Palmtree,
     CreditCard, LogOut, BookOpen, Menu, X,
     LayoutGrid, MapPin, GraduationCap, Settings,
-    ChevronRight, FileText, Shield
+    ChevronRight, FileText, Shield, Zap
 } from 'lucide-react';
 import { getRoleLabel } from '../utils/roles';
 import useAuthStore from '../store/authStore';
@@ -30,55 +30,49 @@ const Sidebar = ({ sidebarOpen, onToggle }) => {
             ]
         },
         {
-            label: 'Ressources Humaines',
-            roles: ['admin', 'hr_manager', 'secretary', 'accountant'],
+            label: 'Pointage & Présences',
             items: [
-                { icon: <Users size={18} />, label: 'Enseignants', path: '/teachers', roles: ['admin', 'hr_manager', 'secretary', 'academic_manager'] },
-                { icon: <Clock size={18} />, label: 'Pointage', path: '/attendance', roles: ['admin', 'hr_manager', 'secretary', 'academic_manager'] },
-                { icon: <Palmtree size={18} />, label: 'Congés & Absences', path: '/leaves', roles: ['admin', 'hr_manager', 'secretary', 'academic_manager', 'accountant'] },
-                { icon: <FileText size={18} />, label: 'Documents', path: '/documents', roles: ['admin', 'hr_manager', 'secretary', 'accountant'] },
-                { icon: <Calendar size={18} />, label: 'Emploi du Temps', path: '/schedules', roles: ['admin', 'hr_manager', 'secretary'] },
-                { icon: <BookOpen size={18} />, label: 'Cours & Devoirs', path: '/homeworks', roles: ['admin', 'hr_manager', 'secretary'] },
+                { icon: <Clock size={18} />, label: 'Pointage', path: '/attendance', roles: ['admin', 'hr_manager', 'secretary', 'academic_manager', 'accountant', 'teacher'] },
             ]
         },
         {
-            label: 'UFR',
+            label: 'Paie & Honoraires',
+            items: [
+                { icon: <CreditCard size={18} />, label: 'Paie', path: '/payroll', roles: ['admin', 'accountant', 'hr_manager', 'secretary', 'teacher'] },
+            ]
+        },
+        {
+            label: 'Gestion Ressources Humaines',
+            roles: ['admin', 'hr_manager', 'secretary'],
+            items: [
+                { icon: <Users size={18} />, label: 'Enseignants', path: '/teachers', roles: ['admin', 'hr_manager', 'secretary', 'academic_manager', 'accountant'] },
+                { icon: <Palmtree size={18} />, label: 'Congés & Absences', path: '/leaves', roles: ['admin', 'hr_manager', 'secretary', 'academic_manager', 'accountant'] },
+                { icon: <FileText size={18} />, label: 'Documents', path: '/documents', roles: ['admin', 'hr_manager', 'secretary', 'accountant', 'teacher'] },
+            ]
+        },
+        {
+            label: 'Académique',
             roles: ['admin', 'academic_manager'],
             items: [
                 { icon: <LayoutGrid size={18} />, label: 'UFR', path: '/ufrs', roles: ['admin', 'academic_manager'] },
                 { icon: <GraduationCap size={18} />, label: 'Matières', path: '/subjects', roles: ['admin', 'academic_manager'] },
                 { icon: <MapPin size={18} />, label: 'Salles', path: '/classrooms', roles: ['admin', 'academic_manager'] },
-                { icon: <Calendar size={18} />, label: 'Emploi du Temps', path: '/schedules', roles: ['admin', 'academic_manager'] },
-                { icon: <BookOpen size={18} />, label: 'Cours & Devoirs', path: '/homeworks', roles: ['admin', 'academic_manager'] },
-            ]
-        },
-        {
-            label: 'Finance',
-            roles: ['admin', 'accountant'],
-            items: [
-                { icon: <CreditCard size={18} />, label: 'Gestion Honoraires', path: '/payroll', roles: ['admin', 'accountant'] },
-                { icon: <Users size={18} />, label: 'Enseignants', path: '/teachers', roles: ['admin', 'hr_manager', 'secretary', 'academic_manager', 'accountant'] },
-                { icon: <Clock size={18} />, label: 'Pointage', path: '/attendance', roles: ['admin', 'hr_manager', 'secretary', 'accountant'] },
+                { icon: <Calendar size={18} />, label: 'Emploi du Temps', path: '/schedules', roles: ['admin', 'academic_manager', 'teacher'] },
+                { icon: <BookOpen size={18} />, label: 'Cours & Devoirs', path: '/homeworks', roles: ['admin', 'academic_manager', 'teacher'] },
             ]
         },
         {
             label: 'Mon Espace',
-            roles: ['teacher'],
             items: [
-                { icon: <Calendar size={18} />, label: 'Mon Emploi du Temps', path: '/schedules', roles: ['teacher'] },
-                { icon: <BookOpen size={18} />, label: 'Mes Cours & Devoirs', path: '/homeworks', roles: ['teacher'] },
-                { icon: <Clock size={18} />, label: 'Présences', path: '/attendance', roles: ['teacher'] },
-                { icon: <CreditCard size={18} />, label: 'Mes Honoraires', path: '/payroll', roles: ['teacher'] },
-                { icon: <FileText size={18} />, label: 'Mes Documents', path: '/documents', roles: ['teacher'] },
-                { icon: <Settings size={18} />, label: 'Mon Profil', path: '/profile', roles: ['teacher'] },
+                { icon: <Settings size={18} />, label: 'Mon Profil', path: '/profile' },
             ]
         },
         {
             label: 'Administration',
             roles: ['admin', 'hr_manager', 'secretary'],
             items: [
-                { icon: <Settings size={18} />, label: 'Comptes & Rôles', path: '/users', roles: ['admin', 'hr_manager', 'secretary'] },
-                { icon: <Shield size={18} />, label: 'Audit & Logs', path: '/audit-logs', roles: ['admin', 'hr_manager'] },
+                { icon: <Shield size={18} />, label: 'Gestion Comptes', path: '/users', roles: ['admin', 'hr_manager', 'secretary'] },
+                { icon: <FileText size={18} />, label: 'Audit & Logs', path: '/audit-logs', roles: ['admin', 'hr_manager'] },
             ]
         },
     ];

@@ -24,7 +24,7 @@ class TestUsersSeeder extends Seeder
             ['name' => 'Enseignant Test',    'email' => 'prof@sirh.local',       'role' => 'teacher'],
         ];
 
-        $password = 'Changez-Moi-2026!';
+        $password = 'password';
         $hashed = Hash::make($password);
 
         foreach ($users as $data) {

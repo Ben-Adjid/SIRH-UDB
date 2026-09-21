@@ -229,23 +229,24 @@ class LeaveController extends Controller {
         try {
             $user = auth()->user();
 
+            // Vérifier que l'utilisateur est autorisé à demander des congés
+            if (!$this->isEligible($user)) {
+                return response()->json(['message' => 'Vous n\'êtes pas autorisé à demander des congés'], 403);
+            }
+
             $validated = $request->validate([
-                'user_id' => 'required|exists:users,id',
                 'leave_type_id' => 'required|exists:leave_types,id',
                 'start_date' => 'required|date',
                 'end_date' => 'required|date|after_or_equal:start_date',
                 'reason' => 'required|string',
             ]);
 
+            // Utiliser l'ID de l'utilisateur authentifié
+            $requestedUserId = $user->id;
             $start = Carbon::parse($validated['start_date']);
             $end = Carbon::parse($validated['end_date']);
 
-            $requestedUser = User::with('roles')->findOrFail($validated['user_id']);
-
-            // Tout utilisateur peut créer une demande pour son propre compte, les managers peuvent en créer pour d'autres
-            if (!$this->canManageAll($user) && $requestedUser->id !== $user->id) {
-                return response()->json(['message' => 'Vous ne pouvez créer une demande de congé que pour votre propre compte'], 403);
-            }
+            $requestedUser = $user;
 
             if ($start->year !== $end->year) {
                 return response()->json(['message' => 'Une demande de congé doit rester dans la même année'], 422);
@@ -269,7 +270,7 @@ class LeaveController extends Controller {
                 return response()->json(['message' => 'La durée doit être d\'au moins un jour ouvré'], 422);
             }
 
-            $balance = LeaveBalance::where('user_id', $validated['user_id'])
+            $balance = LeaveBalance::where('user_id', $requestedUserId)
                 ->where('leave_type_id', $validated['leave_type_id'])
                 ->where('year', $start->year)
                 ->first();
@@ -283,7 +284,7 @@ class LeaveController extends Controller {
                 return response()->json(['message' => "Solde insuffisant. Jours disponibles : {$availableDays}"], 422);
             }
 
-            $overlap = LeaveRequest::where('user_id', $validated['user_id'])
+            $overlap = LeaveRequest::where('user_id', $requestedUserId)
                 ->whereIn('status', ['pending', 'approved'])
                 ->whereDate('start_date', '<=', $validated['end_date'])
                 ->whereDate('end_date', '>=', $validated['start_date'])
@@ -292,9 +293,9 @@ class LeaveController extends Controller {
                 return response()->json(['message' => 'Une demande couvre déjà cette période'], 422);
             }
 
-            $leave = DB::transaction(function () use ($validated, $durationDays, $balance, $user, $request) {
+            $leave = DB::transaction(function () use ($validated, $durationDays, $balance, $user, $request, $requestedUserId) {
                 $leave = LeaveRequest::create([
-                    'user_id' => $validated['user_id'],
+                    'user_id' => $requestedUserId,
                     'leave_type_id' => $validated['leave_type_id'],
                     'start_date' => $validated['start_date'],
                     'end_date' => $validated['end_date'],

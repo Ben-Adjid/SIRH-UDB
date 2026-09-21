@@ -239,6 +239,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:admin|hr_manager|secretary|accountant|teacher')->group(function () {
         Route::get('/payroll', [App\Http\Controllers\Api\PayrollController::class, 'index']);
         Route::get('/payroll/{payroll}', [App\Http\Controllers\Api\PayrollController::class, 'show']);
+        Route::get('/payroll/{payroll}/pdf', [App\Http\Controllers\Api\PayrollController::class, 'downloadPDF']);
     });
 
     // Disponibilités enseignants (now in the attendance group above)

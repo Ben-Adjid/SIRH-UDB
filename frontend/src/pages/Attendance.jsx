@@ -555,8 +555,10 @@ const Attendance = () => {
                     <div className="bg-white rounded-2xl border border-indigo-100 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div>
                             <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Mon pointage du jour</p>
-                            <p className="text-xs text-indigo-600 font-bold mt-2">PIN de pointage : {configuredPin || 'Non configure - ouvrez Mon Profil'}</p>
-                            <p className="text-sm font-semibold text-slate-700 mt-1">{selfAttendance?.check_in_time ? `Entree a ${selfAttendance.check_in_time.substring(0, 5)}` : 'Aucun pointage personnel'}</p>
+                            {configuredPin && (
+                                <p className="text-3xl font-black font-mono text-indigo-700 mt-2 tracking-widest">{configuredPin}</p>
+                            )}
+                            <p className="text-sm font-semibold text-slate-700 mt-3">{selfAttendance?.check_in_time ? `Entree a ${selfAttendance.check_in_time.substring(0, 5)}` : 'Aucun pointage personnel'}</p>
                             {selfAttendance?.check_out_time && <p className="text-xs text-slate-400 mt-1">Sortie a {selfAttendance.check_out_time.substring(0, 5)}</p>}
                         </div>
                         <div className="flex flex-wrap gap-2">

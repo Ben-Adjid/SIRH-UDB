@@ -109,7 +109,6 @@ const Payroll = () => {
             setLeaveData(leaveResp.data?.data || []);
             calculatePreview(teacherId, parseInt(month), parseInt(year), attendResp.data);
         } catch (error) {
-            console.error('Erreur chargement données:', error);
             if (error.response?.status === 401) {
                 toast.error('Session expirée, veuillez vous reconnecter');
             } else if (error.response?.status === 404) {
@@ -203,29 +202,19 @@ const Payroll = () => {
 
     const handleDownloadPDF = useCallback(async (payroll) => {
         try {
-            const response = await api.get(`/payroll/${payroll.id}`);
-            const data = response.data;
-            const teacherName = escapeHtml(data.teacher?.user?.name || 'N/A');
-            const period = `${data.month}/${data.year}`;
-            const gross = new Intl.NumberFormat('fr-FR').format(data.gross_salary || data.honorarium_amount || 0);
-            const brs = data.brs_amount ?? 0;
-            const net = new Intl.NumberFormat('fr-FR').format(data.net_salary ?? 0);
-            const paymentMethod = (data.payment_method || 'cash') === 'check' ? 'Chèque' : 'Espèces';
-            const lineItems = data.details || [];
-            const totalEarnings = lineItems.filter(li => li.type === 'earning').reduce((sum, li) => sum + Number(li.amount || 0), 0);
-            const totalDeductions = lineItems.filter(li => li.type === 'deduction').reduce((sum, li) => sum + Number(li.amount || 0), 0);
-
-            let lineItemsHtml = '';
-            lineItems.forEach(li => {
-                const isEarning = li.type === 'earning';
-                lineItemsHtml += `<tr><td style="padding:6px 12px;font-size:14px;border-bottom:1px solid #e5e7eb;">${escapeHtml(li.description || '')}</td><td style="padding:6px 12px;font-size:14px;text-align:right;border-bottom:1px solid #e5e7eb;color:${isEarning ? '#059669' : '#dc2626'};">${isEarning ? '+' : '-'}${new Intl.NumberFormat('fr-FR').format(li.amount || 0)} FCFA</td></tr>`;
-            });
-
-            const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Etat d'honoraire</title><style>body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;margin:40px;color:#1e293b;}.header{text-align:center;margin-bottom:30px;border-bottom:3px solid #059669;padding-bottom:20px;}.header h1{color:#059669;margin:0;font-size:24px;}.header p{color:#64748b;margin:5px 0 0;font-size:14px;}.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}.info-card{background:#f8fafc;border-radius:8px;padding:12px 16px;}.info-card .label{font-size:11px;text-transform:uppercase;color:#94a3b8;font-weight:700;}.info-card .value{font-size:16px;font-weight:700;color:#1e293b;margin-top:4px;}.summary{background:#059669;color:white;border-radius:12px;padding:20px;margin-top:20px;}.summary-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:15px;}.summary-row.total{border-top:2px solid rgba(255,255,255,.3);padding-top:12px;margin-top:12px;font-size:20px;font-weight:800;}.section-title{font-size:14px;font-weight:700;color:#059669;margin:16px 0 8px;}table{width:100%;border-collapse:collapse;margin:20px 0;}th{text-align:left;padding:8px 12px;font-size:11px;text-transform:uppercase;color:#94a3b8;border-bottom:2px solid #e2e8f0;}.footer{margin-top:40px;text-align:center;font-size:11px;color:#94a3b8;border-top:1px solid #e5e7eb;padding-top:12px;}</style></head><body><div class="header"><h1>ETAT D'HONORAIRE</h1><p>Période: ${period}</p></div><div class="info-grid"><div class="info-card"><div class="label">Enseignant</div><div class="value">${teacherName}</div></div><div class="info-card"><div class="label">Mode de paiement</div><div class="value">${paymentMethod}</div></div></div>${lineItems.length > 0 ? `<div class="section-title">Détails</div><table><thead><tr><th>Description</th><th style="text-align:right;">Montant</th></tr></thead><tbody>${lineItemsHtml}</tbody></table>` : ''}<div class="summary"><div class="summary-row"><span>Honoraire brut</span><span>${gross} FCFA</span></div>${brs > 0 ? `<div class="summary-row"><span>BRS (5%)</span><span>-${new Intl.NumberFormat('fr-FR').format(brs)} FCFA</span></div>` : ''}<div class="summary-row total"><span>NET À PAYER</span><span>${net} FCFA</span></div></div><div class="footer">Généré le ${new Date().toLocaleDateString('fr-FR')}</div></body></html>`;
-            const printWindow = window.open('', '_blank');
-            if (printWindow) { printWindow.document.write(html); printWindow.document.close(); }
-        } catch {
-            toast.error('Erreur téléchargement');
+            const response = await api.get(`/payroll/${payroll.id}/pdf`, { responseType: 'blob' });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `bulletin_paie_${payroll.month}_${payroll.year}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            toast.success('Bulletin PDF téléchargé');
+        } catch (error) {
+            console.error('PDF download error:', error);
+            toast.error('Erreur téléchargement PDF');
         }
     }, []);
 

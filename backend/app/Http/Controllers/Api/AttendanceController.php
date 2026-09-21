@@ -29,10 +29,11 @@ class AttendanceController extends Controller {
 
         // Retourner le PIN temporaire s'il existe
         $tempPin = cache()->get("teacher_temp_pin_{$teacher?->id}");
+        $pin = $tempPin ?? $teacher?->pin_code;
 
         return response()->json([
             'configured' => (bool) ($user->attendance_pin || $teacher?->pin_code),
-            'pin' => $tempPin ?? null, // PIN temporaire en clair
+            'pin' => $tempPin ?? $teacher?->pin_code,
             'temporary' => !is_null($tempPin),
         ]);
     }
@@ -42,7 +43,7 @@ class AttendanceController extends Controller {
         $user = auth()->user();
         $teacher = Teacher::where('user_id', $user->id)->first();
 
-        if (!$teacher) {
+        if (!$user->hasRole('teacher')) {
             return response()->json(['message' => 'Non-enseignant'], 403);
         }
 
@@ -113,15 +114,7 @@ class AttendanceController extends Controller {
         $user = auth()->user();
         $teacher = Teacher::where('user_id', $user->id)->first();
 
-        if (!$teacher) {
-            if (!$user->hasAnyRole(['admin', 'hr_manager', 'secretary', 'accountant', 'academic_manager'])) {
-                return response()->json(['message' => 'Pointage non autorisé pour ce profil'], 403);
-            }
-
-            $validated = $request->validate(['pin' => 'required|string|min:4|max:255']);
-            if (!$user->attendance_pin || !Hash::check($validated['pin'], $user->attendance_pin)) {
-                return response()->json(['message' => 'Code PIN administratif invalide ou non configuré'], 422);
-            }
+        if (!$user->hasRole('teacher')) {
 
             $attendance = Attendance::where('user_id', $user->id)
                 ->whereDate('attendance_date', Carbon::today())
@@ -142,7 +135,7 @@ class AttendanceController extends Controller {
             'pin' => 'required|string|min:4|max:6',
         ]);
 
-        if (!$teacher->pin_code || !Hash::check($validated['pin'], $teacher->pin_code)) {
+        if (!$teacher->pin_code || $validated['pin'] !== $teacher->pin_code) {
             return response()->json(['message' => 'Code PIN invalide'], 422);
         }
 
@@ -318,7 +311,7 @@ class AttendanceController extends Controller {
         $user = auth()->user();
         $teacher = Teacher::where('user_id', $user->id)->first();
 
-        if (!$teacher) {
+        if (!$user->hasRole('teacher')) {
             if (!$user->hasAnyRole(['admin', 'hr_manager', 'secretary', 'accountant', 'academic_manager'])) {
                 return response()->json(['message' => 'Signalement non autorisé pour ce profil'], 403);
             }
@@ -407,7 +400,7 @@ class AttendanceController extends Controller {
         $user = auth()->user();
         $teacher = Teacher::where('user_id', $user->id)->first();
 
-        if (!$teacher) {
+        if (!$user->hasRole('teacher')) {
             return response()->json(['message' => 'Seuls les enseignants peuvent déclarer leur disponibilité'], 403);
         }
 

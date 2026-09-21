@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import NotificationBell from './NotificationBell';
 import Breadcrumb from './Breadcrumb';
 import { Search, Plus, MoreHorizontal, User, Settings, HelpCircle, LogOut, Menu, X } from 'lucide-react';
 import useAuthStore from '../store/authStore';
+import api from '../services/api';
 import toast from '../utils/toast';
 import { getUserRoles, getRoleLabel } from '../utils/roles';
 
@@ -31,18 +32,43 @@ const Layout = () => {
     const location = useLocation();
     const logout = useAuthStore((state) => state.logout);
     const user = useAuthStore((state) => state.user);
+    const setUser = useAuthStore((state) => state.setUser);
     const navigate = useNavigate();
     const [showMenu, setShowMenu] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const userRoles = getUserRoles(user);
 
+    // Restaurer la session au démarrage du layout (doublon de sécurité)
+    useEffect(() => {
+        if (!user) {
+            const token = localStorage.getItem('token');
+            const storedUser = localStorage.getItem('user');
+
+            if (token && storedUser) {
+                try {
+                    const parsed = JSON.parse(storedUser);
+                    setUser(parsed);
+                    // Assurez-vous que le token est aussi dans le store
+                } catch (error) {
+                    console.error('Session restore error:', error);
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                }
+            }
+        }
+    }, [user, setUser]);
+
     const [lastPath, setLastPath] = useState(location.pathname);
-    if (lastPath !== location.pathname) {
-        setLastPath(location.pathname);
-        setShowMenu(false);
-        setSidebarOpen(false);
-    }
+
+    useEffect(() => {
+        if (lastPath !== location.pathname) {
+            setLastPath(location.pathname);
+            setShowMenu(false);
+            setSidebarOpen(false);
+            setSearchQuery('');
+        }
+    }, [location.pathname, lastPath]);
 
     const meta = (() => {
         const base = ROUTE_META[location.pathname] || { title: 'Portail', sub: 'Espace opérationnel' };
