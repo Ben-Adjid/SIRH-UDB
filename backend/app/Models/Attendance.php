@@ -11,7 +11,7 @@ class Attendance extends Model {
     protected $appends = ['validator'];
     protected $fillable = [
         'user_id', 'teacher_id', 'schedule_id', 'attendance_date', 'check_in_time', 'check_out_time',
-        'status', 'hours_worked', 'notes',
+        'status', 'hours_worked', 'notes', 'attendance_mode',
         'is_justified', 'justification_status', 'justified_by', 'justified_at',
         'justification_notes',
     ];

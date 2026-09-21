@@ -242,6 +242,24 @@ const Attendance = () => {
         catch (error) { toast.error(error.response?.data?.message || 'Erreur'); }
     }, [fetchMyAttendance, isManagement]);
 
+    const handleCheckInOnline = useCallback(async () => {
+        if (!activeSchedule) { toast.error('Aucun cours sélectionné'); return; }
+        try {
+            const res = await api.post('/attendance/check-in-online', { schedule_id: activeSchedule.id });
+            toast.success(res.data.message);
+            fetchMyAttendance();
+        } catch (error) { toast.error(error?.response?.data?.message || 'Erreur du pointage en ligne'); }
+    }, [activeSchedule, fetchMyAttendance]);
+
+    const handleCheckOutOnline = useCallback(async () => {
+        if (!activeSchedule) { toast.error('Aucun cours sélectionné'); return; }
+        try {
+            const res = await api.post('/attendance/check-out-online', { schedule_id: activeSchedule.id });
+            toast.success(res.data.message);
+            fetchMyAttendance();
+        } catch (error) { toast.error(error?.response?.data?.message || 'Erreur lors de la sortie en ligne'); }
+    }, [activeSchedule, fetchMyAttendance]);
+
     const handleStaffCheckIn = useCallback(async () => {
         if (staffPin.length < 4) { toast.error('Saisissez votre PIN administratif'); return; }
         try {
@@ -454,9 +472,22 @@ const Attendance = () => {
                                 </div>
                             </div>
                             <div className="w-full space-y-4">
+                                <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 space-y-3">
+                                    <div className="flex items-center justify-center gap-2 text-xs text-blue-600 font-semibold">
+                                        <span>⚡ Cours en ligne?</span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button type="button" onClick={handleCheckInOnline} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-blue-200">
+                                            📱 Démarrer session
+                                        </button>
+                                        <button type="button" onClick={handleCheckOutOnline} className="flex-1 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-blue-200">
+                                            ✓ Terminer
+                                        </button>
+                                    </div>
+                                </div>
                                 <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
                                     <Fingerprint size={16} className="text-indigo-400" />
-                                    <span>Saisissez votre code PIN personnel</span>
+                                    <span>OU: Saisissez votre code PIN personnel</span>
                                 </div>
                                 <form onSubmit={handleCheckIn} className="space-y-4">
                                     <input type="password" inputMode="numeric" pattern="[0-9]*" placeholder="Code PIN (4-6 chiffres)"

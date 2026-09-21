@@ -12,7 +12,8 @@ class Schedule extends Model {
         'teacher_id', 'subject_id', 'teaching_type_id', 'classroom_id', 'level', 'semester', 'academic_year_id',
         'start_date', 'end_date',
         'day_of_week', 'start_time', 'end_time', 'status', 'notes',
-        'type', 'exam_type', 'coefficient', 'is_archived'
+        'type', 'exam_type', 'coefficient', 'is_archived',
+        'teaching_mode', 'online_link', 'online_notes'
     ];
 
     protected $casts = [

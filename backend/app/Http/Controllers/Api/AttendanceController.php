@@ -1013,6 +1013,123 @@ class AttendanceController extends Controller {
         return null;
     }
 
+    public function checkInOnline(Request $request): JsonResponse
+    {
+        try {
+            $user = auth()->user();
+            $teacher = Teacher::where('user_id', $user->id)->first();
+
+            // Vérifier que c'est un enseignant
+            if (!$user->hasRole('teacher')) {
+                return response()->json(['message' => 'Non autorisé'], 403);
+            }
+
+            if (!$teacher) {
+                return response()->json(['message' => 'Enseignant non trouvé'], 404);
+            }
+
+            $validated = $request->validate([
+                'schedule_id' => 'required|exists:schedules,id',
+            ]);
+
+            $schedule = Schedule::with('subject')->findOrFail($validated['schedule_id']);
+
+            // Vérifier que le cours appartient à cet enseignant
+            if ($schedule->teacher_id !== $teacher->id) {
+                return response()->json(['message' => 'Vous ne pouvez pointer que vos propres cours'], 403);
+            }
+
+            // Créer ou mettre à jour la présence en ligne
+            $attendance = Attendance::updateOrCreate(
+                [
+                    'teacher_id' => $teacher->id,
+                    'schedule_id' => $schedule->id,
+                    'attendance_date' => now()->toDateString(),
+                ],
+                [
+                    'user_id' => $user->id,
+                    'check_in_time' => now(),
+                    'status' => 'present',
+                    'attendance_mode' => 'online_present',
+                ]
+            );
+
+            AuditLog::create([
+                'user_id' => $user->id,
+                'action' => 'attendance_online_check_in',
+                'model' => 'Attendance',
+                'model_id' => $attendance->id,
+                'ip_address' => $request->ip(),
+            ]);
+
+            return response()->json([
+                'message' => 'Présence en ligne enregistrée',
+                'attendance' => $attendance,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('CheckInOnline error: ' . $e->getMessage());
+            return response()->json(['message' => 'Erreur lors du pointage en ligne'], 500);
+        }
+    }
+
+    public function checkOutOnline(Request $request): JsonResponse
+    {
+        try {
+            $user = auth()->user();
+            $teacher = Teacher::where('user_id', $user->id)->first();
+
+            if (!$user->hasRole('teacher')) {
+                return response()->json(['message' => 'Non autorisé'], 403);
+            }
+
+            if (!$teacher) {
+                return response()->json(['message' => 'Enseignant non trouvé'], 404);
+            }
+
+            $validated = $request->validate([
+                'schedule_id' => 'required|exists:schedules,id',
+            ]);
+
+            $schedule = Schedule::findOrFail($validated['schedule_id']);
+
+            if ($schedule->teacher_id !== $teacher->id) {
+                return response()->json(['message' => 'Vous ne pouvez pointer que vos propres cours'], 403);
+            }
+
+            // Chercher la présence du jour
+            $attendance = Attendance::where('teacher_id', $teacher->id)
+                ->where('schedule_id', $schedule->id)
+                ->where('attendance_date', now()->toDateString())
+                ->firstOrFail();
+
+            // Calculer les heures travaillées
+            if ($attendance->check_in_time) {
+                $checkInTime = \Carbon\Carbon::parse($attendance->check_in_time);
+                $hoursWorked = now()->diffInHours($checkInTime);
+                $attendance->hours_worked = $hoursWorked;
+            }
+
+            $attendance->check_out_time = now();
+            $attendance->save();
+
+            AuditLog::create([
+                'user_id' => $user->id,
+                'action' => 'attendance_online_check_out',
+                'model' => 'Attendance',
+                'model_id' => $attendance->id,
+                'ip_address' => $request->ip(),
+            ]);
+
+            return response()->json([
+                'message' => 'Sortie en ligne enregistrée',
+                'attendance' => $attendance,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('CheckOutOnline error: ' . $e->getMessage());
+            return response()->json(['message' => 'Erreur lors de la sortie en ligne'], 500);
+        }
+    }
+
     private function getTodaySchedulesForTeacher(Teacher $teacher, Carbon $date): \Illuminate\Database\Eloquent\Collection
     {
         $dayName = $this->getDayName($date);
