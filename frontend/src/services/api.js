@@ -95,8 +95,12 @@ api.interceptors.response.use(
 
         if (error.response) {
             const status = error.response.status;
+            const message = error.response.data?.message;
+
             if (status === 403) {
-                toast.error("Accès refusé");
+                toast.error(message || "Accès refusé : vous n'avez pas l'autorisation d'accéder à cette ressource.");
+            } else if (status === 500) {
+                toast.error(message || "Une erreur serveur s'est produite. Veuillez réessayer.");
             }
         } else if (!navigator.onLine) {
             toast.error("Vous êtes hors ligne");

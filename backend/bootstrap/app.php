@@ -14,7 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            'role' => \App\Http\Middleware\CheckRoleWithMessage::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'force.https' => \App\Http\Middleware\ForceHttps::class,
@@ -55,15 +55,29 @@ return Application::configure(basePath: dirname(__DIR__))
                 }
 
                 if ($e instanceof \Spatie\Permission\Exceptions\UnauthorizedException) {
-                    return response()->json(['message' => $e->getMessage()], 403);
+                    return response()->json([
+                        'message' => 'Accès refusé : vous n\'avez pas l\'autorisation d\'accéder à cette ressource.',
+                        'status' => 'forbidden',
+                        'reason' => 'insufficient_permissions'
+                    ], 403);
                 }
 
                 if ($e instanceof \Illuminate\Http\Exceptions\ThrottleRequestsException) {
-                    return response()->json(['message' => 'Trop de tentatives. Réessayez plus tard.'], 429);
+                    return response()->json([
+                        'message' => 'Trop de tentatives. Réessayez plus tard.',
+                        'status' => 'rate_limited'
+                    ], 429);
                 }
 
                 if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
                     $status = $e->getStatusCode();
+                    if ($status === 403) {
+                        return response()->json([
+                            'message' => 'Accès refusé : vous n\'avez pas l\'autorisation d\'accéder à cette ressource.',
+                            'status' => 'forbidden',
+                            'reason' => 'insufficient_permissions'
+                        ], 403);
+                    }
                     $message = $e->getMessage() ?: 'Une erreur est survenue';
                     return response()->json(['message' => $message], $status);
                 }
