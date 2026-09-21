@@ -175,6 +175,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/attendance/check-in', [App\Http\Controllers\Api\AttendanceController::class, 'checkIn'])->middleware('throttle:10,1');
     Route::post('/attendance/check-out', [App\Http\Controllers\Api\AttendanceController::class, 'checkOut'])->middleware('throttle:10,1');
     Route::get('/attendance/my-pin', [App\Http\Controllers\Api\AttendanceController::class, 'myPin'])->middleware('throttle:60,1');
+    Route::post('/attendance/generate-pin', [App\Http\Controllers\Api\AttendanceController::class, 'generateTemporaryPin'])->middleware('throttle:10,1');
     Route::get('/attendance/active-code', [App\Http\Controllers\Api\AttendanceController::class, 'getActiveCode'])->middleware('throttle:30,1');
     Route::get('/attendance', [App\Http\Controllers\Api\AttendanceController::class, 'index'])->middleware('throttle:60,1');
     Route::post('/attendance/report-absence', [App\Http\Controllers\Api\AttendanceController::class, 'reportAbsence'])->middleware('throttle:10,1');

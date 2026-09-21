@@ -27,8 +27,33 @@ class AttendanceController extends Controller {
         $user = auth()->user();
         $teacher = Teacher::where('user_id', $user->id)->first();
 
+        // Retourner le PIN temporaire s'il existe
+        $tempPin = cache()->get("teacher_temp_pin_{$teacher?->id}");
+
         return response()->json([
             'configured' => (bool) ($user->attendance_pin || $teacher?->pin_code),
+            'pin' => $tempPin ?? null, // PIN temporaire en clair
+            'temporary' => !is_null($tempPin),
+        ]);
+    }
+
+    public function generateTemporaryPin(): JsonResponse
+    {
+        $user = auth()->user();
+        $teacher = Teacher::where('user_id', $user->id)->first();
+
+        if (!$teacher) {
+            return response()->json(['message' => 'Non-enseignant'], 403);
+        }
+
+        // Générer un PIN temporaire (valide 5 minutes)
+        $tempPin = str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
+        cache()->put("teacher_temp_pin_{$teacher->id}", $tempPin, now()->addMinutes(5));
+
+        return response()->json([
+            'pin' => $tempPin,
+            'expires_in_seconds' => 300,
+            'message' => 'PIN temporaire généré (valide 5 minutes)'
         ]);
     }
 
