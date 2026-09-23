@@ -261,13 +261,11 @@ const Dashboard = () => {
     const loadDashboardData = useCallback(async () => {
         // Vérifier que l'utilisateur est prêt
         if (!user?.id) {
-            console.log('[Dashboard] User not ready yet');
             setLoading(false);
             return;
         }
 
         if (!userRole) {
-            console.log('[Dashboard] User role not determined');
             setLoading(false);
             return;
         }
@@ -286,14 +284,11 @@ const Dashboard = () => {
 
         const attempt = async () => {
             try {
-                console.log(`[Dashboard] Attempt ${retries + 1}: Fetching from ${endpoint}`);
-
                 const response = await api.get(endpoint, {
                     signal: abortControllerRef.current.signal
                 });
 
                 if (response.data && Object.keys(response.data).length > 0) {
-                    console.log('[Dashboard] Data loaded successfully:', Object.keys(response.data), response.data);
                     // Force immediate render
                     setLoading(false);
                     setStats(response.data);
@@ -303,19 +298,14 @@ const Dashboard = () => {
             } catch (error) {
                 // Si la requête a été annulée, ne pas réessayer
                 if (error.name === 'AbortError') {
-                    console.log('[Dashboard] Request was cancelled');
                     return;
                 }
 
-                console.error(`[Dashboard] Error attempt ${retries + 1}:`, error.message);
-
                 if (retries < maxRetries) {
                     retries++;
-                    console.log(`[Dashboard] Retrying in 500ms...`);
                     await new Promise(r => setTimeout(r, 500));
                     await attempt();
                 } else {
-                    console.error('[Dashboard] All retries failed');
                     setStats(null);
                     setLoading(false);
                     toast.error('Impossible de charger les données. Veuillez réessayer.');

@@ -78,7 +78,6 @@ const Schedules = () => {
             ]);
             const s = schedRes.data;
             const schedulesData = Array.isArray(s) ? s : (s?.data || []);
-            console.log('Schedules loaded:', schedulesData.length, 'items'); // Debug
             setSchedules(schedulesData);
             const examRes = await api.get('/exams', { params: { per_page: 500 } });
             const examData = examRes.data; setExams(Array.isArray(examData) ? examData : (examData?.data || []));

@@ -32,10 +32,7 @@ class DataRefreshManager {
 
     // Notifier tous les subscribers d'une clé
     async notify(key, options = {}) {
-        console.log(`[DataRefresh] Notifying ${key} subscribers...`);
-
         if (!this.subscribers[key]) {
-            console.warn(`[DataRefresh] No subscribers for key: ${key}`);
             return;
         }
 
@@ -46,14 +43,11 @@ class DataRefreshManager {
                     try {
                         return Promise.resolve(cb());
                     } catch (e) {
-                        console.error(`[DataRefresh] Callback error for ${key}:`, e);
                         return Promise.reject(e);
                     }
                 })
             );
-            console.log(`[DataRefresh] Successfully notified ${key}`);
         } catch (e) {
-            console.error(`[DataRefresh] Error notifying ${key}:`, e);
         }
     }
 

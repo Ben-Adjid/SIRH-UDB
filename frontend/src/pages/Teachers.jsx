@@ -70,13 +70,8 @@ const Teachers = () => {
             if (searchTerm) params.search = searchTerm;
             if (ufrFilter) params.ufr_id = ufrFilter;
             if (statusFilter) params.status = statusFilter;
-            console.log('[Teachers] Fetching with params:', params);
             const response = await api.get('/teachers', { params });
             const data = response.data;
-            console.log('[Teachers] Response:', { total: data.total, page: data.current_page, teachers: data.data?.length });
-            if (data.data && data.data.length > 0) {
-                console.log('[Teachers] First teacher UFR:', data.data[0]?.ufr?.name, 'ID:', data.data[0]?.ufr_id);
-            }
             setTeachers(data.data || []);
             setPagination({ current_page: data.current_page, last_page: data.last_page, total: data.total });
         } catch (error) {

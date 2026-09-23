@@ -43,13 +43,8 @@ const Subjects = () => {
         try {
             const params = { page: pageNum, per_page: perPage };
             if (searchTerm) params.search = searchTerm;
-            console.log('[Subjects] Fetching with params:', params);
             const response = await api.get('/subjects', { params });
             const data = response.data;
-            console.log('[Subjects] Response:', { total: data.total, page: data.current_page, subjects: data.data?.length });
-            if (data.data && data.data.length > 0) {
-                console.log('[Subjects] First subject UFR:', data.data[0]?.ufr?.name, 'ID:', data.data[0]?.ufr_id);
-            }
             setSubjects(data.data || []);
             setPagination({ current_page: data.current_page, last_page: data.last_page, total: data.total });
         } catch (error) {
