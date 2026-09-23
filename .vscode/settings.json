@@ -1,0 +1,17 @@
+{
+    "php.validate.enable": true,
+    "php.validate.run": "onType",
+    "intelephense.diagnostics.undefinedMethodAccess": false,
+    "intelephense.diagnostics.undefinedConstant": false,
+    "intelephense.diagnostics.undefinedFunction": false,
+    "intelephense.diagnostics.undefinedClass": false,
+    "intelephense.diagnostics.undefinedVariable": false,
+    "intelephense.diagnostics.undefinedClassConstant": false,
+    "intelephense.diagnostics.undefinedClassMember": false,
+    "intelephense.diagnostics.undefinedType": false,
+    "intelephense.diagnostics.implementationErrors": false,
+    "[php]": {
+        "editor.defaultFormatter": "bmewburn.vscode-intelephense-client",
+        "editor.formatOnSave": false
+    }
+}
