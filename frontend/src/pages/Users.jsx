@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { dataRefresh } from '../services/dataRefresh';
 import { User, Shield, ShieldCheck, UserCheck, UserX, Search, Plus, Trash2, Mail, Phone } from 'lucide-react';
 import toast from '../utils/toast';
 import { getRoleLabel, hasAnyRole } from '../utils/roles';
@@ -73,6 +74,9 @@ const UsersPage = () => {
 
     useEffect(() => {
         fetchUsers(page);
+        // S'enregistrer pour être notifié des rafraîchissements
+        const unsubscribe = dataRefresh.subscribe('users', () => fetchUsers(page));
+        return unsubscribe;
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [page, searchTerm]);
 

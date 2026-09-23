@@ -90,7 +90,7 @@ const Classrooms = () => {
             setSelectedRoom(null);
             setSearchTerm('');
             setPage(1);
-            fetchClassrooms(1);
+            await fetchClassrooms(1);
         } catch (error) {
             const msg = error.response?.data?.message || error.response?.data?.errors?.name?.[0] || error.response?.data?.errors?.code?.[0] || 'Erreur de sauvegarde';
             toast.error(msg);

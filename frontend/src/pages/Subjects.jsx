@@ -108,7 +108,7 @@ const Subjects = () => {
             setSelectedSubject(null);
             setSearchTerm('');
             setPage(1);
-            fetchSubjects(1);
+            await fetchSubjects(1);
         } catch (error) {
             const errors = error.response?.data?.errors;
             const msg = errors

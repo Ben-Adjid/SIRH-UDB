@@ -111,7 +111,7 @@ const Ufrs = () => {
             setSelectedUfr(null);
             setSearchTerm('');
             setPage(1);
-            fetchUfrs(1);
+            await fetchUfrs(1);
         } catch (err) {
             const msg = err.response?.data?.message || "Erreur lors de l'enregistrement";
             toast.error(msg);

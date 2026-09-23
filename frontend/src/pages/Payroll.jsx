@@ -184,7 +184,7 @@ const Payroll = () => {
         try {
             await api.post(`/payroll/${id}/validate`);
             toast.success('Paie validée');
-            fetchPayrolls(page);
+            await fetchPayrolls(page);
         } catch (error) {
             toast.error(error?.response?.data?.message || 'Erreur lors de la validation');
         }
@@ -194,7 +194,7 @@ const Payroll = () => {
         try {
             await api.post(`/payroll/${id}/mark-as-paid`);
             toast.success('Paie marquée comme payée');
-            fetchPayrolls(page);
+            await fetchPayrolls(page);
         } catch (error) {
             toast.error(error?.response?.data?.message || 'Erreur lors du marquage comme payée');
         }

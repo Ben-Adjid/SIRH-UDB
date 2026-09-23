@@ -1,5 +1,6 @@
 import axios from 'axios';
 import toast from '../utils/toast';
+import { dataRefresh } from './dataRefresh';
 
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
@@ -40,8 +41,43 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
+// Auto-refresh data after mutations
+const triggerDataRefresh = (method, url) => {
+    if (method === 'post' || method === 'put' || method === 'patch' || method === 'delete') {
+        // Déterminer quelle clé rafraîchir selon l'URL
+        if (url.includes('/users') || url.includes('/auth/users')) {
+            setTimeout(() => dataRefresh.refreshUsers().catch(() => {}), 300);
+        }
+        if (url.includes('/teachers')) {
+            setTimeout(() => dataRefresh.refreshTeachers().catch(() => {}), 300);
+        }
+        if (url.includes('/attendance')) {
+            setTimeout(() => dataRefresh.refreshAttendance().catch(() => {}), 300);
+        }
+        if (url.includes('/schedules')) {
+            setTimeout(() => dataRefresh.refreshSchedules().catch(() => {}), 300);
+        }
+        if (url.includes('/leaves')) {
+            setTimeout(() => dataRefresh.refreshLeaves().catch(() => {}), 300);
+        }
+        if (url.includes('/payroll')) {
+            setTimeout(() => dataRefresh.refreshPayroll().catch(() => {}), 300);
+        }
+        if (url.includes('/homeworks')) {
+            setTimeout(() => dataRefresh.refreshHomeworks().catch(() => {}), 300);
+        }
+        if (url.includes('/dashboards') || url.includes('/auth')) {
+            setTimeout(() => dataRefresh.refreshDashboard().catch(() => {}), 300);
+        }
+    }
+};
+
 api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        // Rafraîchir les données après une mutation réussie
+        triggerDataRefresh(response.config.method, response.config.url);
+        return response;
+    },
     async (error) => {
         if (axios.isCancel(error) || error.code === 'ERR_CANCELED') {
             return Promise.reject(error);
