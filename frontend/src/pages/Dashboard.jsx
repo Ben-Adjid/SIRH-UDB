@@ -238,79 +238,106 @@ const Dashboard = () => {
     const user = useAuthStore((state) => state.user);
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
+    const abortControllerRef = useRef(null);
 
-    const userRole = getPrimaryRole(user);
+    const userRole = user ? getPrimaryRole(user) : null;
 
     const formatCurrency = (value) => `${Number(value ?? 0).toLocaleString('fr-FR')} FCFA`;
 
     const getRolePath = (role) => {
-        if (role === 'admin') return 'admin';
-        if (role === 'hr_manager' || role === 'secretary') return 'hr';
-        if (role === 'accountant') return 'accountant';
-        if (role === 'academic_manager') return 'academic';
-        if (role === 'teacher') return 'teacher';
-        return 'teacher'; // Default fallback
+        const roleMap = {
+            admin: 'admin',
+            hr_manager: 'hr',
+            secretary: 'hr',
+            accountant: 'accountant',
+            academic_manager: 'academic',
+            teacher: 'teacher'
+        };
+        return roleMap[role] || 'teacher';
     };
 
-    const fetchStats = useCallback(async () => {
-        if (!user?.id || !userRole) {
-            console.log('[Dashboard] Skipping fetch: user or role not ready', { userId: user?.id, userRole });
+    // Fonction pour charger les données avec gestion robuste
+    const loadDashboardData = useCallback(async () => {
+        // Vérifier que l'utilisateur est prêt
+        if (!user?.id) {
+            console.log('[Dashboard] User not ready yet');
             setLoading(false);
             return;
         }
 
-        setLoading(true);
-        try {
-            const endpoint = `/dashboards/${getRolePath(userRole)}`;
-            console.log('[Dashboard] Fetching from endpoint:', endpoint, 'for user:', user?.id, 'role:', userRole);
-
-            const response = await api.get(endpoint);
-
-            console.log('[Dashboard] Full response received:', {
-                status: response.status,
-                hasData: !!response.data,
-                keys: response.data ? Object.keys(response.data) : 'NULL',
-                totalUsers: response.data?.total_users,
-                totalTeachers: response.data?.total_teachers
-            });
-
-            if (response.data && Object.keys(response.data).length > 0) {
-                console.log('[Dashboard] Setting stats successfully');
-                setStats(response.data);
-            } else {
-                console.error('[Dashboard] Response data is empty');
-                setStats(null);
-                toast.error('Données vides retournées par le serveur');
-            }
-        } catch (error) {
-            console.error('[Dashboard] Fetch error:', {
-                message: error.message,
-                status: error.response?.status,
-                data: error.response?.data
-            });
-
-            if (error.response?.status === 401) {
-                toast.error('Session expirée');
-            } else if (error.response?.status === 403) {
-                toast.error('Accès refusé');
-            } else {
-                toast.error('Erreur: ' + (error.response?.data?.message || error.message));
-            }
-            setStats(null);
-        } finally {
+        if (!userRole) {
+            console.log('[Dashboard] User role not determined');
             setLoading(false);
+            return;
         }
+
+        // Annuler les anciennes requêtes
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+
+        abortControllerRef.current = new AbortController();
+        const endpoint = `/dashboards/${getRolePath(userRole)}`;
+
+        setLoading(true);
+        let retries = 0;
+        const maxRetries = 2;
+
+        const attempt = async () => {
+            try {
+                console.log(`[Dashboard] Attempt ${retries + 1}: Fetching from ${endpoint}`);
+
+                const response = await api.get(endpoint, {
+                    signal: abortControllerRef.current.signal
+                });
+
+                if (response.data && Object.keys(response.data).length > 0) {
+                    console.log('[Dashboard] Data loaded successfully:', Object.keys(response.data));
+                    setStats(response.data);
+                    setLoading(false);
+                } else {
+                    throw new Error('Empty response data');
+                }
+            } catch (error) {
+                // Si la requête a été annulée, ne pas réessayer
+                if (error.name === 'AbortError') {
+                    console.log('[Dashboard] Request was cancelled');
+                    return;
+                }
+
+                console.error(`[Dashboard] Error attempt ${retries + 1}:`, error.message);
+
+                if (retries < maxRetries) {
+                    retries++;
+                    console.log(`[Dashboard] Retrying in 500ms...`);
+                    await new Promise(r => setTimeout(r, 500));
+                    await attempt();
+                } else {
+                    console.error('[Dashboard] All retries failed');
+                    setStats(null);
+                    setLoading(false);
+                    toast.error('Impossible de charger les données. Veuillez réessayer.');
+                }
+            }
+        };
+
+        await attempt();
     }, [user?.id, userRole]);
 
+    // Charger les données au montage et quand l'utilisateur change
     useEffect(() => {
-        console.log('[Dashboard] useEffect: checking user and role', { userId: user?.id, userRole });
-        if (user?.id && userRole) {
-            fetchStats();
-        } else {
-            console.log('[Dashboard] Skipping fetch - user or role not ready');
-            setLoading(false);
-        }
-    }, [user?.id, userRole, fetchStats]);
+        loadDashboardData();
+
+        return () => {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+        };
+    }, [user?.id, userRole]); // N'inclure que les vraies dépendances
+
+    const handleRefresh = () => {
+        loadDashboardData();
+    };
 
     const renderBar = (val, max, color) => (
         <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
@@ -346,6 +373,7 @@ const Dashboard = () => {
         } catch { toast.error("Erreur de téléchargement de l'honoraire"); }
     };
 
+    // Afficher le chargement
     if (loading) return (
         <div className="space-y-6 animate-fadeIn">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -357,17 +385,16 @@ const Dashboard = () => {
         </div>
     );
 
-    if (!stats || Object.keys(stats).length === 0) {
-        console.error('[Dashboard] Stats is empty or null:', stats);
+    // Afficher erreur si pas de données
+    if (!stats) {
         return (
-            <div className="bg-white rounded-2xl p-6 border border-rose-100 shadow-sm">
-                <h2 className="font-bold text-slate-800 flex items-center gap-2">
-                    <AlertCircle size={18} className="text-rose-500" /> Erreur de chargement
-                </h2>
-                <p className="text-sm text-slate-500 mt-1">Impossible de récupérer les statistiques.</p>
+            <div className="bg-white rounded-2xl p-8 border border-rose-100 shadow-sm text-center space-y-4">
+                <AlertCircle size={32} className="text-rose-500 mx-auto" />
+                <h2 className="font-bold text-slate-800 text-lg">Impossible de charger les données</h2>
+                <p className="text-sm text-slate-500">Une erreur s'est produite lors du chargement de vos statistiques.</p>
                 <button
-                    onClick={fetchStats}
-                    className="mt-4 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-all"
+                    onClick={handleRefresh}
+                    className="px-6 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-all font-semibold"
                 >
                     Réessayer
                 </button>
@@ -375,16 +402,17 @@ const Dashboard = () => {
         );
     }
 
+    // ADMIN
     if (userRole === 'admin') {
         return (
             <div className="space-y-6 animate-fadeIn">
-                <WelcomeHero user={user} userRole={userRole} onRefresh={fetchStats} loading={loading} />
+                <WelcomeHero user={user} userRole={userRole} onRefresh={handleRefresh} loading={loading} />
                 <QuickActions role={userRole} />
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
                     <StatCard title="Utilisateurs" value={stats.total_users ?? 0} icon={Users} accent="indigo" subValue={`${stats.active_users ?? 0} actifs`} />
                     <StatCard title="Enseignants" value={stats.total_teachers ?? 0} icon={GraduationCap} accent="emerald" subValue={`${stats.active_teachers ?? 0} actifs`} />
                     <StatCard title="Présents" value={stats.today_present ?? 0} icon={UserCheck} accent="blue" subValue={`${stats.today_total ?? 0} pointages`} />
-                    <StatCard title="Absences" value={stats.pending_leaves ?? 0} icon={FileText} accent="amber" subValue={`${stats.month_absences ?? 0} ce mois`} />
+                    <StatCard title="Absences" value={stats.month_absences ?? 0} icon={FileText} accent="amber" subValue={`${stats.month_absences ?? 0} ce mois`} />
                 </div>
                 <SectionCard title="Vue d'Ensemble" subtitle="Indicateurs clés du système">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -392,7 +420,7 @@ const Dashboard = () => {
                             { label: 'Utilisateurs', val: stats.total_users ?? 0, sub: `${stats.active_users ?? 0} actifs · ${stats.inactive_users ?? 0} inactifs`, barVal: stats.active_users ?? 0, barMax: stats.total_users || 1, barColor: 'bg-emerald-500' },
                             { label: 'Enseignants', val: stats.total_teachers ?? 0, sub: `${stats.active_teachers ?? 0} actifs · ${stats.teachers_on_leave ?? 0} congé`, barVal: stats.active_teachers ?? 0, barMax: stats.total_teachers || 1, barColor: 'bg-emerald-500' },
                             { label: 'Présents ajd', val: stats.today_present ?? 0, sub: `${stats.today_late ?? 0} retards · ${stats.today_absent ?? 0} absents`, barVal: stats.today_present ?? 0, barMax: stats.today_total || 1, barColor: 'bg-emerald-500' },
-                            { label: 'Absences mois', val: stats.month_absences ?? 0, sub: `${stats.approved_leaves ?? 0} app. · ${stats.rejected_leaves ?? 0} ref.`, barVal: stats.month_attendance_rate ?? 0, barMax: 100, barColor: 'bg-amber-500' },
+                            { label: 'Absences mois', val: stats.month_absences ?? 0, sub: `${stats.approved_leaves ?? 0} approuvés · ${stats.rejected_leaves ?? 0} refusés`, barVal: stats.month_attendance_rate ?? 0, barMax: 100, barColor: 'bg-amber-500' },
                         ].map((d, i) => (
                             <div key={i} className="bg-slate-50 rounded-2xl p-5 text-center border border-slate-100">
                                 <p className="text-2xl font-black text-slate-800">{d.val}</p>
@@ -402,7 +430,9 @@ const Dashboard = () => {
                             </div>
                         ))}
                     </div>
-                    <SimpleChart title="Tendance Présence (7 jours)" data={(stats.charts?.attendance || []).map(d => ({ label: d.day, value: d.present ?? d.count ?? 0 }))} color="bg-indigo-500" />
+                    {stats.charts?.attendance && (
+                        <SimpleChart title="Tendance Présence (7 jours)" data={(stats.charts.attendance || []).map(d => ({ label: d.day, value: d.present ?? d.count ?? 0 }))} color="bg-indigo-500" />
+                    )}
                     {stats.recent_teachers?.length > 0 && (
                         <div className="mt-6">
                             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Derniers Enseignants</h3>
@@ -426,22 +456,25 @@ const Dashboard = () => {
         );
     }
 
+    // RH / SECRETAIRE
     if (userRole === 'hr_manager' || userRole === 'secretary') {
         return (
             <div className="space-y-6 animate-fadeIn">
-                <WelcomeHero user={user} userRole={userRole} onRefresh={fetchStats} loading={loading} />
+                <WelcomeHero user={user} userRole={userRole} onRefresh={handleRefresh} loading={loading} />
                 <QuickActions role={userRole} />
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
-                    <StatCard title="Enseignants" value={stats.teachers_active ?? 0} icon={Users} accent="emerald" subValue={`${stats.teachers_total ?? 0} total`} />
+                    <StatCard title="Enseignants" value={stats.total_teachers ?? 0} icon={Users} accent="emerald" subValue={`${stats.active_teachers ?? 0} actifs`} />
                     <StatCard title="En congé" value={stats.teachers_on_leave ?? 0} icon={Calendar} accent="blue" subValue="Absents" />
                     <StatCard title="Présents" value={stats.today_present ?? 0} icon={CheckCircle} accent="indigo" subValue={`${stats.today_total ?? 0} pointages`} />
-                    <StatCard title="Taux présence" value={`${stats.month_attendance_rate ?? 0}%`} icon={Target} accent="purple" subValue={`${stats.pending_leave_count ?? 0} en attente`} />
+                    <StatCard title="Taux présence" value={`${stats.month_attendance_rate ?? 0}%`} icon={Target} accent="purple" subValue="Ce mois" />
                 </div>
                 <SectionCard title="Suivi des Présences" subtitle="Absentéisme et données du jour">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div className="lg:col-span-2">
-                            <SimpleChart title="Absentéisme (7 jours)" data={(stats.charts?.absences || []).map(d => ({ label: d.label, value: d.total ?? d.value ?? 0 }))} color="bg-rose-500" />
-                        </div>
+                        {stats.charts?.absences && (
+                            <div className="lg:col-span-2">
+                                <SimpleChart title="Absentéisme (7 jours)" data={(stats.charts.absences || []).map(d => ({ label: d.label, value: d.total ?? d.value ?? 0 }))} color="bg-rose-500" />
+                            </div>
+                        )}
                         <div className="space-y-4">
                             <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
                                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Aujourd'hui</h3>
@@ -467,118 +500,50 @@ const Dashboard = () => {
         );
     }
 
+    // COMPTABLE
     if (userRole === 'accountant') {
         return (
             <div className="space-y-6 animate-fadeIn">
-                <WelcomeHero user={user} userRole={userRole} onRefresh={fetchStats} loading={loading} />
+                <WelcomeHero user={user} userRole={userRole} onRefresh={handleRefresh} loading={loading} />
                 <QuickActions role={userRole} />
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
-                    <StatCard title="Net payé (Mois)" value={formatCurrency(stats.total_net_salary)} icon={Wallet} accent="emerald" subValue={stats.net_variation > 0 ? `+${stats.net_variation}%` : undefined} />
-                    <StatCard title="Honoraires" value={stats.payrolls_calculated ?? 0} icon={FileText} accent="blue" subValue={`${stats.payrolls_total ?? 0} total`} />
-                    <StatCard title="Validés" value={stats.payrolls_validated ?? 0} icon={CheckCircle} accent="indigo" subValue={`${stats.payrolls_paid ?? 0} payés`} />
-                    <StatCard title="Retenues" value={formatCurrency(stats.total_deductions)} icon={Shield} accent="amber" subValue="BRS & autres" />
+                    <StatCard title="Masse salariale" value={formatCurrency(stats.month_gross_payroll ?? 0)} icon={Wallet} accent="emerald" />
+                    <StatCard title="Honoraires" value={stats.total_payrolls ?? 0} icon={FileText} accent="blue" subValue="Ce mois" />
+                    <StatCard title="Validés" value={stats.payrolls_validated ?? 0} icon={CheckCircle} accent="indigo" subValue="Prêts" />
+                    <StatCard title="Payés" value={stats.payrolls_paid ?? 0} icon={Shield} accent="amber" subValue="Effectués" />
                 </div>
-                <SectionCard title="Résumé Financier" subtitle="Masse salariale et moyens de paiement">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div className="lg:col-span-2">
-                            <SimpleChart title="Masse Salariale Brute (Millions FCFA)" data={(stats.charts?.payroll_gross || []).map(d => ({ label: d.label, value: d.value }))} color="bg-indigo-600" />
-                        </div>
-                        <div className="space-y-4">
-                            {stats.payment_methods?.length > 0 && (
-                                <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
-                                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Moyens de paiement</h3>
-                                    <div className="space-y-2">
-                                        {stats.payment_methods.map((pm, i) => (
-                                            <MiniStat key={i}
-                                                label={pm.payment_method === 'cheque' ? 'Chèque' : pm.payment_method === 'virement' ? 'Virement' : pm.payment_method === 'cash' ? 'Espèces' : pm.payment_method || 'N/A'}
-                                                value={`${pm.count} · ${formatCurrency(pm.total)}`}
-                                            />
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                            {stats.recent_payrolls?.length > 0 && (
-                                <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
-                                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Derniers règlements</h3>
-                                    <div className="space-y-2">
-                                        {stats.recent_payrolls.slice(0, 4).map((p, i) => (
-                                            <div key={i} className="flex items-center justify-between p-2 bg-white rounded-xl border border-slate-100">
-                                                <span className="text-xs font-bold text-slate-700 truncate">{p.teacher?.user?.name || 'N/A'}</span>
-                                                <span className="text-xs font-black text-emerald-600">{Number(p.net_salary ?? 0).toLocaleString()}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                <SectionCard title="Résumé Financier" subtitle="Masse salariale et paiements">
+                    {stats.charts?.payroll && (
+                        <SimpleChart title="Masse Salariale (6 derniers mois)" data={(stats.charts.payroll || []).map(d => ({ label: d.month, value: d.amount ?? 0 }))} color="bg-indigo-600" />
+                    )}
                 </SectionCard>
             </div>
         );
     }
 
+    // CHEF UFR
     if (userRole === 'academic_manager') {
         return (
             <div className="space-y-6 animate-fadeIn">
-                <WelcomeHero user={user} userRole={userRole} onRefresh={fetchStats} loading={loading} />
+                <WelcomeHero user={user} userRole={userRole} onRefresh={handleRefresh} loading={loading} />
                 <QuickActions role={userRole} />
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
                     <StatCard title="Matières" value={stats.total_subjects ?? 0} icon={GraduationCap} accent="purple" />
                     <StatCard title="Salles" value={stats.total_classrooms ?? 0} icon={MapPin} accent="blue" />
-                    <StatCard title="Séances" value={stats.schedules_this_week ?? 0} icon={Calendar} accent="indigo" subValue={`${stats.total_schedules ?? 0} total`} />
-                    <StatCard title="Devoirs en cours" value={stats.active_homeworks ?? 0} icon={BookOpen} accent="amber" subValue={`${stats.submitted_homeworks ?? 0} rendus`} />
+                    <StatCard title="Cours cette semaine" value={stats.schedules_this_week ?? 0} icon={Calendar} accent="indigo" />
+                    <StatCard title="Devoirs" value={stats.active_homeworks ?? 0} icon={BookOpen} accent="amber" />
                 </div>
-                <SectionCard title="Planning Académique" subtitle="Cours récents et occupation des salles">
+                <SectionCard title="Planning Académique" subtitle="Cours et ressources">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
-                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Derniers Cours</h3>
-                            <div className="space-y-3">
-                                {stats.recent_schedules?.length > 0 ? stats.recent_schedules.slice(0, 5).map((s, i) => (
-                                    <div key={i} className="flex items-center gap-4 bg-white hover:bg-slate-50 rounded-xl p-3 transition-all border border-slate-100">
-                                        <div className="w-12 h-12 bg-indigo-100 rounded-xl flex flex-col items-center justify-center shrink-0 border border-indigo-200">
-                                            <span className="text-[9px] font-black text-indigo-500 uppercase">{s.day_of_week?.substring(0, 3)}</span>
-                                            <span className="text-sm font-black text-indigo-700 leading-none">{s.start_time?.substring(0, 2)}h</span>
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-bold text-slate-700 truncate">{s.subject?.name || 'Matière'}</p>
-                                            <p className="text-xs text-slate-400 font-semibold">{s.teacher?.user?.name || '—'} · Salle {s.classroom?.name || '—'}</p>
-                                        </div>
-                                    </div>
-                                )) : <p className="text-slate-400 text-xs text-center py-6">Aucun cours planifié</p>}
-                            </div>
+                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Enseignants de l'UFR</h3>
+                            <p className="text-3xl font-black text-slate-800">{stats.active_teachers ?? 0}</p>
+                            <p className="text-xs text-slate-400 mt-2">{stats.total_teachers ?? 0} total dans la faculté</p>
                         </div>
-                        <div className="space-y-4">
-                            <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
-                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Répartition Enseignants/UFR</h3>
-                                <div className="space-y-3">
-                                    {(stats.teachers_per_ufr || []).slice(0, 5).map((dept, i) => (
-                                        <div key={i}>
-                                            <div className="flex justify-between text-xs font-bold mb-1">
-                                                <span className="text-slate-500">{dept.name}</span>
-                                                <span className="text-slate-700">{dept.active_count ?? 0} actifs</span>
-                                            </div>
-                                            {renderBar(dept.active_count ?? 0, (stats.teachers_per_ufr || []).reduce((a, b) => a + (b.active_count ?? 0), 0) || 1, 'bg-purple-500')}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
-                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Devoirs</h3>
-                                <div className="grid grid-cols-3 gap-3">
-                                    <div className="text-center p-3 bg-amber-50 rounded-xl border border-amber-100">
-                                        <p className="text-xl font-black text-amber-600">{stats.active_homeworks ?? 0}</p>
-                                        <p className="text-[10px] font-bold text-amber-400 uppercase">En cours</p>
-                                    </div>
-                                    <div className="text-center p-3 bg-emerald-50 rounded-xl border border-emerald-100">
-                                        <p className="text-xl font-black text-emerald-600">{stats.submitted_homeworks ?? 0}</p>
-                                        <p className="text-[10px] font-bold text-emerald-400 uppercase">Rendus</p>
-                                    </div>
-                                    <div className="text-center p-3 bg-slate-100 rounded-xl border border-slate-200">
-                                        <p className="text-xl font-black text-slate-600">{stats.total_homeworks ?? 0}</p>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase">Total</p>
-                                    </div>
-                                </div>
-                            </div>
+                        <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Présence cette semaine</h3>
+                            <p className="text-3xl font-black text-emerald-600">{stats.attendance_rate ?? 0}%</p>
+                            <p className="text-xs text-slate-400 mt-2">Taux de présence moyen</p>
                         </div>
                     </div>
                 </SectionCard>
@@ -586,6 +551,7 @@ const Dashboard = () => {
         );
     }
 
+    // ENSEIGNANT (Prof)
     const attMonth = stats.my_attendance_month || {};
     const attTotal = (attMonth.present ?? 0) + (attMonth.absent ?? 0) + (attMonth.late ?? 0);
     const attRate = attTotal > 0 ? Math.round(((attMonth.present ?? 0) / attTotal) * 100) : 0;
@@ -594,7 +560,7 @@ const Dashboard = () => {
 
     return (
         <div className="space-y-6 animate-fadeIn">
-            <WelcomeHero user={user} userRole={userRole} onRefresh={fetchStats} loading={loading} />
+            <WelcomeHero user={user} userRole={userRole} onRefresh={handleRefresh} loading={loading} />
             <QuickActions role={userRole} />
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
@@ -622,9 +588,8 @@ const Dashboard = () => {
                             <Wallet size={20} className="text-emerald-600" />
                         </div>
                     </div>
-                    <p className="text-2xl font-black text-emerald-600">{Number(stats.estimated_honoraria ?? 0).toLocaleString('fr-FR')} FCFA</p>
-                    <p className="text-xs text-slate-400 mt-1">{contractProgress.worked_hours}h × {stats.last_payslip?.teacher?.hourly_rate ? Number(stats.last_payslip.teacher.hourly_rate).toLocaleString() : '-'} F/h</p>
-                    <p className="text-[10px] text-slate-300 mt-2 uppercase tracking-wider font-semibold">Mois en cours</p>
+                    <p className="text-2xl font-black text-emerald-600">{formatCurrency(stats.estimated_honoraria ?? 0)}</p>
+                    <p className="text-xs text-slate-400 mt-1">{contractProgress.worked_hours}h travaillées</p>
                 </div>
 
                 <div className="relative overflow-hidden bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all group">
@@ -638,91 +603,61 @@ const Dashboard = () => {
                     {nextCourse ? (
                         <>
                             <p className="text-lg font-black text-slate-800 truncate">{nextCourse.subject_name}</p>
-                            <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
-                                <MapPin size={11} className="text-slate-400" />
-                                <span>{nextCourse.classroom_name}</span>
-                            </div>
-                            <div className="flex items-center gap-2 mt-3">
-                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black bg-blue-100 text-blue-700">
-                                    {nextCourse.start_time?.substring(11, 16)} - {nextCourse.end_time?.substring(11, 16)}
-                                </span>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase">{nextCourse.day_of_week}</span>
-                            </div>
+                            <p className="text-xs text-slate-500 mt-2">Salle {nextCourse.classroom_name}</p>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase mt-2">{nextCourse.start_time?.substring(11, 16)}</p>
                         </>
                     ) : (
-                        <>
-                            <p className="text-lg font-black text-slate-300">Aucun cours</p>
-                            <p className="text-xs text-slate-300 mt-1">Pas de cours planifié</p>
-                        </>
+                        <p className="text-lg font-black text-slate-300">Aucun cours</p>
                     )}
                 </div>
 
-                <StatCard title="Présences (Mois)" value={attMonth.present ?? 0} icon={CheckCircle} accent="purple"
-                    subValue={attTotal > 0
-                        ? <span className="flex items-center gap-2 mt-1">
-                            <span className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden flex-1">
-                                <span className="bg-emerald-500 h-full rounded-full block" style={{ width: `${attRate}%` }}></span>
-                            </span>
-                            <span className="text-xs font-black text-emerald-600">{attRate}%</span>
-                          </span>
-                        : `${(attMonth.absent ?? 0) + (attMonth.late ?? 0)} abs./retards`} />
+                <StatCard title="Présences (Mois)" value={attMonth.present ?? 0} icon={CheckCircle} accent="purple" subValue={`${attRate}% taux`} />
             </div>
+
             <SectionCard title="Mes Cours & Honoraires" subtitle="Planning et rémunération">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
-                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Prochains Cours</h3>
-                        <div className="space-y-3">
-                            {stats.my_schedules?.length > 0 ? stats.my_schedules.slice(0, 5).map((s, i) => (
-                                <div key={i} className="flex items-center gap-4 bg-white hover:bg-slate-50 rounded-xl p-3 transition-all border border-slate-100">
-                                    <div className="w-12 h-12 bg-blue-100 rounded-xl flex flex-col items-center justify-center shrink-0 border border-blue-200">
-                                        <span className="text-[9px] font-black text-blue-500 uppercase">{s.day_of_week?.substring(0, 3)}</span>
-                                        <span className="text-sm font-black text-blue-700 leading-none">{s.start_time?.substring(0, 2)}h</span>
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-bold text-slate-700 truncate">{s.subject?.name || 'Matière'}</p>
-                                        <p className="text-xs text-slate-400 font-semibold">Salle {s.classroom?.name || '—'} · {s.start_time?.substring(11, 16)}-{s.end_time?.substring(11, 16)}</p>
-                                    </div>
-                                </div>
-                            )) : <p className="text-slate-400 text-xs text-center py-6">Aucun cours programmé</p>}
-                        </div>
-                    </div>
-                    <div className="space-y-4">
-                        {stats.last_payslip ? (
-                            <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
-                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Dernier Honoraire</h3>
-                                <p className="text-4xl font-black text-slate-800 tracking-tighter">{Number(stats.last_payslip.net_salary ?? 0).toLocaleString()} <span className="text-lg text-slate-400">FCFA</span></p>
-                                <p className="text-xs text-slate-400 mt-1">Mois {stats.last_payslip.month}/{stats.last_payslip.year} · {stats.last_payslip.status === 'paid' ? 'Payé' : 'En attente'}</p>
-                                <button onClick={handleDownloadPayslip} className="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-sm">
-                                    Télécharger <ChevronRight size={14} />
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 flex items-center justify-center min-h-[120px]">
-                                <p className="text-slate-400 text-xs font-semibold uppercase">Honoraire non disponible</p>
-                            </div>
-                        )}
+                    {stats.my_schedules?.length > 0 ? (
                         <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
-                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Présence ce Mois</h3>
-                            <div className="grid grid-cols-3 gap-3">
-                                <div className="text-center p-3 bg-emerald-50 rounded-xl border border-emerald-100">
-                                    <p className="text-xl font-black text-emerald-600">{attMonth.present ?? 0}</p>
-                                    <p className="text-[10px] font-bold text-emerald-500 uppercase">Présent</p>
-                                </div>
-                                <div className="text-center p-3 bg-amber-50 rounded-xl border border-amber-100">
-                                    <p className="text-xl font-black text-amber-500">{attMonth.late ?? 0}</p>
-                                    <p className="text-[10px] font-bold text-amber-400 uppercase">Retard</p>
-                                </div>
-                                <div className="text-center p-3 bg-rose-50 rounded-xl border border-rose-100">
-                                    <p className="text-xl font-black text-rose-500">{attMonth.absent ?? 0}</p>
-                                    <p className="text-[10px] font-bold text-rose-400 uppercase">Absent</p>
-                                </div>
+                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Mes Cours</h3>
+                            <div className="space-y-3">
+                                {stats.my_schedules.slice(0, 5).map((s, i) => (
+                                    <div key={i} className="flex items-center gap-4 bg-white rounded-xl p-3 border border-slate-100">
+                                        <div className="text-sm font-black text-slate-600">{s.start_time?.substring(0, 5)}</div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-bold text-slate-700 truncate">{s.subject?.name || 'Matière'}</p>
+                                            <p className="text-xs text-slate-400">Salle {s.classroom?.name || '—'}</p>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                            <div className="mt-4 flex items-center gap-3">
-                                <div className="flex-1 bg-slate-200 h-2 rounded-full overflow-hidden">
-                                    <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${attRate}%` }}></div>
-                                </div>
-                                <span className="text-xs font-black text-emerald-600">{attRate}%</span>
+                        </div>
+                    ) : (
+                        <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 flex items-center justify-center">
+                            <p className="text-slate-400 text-sm">Aucun cours programmé</p>
+                        </div>
+                    )}
+
+                    <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Présence ce Mois</h3>
+                        <div className="grid grid-cols-3 gap-3">
+                            <div className="text-center p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+                                <p className="text-xl font-black text-emerald-600">{attMonth.present ?? 0}</p>
+                                <p className="text-[10px] font-bold text-emerald-500 uppercase">Présent</p>
                             </div>
+                            <div className="text-center p-3 bg-amber-50 rounded-xl border border-amber-100">
+                                <p className="text-xl font-black text-amber-500">{attMonth.late ?? 0}</p>
+                                <p className="text-[10px] font-bold text-amber-400 uppercase">Retard</p>
+                            </div>
+                            <div className="text-center p-3 bg-rose-50 rounded-xl border border-rose-100">
+                                <p className="text-xl font-black text-rose-500">{attMonth.absent ?? 0}</p>
+                                <p className="text-[10px] font-bold text-rose-400 uppercase">Absent</p>
+                            </div>
+                        </div>
+                        <div className="mt-4">
+                            <div className="flex-1 bg-slate-200 h-2 rounded-full overflow-hidden">
+                                <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${attRate}%` }}></div>
+                            </div>
+                            <p className="text-xs font-black text-emerald-600 mt-2 text-center">{attRate}% de présence</p>
                         </div>
                     </div>
                 </div>
