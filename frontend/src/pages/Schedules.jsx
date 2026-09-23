@@ -112,8 +112,8 @@ const Schedules = () => {
         const map = new Map();
         TIME_SLOTS.forEach(ts => { const [s] = ts.split('-'); map.set(s, ts); });
         (courses || []).forEach(s => {
-            const st = s.start_time?.substring(0, 5);
-            const et = s.end_time?.substring(0, 5);
+            const st = s.start_time?.substring(11, 16);
+            const et = s.end_time?.substring(11, 16);
             if (st && et) map.set(st, `${st}-${et}`);
         });
         return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([, v]) => v);
@@ -126,9 +126,9 @@ const Schedules = () => {
         courses.forEach(s => {
             const di = DAYS.indexOf(s.day_of_week);
             if (di === -1) return;
-            const st = s.start_time?.substring(0, 5);
+            const st = s.start_time?.substring(11, 16);
             if (!st) return;
-            const et = s.end_time?.substring(0, 5);
+            const et = s.end_time?.substring(11, 16);
             const key = et ? `${st}-${et}` : st;
             if (!grid[di][key]) grid[di][key] = [];
             grid[di][key].push(s);
@@ -144,8 +144,8 @@ const Schedules = () => {
             teaching_type_id: schedule.teaching_type_id || '', classroom_id: schedule.classroom_id || '',
             level: schedule.level || 'L1', semester: schedule.semester || 'S1',
             day_of_week: schedule.day_of_week || 'Lundi',
-            start_time: schedule.start_time?.substring(0, 5) || '08:00',
-            end_time: schedule.end_time?.substring(0, 5) || '10:00',
+            start_time: schedule.start_time?.substring(11, 16) || '08:00',
+            end_time: schedule.end_time?.substring(11, 16) || '10:00',
             start_date: schedule.start_date?.split('T')[0] || '', end_date: schedule.end_date?.split('T')[0] || '',
             notes: schedule.notes || '',
         });
@@ -195,7 +195,7 @@ const Schedules = () => {
             type: 'exam',
             teacher_id: exam.teacher_id || '', subject_id: exam.subject_id || '', classroom_id: exam.classroom_id || '',
             level: exam.level || 'L1', semester: exam.semester || 'S1', day_of_week: exam.day_of_week || 'Lundi',
-            start_time: exam.start_time?.substring(0, 5) || '08:00', end_time: exam.end_time?.substring(0, 5) || '10:00',
+            start_time: exam.start_time?.substring(11, 16) || '08:00', end_time: exam.end_time?.substring(11, 16) || '10:00',
             start_date: exam.start_date?.split('T')[0] || '', end_date: exam.end_date?.split('T')[0] || '',
             exam_type: exam.exam_type || 'DS',
         });
@@ -394,7 +394,7 @@ const Schedules = () => {
                              <button onClick={() => goToUfr(selectedUfrIdx + 1)} disabled={selectedUfrIdx >= visibleUfrs.length - 1} className="p-2 rounded-xl border border-slate-200 text-slate-400 hover:text-indigo-600 disabled:opacity-30 flex-shrink-0"><ChevronRight size={14} /></button>
                         </div>
                     </div>
-                    {exams.length > 0 && <div className="bg-white rounded-2xl border border-amber-200 shadow-sm p-4"><h3 className="text-sm font-black text-slate-800 mb-3 flex items-center gap-2"><BookOpen size={16} className="text-amber-500" /> Examens programmes</h3><div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">{exams.map(exam => <div key={exam.id} className="rounded-xl border border-amber-100 bg-amber-50/50 p-3"><div className="flex items-start justify-between gap-2"><p className="text-sm font-bold text-slate-800">{exam.subject?.name || 'Matiere'}</p>{canManage && <div className="flex gap-1"><button onClick={() => handleEditExam(exam)} className="p-1 text-slate-400 hover:text-indigo-600" title="Modifier"><Edit size={14} /></button><button onClick={() => handleDeleteExam(exam)} className="p-1 text-slate-400 hover:text-red-600" title="Supprimer"><Trash2 size={14} /></button></div>}</div><p className="text-xs text-slate-500 mt-1">{exam.exam_type || 'Examen'} · {exam.level} · {exam.day_of_week}</p><p className="text-xs text-slate-500">{exam.start_date} · {exam.start_time?.substring(0, 5)} - {exam.end_time?.substring(0, 5)} · {exam.classroom?.name || 'Salle non renseignee'}</p></div>)}</div></div>}
+                    {exams.length > 0 && <div className="bg-white rounded-2xl border border-amber-200 shadow-sm p-4"><h3 className="text-sm font-black text-slate-800 mb-3 flex items-center gap-2"><BookOpen size={16} className="text-amber-500" /> Examens programmes</h3><div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">{exams.map(exam => <div key={exam.id} className="rounded-xl border border-amber-100 bg-amber-50/50 p-3"><div className="flex items-start justify-between gap-2"><p className="text-sm font-bold text-slate-800">{exam.subject?.name || 'Matiere'}</p>{canManage && <div className="flex gap-1"><button onClick={() => handleEditExam(exam)} className="p-1 text-slate-400 hover:text-indigo-600" title="Modifier"><Edit size={14} /></button><button onClick={() => handleDeleteExam(exam)} className="p-1 text-slate-400 hover:text-red-600" title="Supprimer"><Trash2 size={14} /></button></div>}</div><p className="text-xs text-slate-500 mt-1">{exam.exam_type || 'Examen'} · {exam.level} · {exam.day_of_week}</p><p className="text-xs text-slate-500">{exam.start_date} · {exam.start_time?.substring(11, 16)} - {exam.end_time?.substring(11, 16)} · {exam.classroom?.name || 'Salle non renseignee'}</p></div>)}</div></div>}
                     {selectedUfr ? (
                         <div className="space-y-1">
                             {(() => {

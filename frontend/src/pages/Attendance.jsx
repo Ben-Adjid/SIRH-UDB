@@ -618,7 +618,7 @@ const Attendance = () => {
                                                 <div className="flex items-center gap-3 mt-1.5 text-xs text-slate-500 flex-wrap">
                                                     <span className="flex items-center gap-1"><MapPin size={11} /> {s.classroom_name || '—'}</span>
                                                     {s.level && <span className="font-bold text-indigo-600">Niveau {s.level}</span>}
-                                                    <span className="font-mono font-bold text-slate-700">{s.start_time?.substring(0, 5)} - {s.end_time?.substring(0, 5)}</span>
+                                                    <span className="font-mono font-bold text-slate-700">{s.start_time?.substring(11, 16)} - {s.end_time?.substring(11, 16)}</span>
                                                 </div>
                                             </div>
                                             <div className="flex flex-col items-end gap-1.5 shrink-0">
@@ -904,7 +904,7 @@ const Attendance = () => {
                                 </div>
                             ) : (
                                 <>
-                                    <div className="form-group"><label className="form-label">Cours</label><select required className="select-field" value={onlineRequestForm.schedule_id} onChange={e => setOnlineRequestForm({...onlineRequestForm, schedule_id: e.target.value})}><option value="">Sélectionner un cours...</option>{schedules.map(s => <option key={s.id} value={s.id}>{s.subject?.name} - {s.start_time?.substring(0, 5)}</option>)}</select></div>
+                                    <div className="form-group"><label className="form-label">Cours</label><select required className="select-field" value={onlineRequestForm.schedule_id} onChange={e => setOnlineRequestForm({...onlineRequestForm, schedule_id: e.target.value})}><option value="">Sélectionner un cours...</option>{schedules.map(s => <option key={s.id} value={s.id}>{s.subject?.name} - {s.start_time?.substring(11, 16)}</option>)}</select></div>
                                     <div className="form-group"><label className="form-label">Date du cours (minimum 2 jours avant)</label><input required type="date" className="input-field" min={new Date(Date.now() + 2*24*60*60*1000).toISOString().split('T')[0]} value={onlineRequestForm.course_date} onChange={e => setOnlineRequestForm({...onlineRequestForm, course_date: e.target.value})} /></div>
                                 </>
                             )}

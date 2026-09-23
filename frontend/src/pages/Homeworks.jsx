@@ -264,8 +264,8 @@ const Homeworks = () => {
         setRescheduleHomework(homework);
         setRescheduleData({
             scheduled_date: homework.scheduled_date ? String(homework.scheduled_date).split('T')[0].split(' ')[0] : '',
-            start_time: homework.start_time?.substring(0, 5) || '08:00',
-            end_time: homework.end_time?.substring(0, 5) || '09:00',
+            start_time: homework.start_time?.substring(11, 16) || '08:00',
+            end_time: homework.end_time?.substring(11, 16) || '09:00',
         });
         setShowReschedule(true);
     };

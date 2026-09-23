@@ -584,7 +584,7 @@ const Dashboard = () => {
                             </div>
                             <div className="flex items-center gap-2 mt-3">
                                 <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black bg-blue-100 text-blue-700">
-                                    {nextCourse.start_time?.substring(0, 5)} - {nextCourse.end_time?.substring(0, 5)}
+                                    {nextCourse.start_time?.substring(11, 16)} - {nextCourse.end_time?.substring(11, 16)}
                                 </span>
                                 <span className="text-[10px] font-bold text-slate-400 uppercase">{nextCourse.day_of_week}</span>
                             </div>
@@ -620,7 +620,7 @@ const Dashboard = () => {
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-bold text-slate-700 truncate">{s.subject?.name || 'Matière'}</p>
-                                        <p className="text-xs text-slate-400 font-semibold">Salle {s.classroom?.name || '—'} · {s.start_time?.substring(0, 5)}-{s.end_time?.substring(0, 5)}</p>
+                                        <p className="text-xs text-slate-400 font-semibold">Salle {s.classroom?.name || '—'} · {s.start_time?.substring(11, 16)}-{s.end_time?.substring(11, 16)}</p>
                                     </div>
                                 </div>
                             )) : <p className="text-slate-400 text-xs text-center py-6">Aucun cours programmé</p>}
