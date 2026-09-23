@@ -374,7 +374,7 @@ class DashboardController extends Controller {
                 ]
             ]);
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('AccountantStats error', ['error' => $e->getMessage()]);
+            Log::error('AccountantStats error', ['error' => $e->getMessage()]);
             return response()->json(['message' => 'Erreur lors du chargement des données'], 500);
         }
     }
