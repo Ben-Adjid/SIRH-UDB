@@ -256,10 +256,19 @@ const Dashboard = () => {
         if (!userRole) return;
         setLoading(true);
         try {
-            const response = await api.get(`/dashboards/${getRolePath(userRole)}`);
-            setStats(response.data);
-        } catch {
-            toast.error('Erreur chargement des statistiques');
+            const endpoint = `/dashboards/${getRolePath(userRole)}`;
+            console.log('[Dashboard] Fetching stats from:', endpoint);
+            const response = await api.get(endpoint);
+            console.log('[Dashboard] Stats response:', response.data);
+            setStats(response.data || {});
+            if (!response.data) {
+                toast.error('Aucune donnée retournée du serveur');
+            }
+        } catch (error) {
+            console.error('[Dashboard] Stats error:', error);
+            const message = error.response?.data?.message || error.message || 'Erreur chargement des statistiques';
+            toast.error(message);
+            setStats({});
         } finally {
             setLoading(false);
         }
