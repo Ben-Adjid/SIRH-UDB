@@ -112,8 +112,8 @@ const Schedules = () => {
         const map = new Map();
         TIME_SLOTS.forEach(ts => { const [s] = ts.split('-'); map.set(s, ts); });
         (courses || []).forEach(s => {
-            const st = s.start_time?.substring(11, 16);
-            const et = s.end_time?.substring(11, 16);
+            const st = s.start_time ? (s.start_time.length > 8 ? s.start_time.substring(11, 16) : s.start_time.substring(0, 5)) : null;
+            const et = s.end_time ? (s.end_time.length > 8 ? s.end_time.substring(11, 16) : s.end_time.substring(0, 5)) : null;
             if (st && et) map.set(st, `${st}-${et}`);
         });
         return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([, v]) => v);
@@ -126,9 +126,9 @@ const Schedules = () => {
         courses.forEach(s => {
             const di = DAYS.indexOf(s.day_of_week);
             if (di === -1) return;
-            const st = s.start_time?.substring(11, 16);
+            const st = s.start_time ? (s.start_time.length > 8 ? s.start_time.substring(11, 16) : s.start_time.substring(0, 5)) : null;
             if (!st) return;
-            const et = s.end_time?.substring(11, 16);
+            const et = s.end_time ? (s.end_time.length > 8 ? s.end_time.substring(11, 16) : s.end_time.substring(0, 5)) : null;
             const key = et ? `${st}-${et}` : st;
             if (!grid[di][key]) grid[di][key] = [];
             grid[di][key].push(s);
@@ -144,8 +144,8 @@ const Schedules = () => {
             teaching_type_id: schedule.teaching_type_id || '', classroom_id: schedule.classroom_id || '',
             level: schedule.level || 'L1', semester: schedule.semester || 'S1',
             day_of_week: schedule.day_of_week || 'Lundi',
-            start_time: schedule.start_time?.substring(11, 16) || '08:00',
-            end_time: schedule.end_time?.substring(11, 16) || '10:00',
+            start_time: schedule.start_time ? (schedule.start_time.length > 8 ? schedule.start_time.substring(11, 16) : schedule.start_time.substring(0, 5)) : '08:00',
+            end_time: schedule.end_time ? (schedule.end_time.length > 8 ? schedule.end_time.substring(11, 16) : schedule.end_time.substring(0, 5)) : '10:00',
             start_date: schedule.start_date?.split('T')[0] || '', end_date: schedule.end_date?.split('T')[0] || '',
             notes: schedule.notes || '',
         });
@@ -195,7 +195,7 @@ const Schedules = () => {
             type: 'exam',
             teacher_id: exam.teacher_id || '', subject_id: exam.subject_id || '', classroom_id: exam.classroom_id || '',
             level: exam.level || 'L1', semester: exam.semester || 'S1', day_of_week: exam.day_of_week || 'Lundi',
-            start_time: exam.start_time?.substring(11, 16) || '08:00', end_time: exam.end_time?.substring(11, 16) || '10:00',
+            start_time: exam.start_time ? (exam.start_time.length > 8 ? exam.start_time.substring(11, 16) : exam.start_time.substring(0, 5)) : '08:00', end_time: exam.end_time ? (exam.end_time.length > 8 ? exam.end_time.substring(11, 16) : exam.end_time.substring(0, 5)) : '10:00',
             start_date: exam.start_date?.split('T')[0] || '', end_date: exam.end_date?.split('T')[0] || '',
             exam_type: exam.exam_type || 'DS',
         });
