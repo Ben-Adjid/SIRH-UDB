@@ -1,6 +1,7 @@
 import { createElement, useEffect, useState, useRef, memo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { dataRefresh } from '../services/dataRefresh';
 import useAuthStore from '../store/authStore';
 import {
     Users, Calendar, Clock, FileText,
@@ -334,6 +335,12 @@ const Dashboard = () => {
             }
         };
     }, [user?.id, userRole]); // N'inclure que les vraies dépendances
+
+    // Subscribe to auto-refresh after mutations
+    useEffect(() => {
+        const unsubscribe = dataRefresh.subscribe('dashboard', () => loadDashboardData());
+        return unsubscribe;
+    }, [loadDashboardData]);
 
     const handleRefresh = () => {
         loadDashboardData();

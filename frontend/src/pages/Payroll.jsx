@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import api from '../services/api';
+import { dataRefresh } from '../services/dataRefresh';
 import useAuthStore from '../store/authStore';
 import { CreditCard, Download, DollarSign, FileText, CheckCircle, AlertCircle, Zap, TrendingUp, TrendingDown, Users, Calendar, Eye, Play, ChevronRight } from 'lucide-react';
 import toast from '../utils/toast';
@@ -77,6 +78,11 @@ const Payroll = () => {
             fetchTeachers();
         }
     }, [isAccountant, showIndividualCalculateModal]);
+
+    useEffect(() => {
+        const unsubscribe = dataRefresh.subscribe('payroll', () => fetchPayrolls(page));
+        return unsubscribe;
+    }, [page, fetchPayrolls]);
 
     const calculatePreview = useCallback((teacherId, month, year, attData) => {
         const selectedTeacher = teachers.find(t => t.id == teacherId);

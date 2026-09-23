@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
+import { dataRefresh } from '../services/dataRefresh';
 import {
     Plus, Search, Edit, Trash2, UserCheck, UserX, Users,
     Mail, Phone, Eye, EyeOff,
@@ -104,6 +105,11 @@ const Teachers = () => {
     }, [page, searchTerm, ufrFilter, statusFilter]);
 
     useEffect(() => { setPage(1); }, [searchTerm, ufrFilter, statusFilter]);
+
+    useEffect(() => {
+        const unsubscribe = dataRefresh.subscribe('teachers', () => fetchTeachers(page));
+        return unsubscribe;
+    }, [page]);
 
     const handleOpenAddModal = () => {
         setIsEditing(false);

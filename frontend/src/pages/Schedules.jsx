@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import api from '../services/api';
+import { dataRefresh } from '../services/dataRefresh';
 import useAuthStore from '../store/authStore';
 import { hasAnyRole } from '../utils/roles';
 import { Plus, Edit, Trash2, RefreshCw, BookOpen, GraduationCap, ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
@@ -90,6 +91,11 @@ const Schedules = () => {
     }, []);
 
     useEffect(() => { fetchData(); }, [fetchData]);
+
+    useEffect(() => {
+        const unsubscribe = dataRefresh.subscribe('schedules', () => fetchData());
+        return unsubscribe;
+    }, [fetchData]);
 
     const getTeacherName = (tId) => teachers.find(t => t.id === tId)?.user?.name || '—';
     const getSubjectName = (sId) => subjects.find(s => s.id === sId)?.name || '—';

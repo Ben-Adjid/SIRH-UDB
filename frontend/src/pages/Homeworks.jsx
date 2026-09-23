@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import api from '../services/api';
+import { dataRefresh } from '../services/dataRefresh';
 import useAuthStore from '../store/authStore';
 import { getUserRoles } from '../utils/roles';
 import { Plus, Search, HelpCircle, FileText, Calendar, User, Edit, Trash2, Lock, CheckCircle, ClipboardList, Clock, X, CalendarClock } from 'lucide-react';
@@ -98,6 +99,11 @@ const Homeworks = () => {
     }, [page, fetchHomeworks]);
 
     useEffect(() => { setPage(1); }, [searchTerm]);
+
+    useEffect(() => {
+        const unsubscribe = dataRefresh.subscribe('homeworks', () => fetchHomeworks(page));
+        return unsubscribe;
+    }, [page, fetchHomeworks]);
 
     const canEditHomework = (hw) => {
         if (isAcademic) return !['completed', 'cancelled'].includes(hw.status);

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Check, X, Search, Calendar, User, Plus } from 'lucide-react';
 import api from '../services/api';
+import { dataRefresh } from '../services/dataRefresh';
 import toast from '../utils/toast';
 import FormModal from '../components/FormModal';
 import useAuthStore from '../store/authStore';
@@ -72,6 +73,11 @@ const Leaves = () => {
         };
         loadData();
     }, [search]);
+
+    useEffect(() => {
+        const unsubscribe = dataRefresh.subscribe('leaves', () => loadLeaves());
+        return unsubscribe;
+    }, []);
 
     const submitLeave = async (event) => {
         event.preventDefault();
