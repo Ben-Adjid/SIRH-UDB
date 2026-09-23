@@ -113,7 +113,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
     Route::get('/ufrs', [App\Http\Controllers\Api\UfrController::class, 'index'])->middleware('throttle:60,1');
     Route::get('/ufrs/{ufr}', [App\Http\Controllers\Api\UfrController::class, 'show'])->middleware('throttle:60,1');
-    Route::get('/teaching-types', [App\Http\Controllers\Api\TeachingTypeController::class, 'getTypes'])->middleware('throttle:60,1');
+    Route::get('/teaching-types', [App\Http\Controllers\Api\TeachingTypeController::class, 'index'])->middleware('throttle:60,1');
     Route::middleware('role:admin|academic_manager')->group(function () {
         Route::post('/teaching-types', [App\Http\Controllers\Api\TeachingTypeController::class, 'store']);
         Route::put('/teaching-types/{teachingType}', [App\Http\Controllers\Api\TeachingTypeController::class, 'update']);
