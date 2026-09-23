@@ -885,11 +885,11 @@ const Attendance = () => {
                                         <div className="grid grid-cols-2 gap-2 mb-4">
                                             <div className="bg-slate-50 rounded-xl p-2.5 text-center">
                                                 <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Entree</p>
-                                                <span className="font-mono font-black text-sm text-emerald-600">{att.check_in_time?.substring(11, 16) || '--:--'}</span>
+                                                <span className="font-mono font-black text-sm text-emerald-600">{att.check_in_time ? (att.check_in_time.length > 8 ? att.check_in_time.substring(11, 16) : att.check_in_time.substring(0, 5)) : '--:--'}</span>
                                             </div>
                                             <div className="bg-slate-50 rounded-xl p-2.5 text-center">
                                                 <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Sortie</p>
-                                                <span className="font-mono font-black text-sm text-amber-600">{att.check_out_time?.substring(11, 16) || '--:--'}</span>
+                                                <span className="font-mono font-black text-sm text-amber-600">{att.check_out_time ? (att.check_out_time.length > 8 ? att.check_out_time.substring(11, 16) : att.check_out_time.substring(0, 5)) : '--:--'}</span>
                                             </div>
                                         </div>
 
