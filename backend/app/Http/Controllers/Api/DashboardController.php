@@ -33,6 +33,16 @@ class DashboardController extends Controller {
 
     public function adminStats(): JsonResponse {
         try {
+            // Debug logging
+            $totalUsers = User::count();
+            $totalTeachers = Teacher::count();
+            Log::debug('[Dashboard] Admin stats counts', [
+                'total_users' => $totalUsers,
+                'total_teachers' => $totalTeachers,
+                'active_users' => User::where('status', 'active')->count(),
+                'active_teachers' => Teacher::where('status', 'active')->count(),
+            ]);
+
             $today = Carbon::today()->toDateString();
             $startOfWeek = Carbon::now()->startOfWeek()->toDateString();
             $startOfMonth = Carbon::now()->startOfMonth()->toDateString();
