@@ -246,6 +246,15 @@ Le système de gestion RH (SIRH) a fait l'objet d'un audit complet. **90% des fo
 ✅ Dashboard: auto-refresh après mutations
 ```
 
+### Commit 2c0792e - Fix Chef UFR Pointage Non-Affichage
+```
+✅ Problème résolu: Chef UFR pointage n'affichait pas après check-in
+✅ Causé par: selfAttendance non rechargé dans dataRefresh subscribe
+✅ Solution 1: Added 300ms delay après check-in pour backend confirmation
+✅ Solution 2: Modified dataRefresh.subscribe pour recharger loadSelfAttendance()
+✅ Résultat: Chef UFR voit immédiatement son pointage après check-in
+```
+
 ---
 
 ## ✨ RÉSUMÉ FINAL
