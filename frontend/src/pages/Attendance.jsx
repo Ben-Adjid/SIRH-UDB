@@ -847,7 +847,6 @@ const Attendance = () => {
                                 return (
                                     <div key={att.id}
                                         className={`group relative bg-white rounded-2xl p-5 border ${isPersonal ? 'border-indigo-300 bg-indigo-50' : 'border-slate-100'} shadow-sm hover:shadow-lg hover:border-indigo-200 transition-all duration-300`}>
-                                        {isPersonal && <div className="absolute top-2 right-2 px-2.5 py-1 bg-indigo-600 text-white text-[10px] font-black rounded-lg">👤 MON POINTAGE</div>}
                                         <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${att.status === 'present' ? 'from-emerald-400 to-teal-500' : att.status === 'late' ? 'from-amber-400 to-orange-500' : att.status === 'absent' ? 'from-red-400 to-rose-500' : 'from-indigo-400 to-purple-500'} opacity-100 rounded-t-2xl`} />
 
                                         <div className="flex items-start justify-between mb-4">
@@ -860,10 +859,13 @@ const Attendance = () => {
                                                     <p className="text-[10px] font-mono font-semibold text-slate-400">{att.teacher?.employee_id || (isPersonal ? user?.teacher?.employee_id : '-') || '-'}</p>
                                                 </div>
                                             </div>
-                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border ${sm.badge}`}>
-                                                <span className={`w-1.5 h-1.5 rounded-full ${sm.dot} mr-1.5`}></span>
-                                                {sm.label}
-                                            </span>
+                                            <div className="flex flex-wrap gap-2 items-center">
+                                                {isPersonal && <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-indigo-600 text-white border-0">👤 MON POINTAGE</span>}
+                                                <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border ${sm.badge}`}>
+                                                    <span className={`w-1.5 h-1.5 rounded-full ${sm.dot} mr-1.5`}></span>
+                                                    {sm.label}
+                                                </span>
+                                            </div>
                                         </div>
 
                                         <div className="flex flex-wrap gap-1.5 mb-4">
