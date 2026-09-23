@@ -52,19 +52,25 @@ class SubjectController extends Controller
 
             if ($this->isTeacherOnly($user)) {
                 $teacherId = Teacher::where('user_id', $user->id)->value('id');
-                $query->whereHas('schedules', fn($s) => $s->where('teacher_id', $teacherId ?? 0)
-                    ->where(fn($q) => $q->whereNull('is_archived')->orWhere('is_archived', false))
-                    ->where('status', '!=', 'cancelled'));
+                $query->whereHas('schedules', function($s) use ($teacherId) {
+                    $s->where('teacher_id', $teacherId ?? 0)
+                        ->where(function($q) {
+                            $q->whereNull('is_archived')->orWhere('is_archived', false);
+                        })
+                        ->where('status', '!=', 'cancelled');
+                });
             } elseif (!$user->hasRole('admin')) {
                 $ufrIds = $this->visibleUfrIds($user);
                 $query->where(function ($q) use ($ufrIds) {
                     $q->whereIn('ufr_id', $ufrIds)
-                       ->orWhereHas('schedules.teacher', fn($teacher) => $teacher->whereIn('ufr_id', $ufrIds));
+                       ->orWhereHas('schedules.teacher', function($teacher) use ($ufrIds) {
+                            $teacher->whereIn('ufr_id', $ufrIds);
+                        });
                 });
             }
 
             if ($search) {
-                $query->where(function ($builder) use ($search) {
+                $query->where(function($builder) use ($search) {
                     $builder->where('name', 'like', '%' . trim($search) . '%')
                            ->orWhere('code', 'like', '%' . trim($search) . '%');
                 });
