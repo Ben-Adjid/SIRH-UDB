@@ -853,11 +853,11 @@ const Attendance = () => {
                                         <div className="flex items-start justify-between mb-4">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
-                                                    {(att.teacher?.user?.name || att.user?.name || '?').charAt(0).toUpperCase()}
+                                                    {(att.teacher?.user?.name || att.user?.name || (isPersonal ? user?.name : '?') || '?').charAt(0).toUpperCase()}
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <h3 className="font-bold text-slate-900 text-sm truncate">{att.teacher?.user?.name || att.user?.name || 'Inconnu'}</h3>
-                                                    <p className="text-[10px] font-mono font-semibold text-slate-400">{att.teacher?.employee_id || '-'}</p>
+                                                    <h3 className="font-bold text-slate-900 text-sm truncate">{att.teacher?.user?.name || att.user?.name || (isPersonal ? user?.name : 'Inconnu') || 'Inconnu'}</h3>
+                                                    <p className="text-[10px] font-mono font-semibold text-slate-400">{att.teacher?.employee_id || (isPersonal ? user?.teacher?.employee_id : '-') || '-'}</p>
                                                 </div>
                                             </div>
                                             <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border ${sm.badge}`}>
