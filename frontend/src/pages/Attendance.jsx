@@ -831,19 +831,23 @@ const Attendance = () => {
                         </div>
                     </div>
 
-                    {allAttendance.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-24">
-                            <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4"><Clock size={28} className="text-slate-300" /></div>
-                            <p className="text-base font-bold text-slate-400 mb-1">Aucun pointage</p>
-                            <p className="text-xs text-slate-300">Les donnees de presence apparaitront ici</p>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
-                            {allAttendance.map((att) => {
-                                const sm = STATUS_MAP[att.status] || STATUS_MAP.none;
+                    {(() => {
+                        const attendanceList = isManagement && selfAttendance ? [selfAttendance, ...allAttendance] : allAttendance;
+                        return attendanceList.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-24">
+                                <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4"><Clock size={28} className="text-slate-300" /></div>
+                                <p className="text-base font-bold text-slate-400 mb-1">Aucun pointage</p>
+                                <p className="text-xs text-slate-300">Les donnees de presence apparaitront ici</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
+                                {attendanceList.map((att, idx) => {
+                                    const isPersonal = isManagement && idx === 0 && att === selfAttendance;
+                                    const sm = STATUS_MAP[att.status] || STATUS_MAP.none;
                                 return (
                                     <div key={att.id}
-                                        className={`group relative bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-lg hover:border-indigo-200 transition-all duration-300`}>
+                                        className={`group relative bg-white rounded-2xl p-5 border ${isPersonal ? 'border-indigo-300 bg-indigo-50' : 'border-slate-100'} shadow-sm hover:shadow-lg hover:border-indigo-200 transition-all duration-300`}>
+                                        {isPersonal && <div className="absolute top-2 right-2 px-2.5 py-1 bg-indigo-600 text-white text-[10px] font-black rounded-lg">👤 MON POINTAGE</div>}
                                         <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${att.status === 'present' ? 'from-emerald-400 to-teal-500' : att.status === 'late' ? 'from-amber-400 to-orange-500' : att.status === 'absent' ? 'from-red-400 to-rose-500' : 'from-indigo-400 to-purple-500'} opacity-100 rounded-t-2xl`} />
 
                                         <div className="flex items-start justify-between mb-4">
@@ -925,7 +929,8 @@ const Attendance = () => {
                                 );
                             })}
                         </div>
-                    )}
+                    );
+                    })()}
 
                     <Pagination page={page} totalPages={attMeta.last_page} onPageChange={setPage} totalItems={attMeta.total} perPage={perPage} />
 
