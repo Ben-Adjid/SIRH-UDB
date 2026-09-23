@@ -82,13 +82,36 @@ const Leaves = () => {
     const submitLeave = async (event) => {
         event.preventDefault();
         try {
+            // Validate required fields
+            if (!form.teacher_id || !form.leave_type_id || !form.start_date || !form.end_date) {
+                toast.error('Veuillez remplir tous les champs obligatoires');
+                return;
+            }
+
+            // Validate dates
+            const startDate = new Date(form.start_date);
+            const endDate = new Date(form.end_date);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (startDate < today) {
+                toast.error('La date de debut doit etre aujourd\'hui ou dans le futur');
+                return;
+            }
+
+            if (endDate < startDate) {
+                toast.error('La date de fin doit etre apres la date de debut');
+                return;
+            }
+
             await api.post('/leaves', form);
             toast.success('Demande de conge envoyee');
             await loadLeaves();
             setShowForm(false);
             setForm(emptyForm);
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Impossible d envoyer la demande');
+            const message = error.response?.data?.message || error.response?.data?.errors?.teacher_id?.[0] || error.response?.data?.errors?.leave_type_id?.[0] || 'Impossible d envoyer la demande';
+            toast.error(message);
         }
     };
 

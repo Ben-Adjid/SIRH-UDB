@@ -37,12 +37,16 @@ const Classrooms = () => {
     const fetchClassrooms = async (pageNum = 1) => {
         setLoading(true);
         try {
-            const params = { page: pageNum, per_page: perPage };
+            const params = { page: Math.max(1, parseInt(pageNum) || 1), per_page: perPage };
             if (searchTerm) params.search = searchTerm;
             const response = await api.get('/classrooms', { params });
             const data = response.data;
             setClassrooms(data.data || []);
-            setPagination({ current_page: data.current_page, last_page: data.last_page, total: data.total });
+            setPagination({
+                current_page: Math.max(1, parseInt(data.pagination?.current_page || data.current_page) || 1),
+                last_page: Math.max(1, parseInt(data.pagination?.last_page || data.last_page) || 1),
+                total: parseInt(data.pagination?.total || data.total) || 0
+            });
         } catch {
             toast.error('Erreur chargement salles');
         } finally {

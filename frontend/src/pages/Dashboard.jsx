@@ -435,8 +435,8 @@ const Dashboard = () => {
                         <div className="mt-6">
                             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Derniers Enseignants</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                {stats.recent_teachers.slice(0, 6).map((t, i) => (
-                                    <div key={i} className="flex items-center gap-3 bg-slate-50 hover:bg-slate-100 rounded-xl p-3 transition-all border border-transparent hover:border-slate-200">
+                                {stats.recent_teachers.slice(0, 6).map((t) => (
+                                    <div key={`teacher-${t.id}`} className="flex items-center gap-3 bg-slate-50 hover:bg-slate-100 rounded-xl p-3 transition-all border border-transparent hover:border-slate-200">
                                         <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center font-black text-xs border border-indigo-200">
                                             {t.user?.name?.charAt(0) || '?'}
                                         </div>
@@ -497,8 +497,8 @@ const Dashboard = () => {
                 <SectionCard title="Enseignants qui ont pointé" subtitle="Liste du jour">
                     {stats.recent_attendances && stats.recent_attendances.length > 0 ? (
                         <div className="space-y-2">
-                            {stats.recent_attendances.map((att, idx) => (
-                                <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100 hover:border-slate-200 transition-all">
+                            {stats.recent_attendances.map((att) => (
+                                <div key={att.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100 hover:border-slate-200 transition-all">
                                     <div className="flex items-center gap-3 flex-1">
                                         <div className={`w-2 h-2 rounded-full ${att.status === 'present' ? 'bg-emerald-500' : att.status === 'late' ? 'bg-amber-500' : 'bg-rose-500'}`} />
                                         <div className="flex-1">
@@ -642,8 +642,8 @@ const Dashboard = () => {
                         <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
                             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Mes Cours</h3>
                             <div className="space-y-3">
-                                {stats.my_schedules.slice(0, 5).map((s, i) => (
-                                    <div key={i} className="flex items-center gap-4 bg-white rounded-xl p-3 border border-slate-100">
+                                {stats.my_schedules.slice(0, 5).map((s) => (
+                                    <div key={`schedule-${s.id}`} className="flex items-center gap-4 bg-white rounded-xl p-3 border border-slate-100">
                                         <div className="text-sm font-black text-slate-600">{s.start_time?.substring(0, 5)}</div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-bold text-slate-700 truncate">{s.subject?.name || 'Matière'}</p>
