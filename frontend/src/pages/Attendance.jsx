@@ -209,7 +209,11 @@ const Attendance = () => {
             setLoading(true);
             try {
                 const pinResponse = await api.get('/attendance/my-pin', { signal: controller.signal });
-                if (!cancelled) setConfiguredPin(pinResponse.data?.pin || '');
+                if (!cancelled) {
+                    const pin = pinResponse.data?.pin || pinResponse.data || '';
+                    console.log('PIN loaded:', { pin, full: pinResponse.data }); // Debug
+                    setConfiguredPin(typeof pin === 'string' ? pin : pin.pin || '');
+                }
                 if (isTeacher) {
                     await loadTeacherData(controller.signal);
                     await loadWeekData(controller.signal);
