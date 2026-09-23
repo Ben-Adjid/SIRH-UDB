@@ -29,6 +29,11 @@ const quickActions = {
         { label: 'Gérer enseignants', icon: Users, path: '/teachers', color: 'from-emerald-500 to-teal-600' },
         { label: 'Gérer absences', icon: Calendar, path: '/leaves', color: 'from-blue-500 to-indigo-600' },
     ],
+    secretary: [
+        { label: 'Nouveau compte', icon: Users, path: '/users', color: 'from-indigo-500 to-purple-600' },
+        { label: 'Gérer enseignants', icon: Users, path: '/teachers', color: 'from-emerald-500 to-teal-600' },
+        { label: 'Gérer absences', icon: Calendar, path: '/leaves', color: 'from-blue-500 to-indigo-600' },
+    ],
     accountant: [
         { label: 'Nouvel honoraire', icon: Wallet, path: '/payroll', color: 'from-emerald-500 to-teal-600' },
         { label: 'Export données', icon: FileText, path: '/payroll', color: 'from-blue-500 to-indigo-600' },
@@ -49,7 +54,7 @@ const quickActions = {
 
 const QuickActions = memo(({ role }) => {
     const navigate = useNavigate();
-    const actions = quickActions[role] || (role === 'secretary' ? quickActions.hr_manager : quickActions.teacher);
+    const actions = quickActions[role] || quickActions.teacher;
     return (
         <div className="flex flex-wrap gap-3">
             {actions.map((a, i) => (
