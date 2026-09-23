@@ -136,10 +136,6 @@ const Attendance = () => {
     const [currentSchedule, setCurrentSchedule] = useState(null);
     const [attendanceMode, setAttendanceMode] = useState(null); // 'physical' ou 'online'
     const [teachers, setTeachers] = useState([]);
-    const [onlineCourseRequest, setOnlineCourseRequest] = useState(null);
-    const [showOnlineRequestModal, setShowOnlineRequestModal] = useState(false);
-    const [onlineRequestForm, setOnlineRequestForm] = useState({ schedule_id: '', course_date: '' });
-    const [submittingOnlineRequest, setSubmittingOnlineRequest] = useState(false);
     const [schedules, setSchedules] = useState([]);
     const [userPinCode, setUserPinCode] = useState('••••••');
 
@@ -196,9 +192,6 @@ const Attendance = () => {
                 setHistory(res.data.history || (Array.isArray(histData) ? histData : []));
                 setTodaySchedules(res.data.today_schedules || []);
             }),
-            api.get('/online-course-requests/today', { signal }).then(res => {
-                setOnlineCourseRequest(res.data.request || null);
-            }).catch(() => setOnlineCourseRequest(null)),
         ]);
     }, []);
 
@@ -271,12 +264,6 @@ const Attendance = () => {
                     console.error('Erreur chargement schedules:', err.message);
                     setSchedules([]);
                 }),
-                api.get('/online-course-requests/today').then(res => {
-                    setOnlineCourseRequest(res.data.request || null);
-                }).catch(err => {
-                    console.error('Erreur chargement online-course-requests:', err.message);
-                    setOnlineCourseRequest(null);
-                }),
             ]);
         } catch (err) {
             console.error('Erreur fetchMyAttendance:', err);
@@ -313,31 +300,6 @@ const Attendance = () => {
         }
     }, [todaySchedules]);
 
-    const handleSubmitOnlineRequest = useCallback(async (e) => {
-        e.preventDefault();
-        if (!onlineRequestForm.schedule_id || !onlineRequestForm.course_date) {
-            toast.error('Veuillez remplir tous les champs');
-            return;
-        }
-        setSubmittingOnlineRequest(true);
-        try {
-            const payload = {
-                schedule_id: parseInt(onlineRequestForm.schedule_id),
-                course_date: onlineRequestForm.course_date
-            };
-            await api.post('/online-course-requests', payload);
-            toast.success('✅ Demande soumise! En attente de validation par l\'administration');
-            setShowOnlineRequestModal(false);
-            setOnlineRequestForm({ schedule_id: '', course_date: '' });
-            await fetchMyAttendance();
-        } catch (err) {
-            console.error('Erreur submission:', err);
-            toast.error(err.response?.data?.message || 'Erreur de soumission');
-        } finally {
-            setSubmittingOnlineRequest(false);
-        }
-    }, [onlineRequestForm, fetchMyAttendance]);
-
     const handleCheckIn = useCallback(async (e) => {
         e.preventDefault();
         if (!code || code.length < 4) { toast.error('Veuillez saisir votre code PIN (4 à 6 chiffres)'); return; }
@@ -360,24 +322,6 @@ const Attendance = () => {
         }
         catch (error) { toast.error(error.response?.data?.message || 'Erreur'); }
     }, [fetchMyAttendance, isManagement, loadManagementData, loadSelfAttendance, page]);
-
-    const handleCheckInOnline = useCallback(async () => {
-        if (!activeSchedule) { toast.error('Aucun cours sélectionné'); return; }
-        try {
-            const res = await api.post('/attendance/check-in-online', { schedule_id: activeSchedule.id });
-            toast.success(res.data.message);
-            await fetchMyAttendance();
-        } catch (error) { toast.error(error?.response?.data?.message || 'Erreur du pointage en ligne'); }
-    }, [activeSchedule, fetchMyAttendance]);
-
-    const handleCheckOutOnline = useCallback(async () => {
-        if (!activeSchedule) { toast.error('Aucun cours sélectionné'); return; }
-        try {
-            const res = await api.post('/attendance/check-out-online', { schedule_id: activeSchedule.id });
-            toast.success(res.data.message);
-            await fetchMyAttendance();
-        } catch (error) { toast.error(error?.response?.data?.message || 'Erreur lors de la sortie en ligne'); }
-    }, [activeSchedule, fetchMyAttendance]);
 
     const handleStaffCheckIn = useCallback(async () => {
         if (staffPin.length < 4) { toast.error('Saisissez votre PIN administratif'); return; }
@@ -531,25 +475,6 @@ const Attendance = () => {
                     </div>
                 </header>
 
-                {onlineCourseRequest && onlineCourseRequest.status === 'approved' && (
-                    <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-[2rem] border-2 border-emerald-200 p-6 sm:p-8 shadow-lg shadow-emerald-100/50">
-                        <div className="flex items-start gap-4">
-                            <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                <CheckCircle size={24} className="text-white" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <h3 className="text-lg font-black text-emerald-900 mb-2">✅ Cours en ligne approuvé</h3>
-                                <p className="text-sm text-emerald-800 mb-3">L'administration a validé votre demande de faire cours en ligne aujourd'hui.</p>
-                                <div className="bg-white rounded-xl p-4 border border-emerald-200">
-                                    <p className="text-xs text-gray-600 uppercase tracking-widest font-bold mb-1">Code d'accès temporaire</p>
-                                    <p className="text-2xl font-black text-emerald-600 font-mono tracking-wider">{onlineCourseRequest.temporary_code}</p>
-                                    <p className="text-xs text-gray-500 mt-2">Utilisez ce code pour pointer votre présence en ligne</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
                 {!hasAnyCourse && (
                     <div className="bg-indigo-50/70 border border-indigo-200 rounded-2xl p-5 flex items-center gap-4">
                         <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0 text-indigo-600">
@@ -562,30 +487,8 @@ const Attendance = () => {
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    {hasAnyCourse && (
-                    <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-[2.5rem] shadow-xl border-2 border-blue-200 p-6">
-                        <h3 className="text-lg font-black text-blue-900 mb-4">📱 POINTAGE EN LIGNE</h3>
-                        {onlineCourseRequest?.status === 'approved' ? (
-                            <div className="space-y-3">
-                                <div className="bg-white rounded-xl p-4 border-2 border-emerald-200">
-                                    <p className="text-xs text-emerald-700 uppercase font-bold mb-2">Code temporaire</p>
-                                    <p className="text-3xl font-black text-emerald-600 font-mono tracking-wider">{onlineCourseRequest.temporary_code}</p>
-                                </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <button onClick={handleCheckInOnline} className="px-4 py-3 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700">▶️ Démarrer</button>
-                                    <button onClick={handleCheckOutOnline} className="px-4 py-3 bg-red-600 text-white text-sm font-bold rounded-lg hover:bg-red-700">⏹️ Terminer</button>
-                                </div>
-                            </div>
-                        ) : (
-                            <button onClick={() => setShowOnlineRequestModal(true)} className="w-full px-4 py-3 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700">
-                                📤 Demander Cours en Ligne
-                            </button>
-                        )}
-                    </div>
-                    )}
-
-                    <div className={`bg-gradient-to-br from-orange-50 to-red-50 rounded-[2.5rem] shadow-xl border-2 border-orange-200 p-6 ${!hasAnyCourse ? 'sm:col-span-2' : ''}`}>
+                <div className="grid grid-cols-1 sm:grid-cols-1 gap-6">
+                    <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-[2.5rem] shadow-xl border-2 border-orange-200 p-6">
                         <h3 className="text-lg font-black text-orange-900 mb-4">🏫 POINTAGE EN PRÉSENTIEL</h3>
                         <div className="space-y-3">
                             {todayAttendance?.check_in_time && !todayAttendance?.check_out_time ? (
@@ -943,22 +846,6 @@ const Attendance = () => {
 
                     <FormModal isOpen={showAbsenceModal} onClose={() => setShowAbsenceModal(false)} onSubmit={handleReportAbsence} title="Signaler une absence ou un retard" submitText="Signaler">
                         <div className="space-y-5"><div className="form-group"><label className="form-label">Date</label><input required type="date" className="input-field" max={new Date().toISOString().split('T')[0]} value={absenceForm.attendance_date} onChange={e => setAbsenceForm({...absenceForm, attendance_date: e.target.value})} /></div><div className="form-group"><label className="form-label">Type</label><select required className="select-field" value={absenceForm.status} onChange={e => setAbsenceForm({...absenceForm, status: e.target.value})}><option value="absent">Absent</option><option value="late">Retard</option></select></div><div className="form-group"><label className="form-label">Motif</label><textarea className="textarea-field" rows="3" value={absenceForm.reason} onChange={e => setAbsenceForm({...absenceForm, reason: e.target.value})} /></div></div>
-                    </FormModal>
-
-                    <FormModal isOpen={showOnlineRequestModal} onClose={() => setShowOnlineRequestModal(false)} onSubmit={handleSubmitOnlineRequest} title="Demander un Cours en Ligne" submitText={submittingOnlineRequest ? "..." : "Soumettre"} disableSubmit={!onlineRequestForm.schedule_id || !onlineRequestForm.course_date}>
-                        <div className="space-y-5">
-                            {schedules.length === 0 ? (
-                                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                                    <p className="text-sm text-yellow-800">⚠️ Aucun cours trouvé. Veuillez vous assurer que vous avez des cours assignés.</p>
-                                </div>
-                            ) : (
-                                <>
-                                    <div className="form-group"><label className="form-label">Cours</label><select required className="select-field" value={onlineRequestForm.schedule_id} onChange={e => setOnlineRequestForm({...onlineRequestForm, schedule_id: e.target.value})}><option value="">Sélectionner un cours...</option>{schedules.map(s => <option key={s.id} value={s.id}>{s.subject?.name} - {s.start_time?.substring(11, 16)}</option>)}</select></div>
-                                    <div className="form-group"><label className="form-label">Date du cours (minimum 2 jours avant)</label><input required type="date" className="input-field" min={new Date(Date.now() + 2*24*60*60*1000).toISOString().split('T')[0]} value={onlineRequestForm.course_date} onChange={e => setOnlineRequestForm({...onlineRequestForm, course_date: e.target.value})} /></div>
-                                </>
-                            )}
-                            <p className="text-xs text-blue-600 bg-blue-50 p-3 rounded-lg">ℹ️ L'administration validera votre demande. Un code temporaire vous sera généré automatiquement.</p>
-                        </div>
                     </FormModal>
                 </div>
             </div>

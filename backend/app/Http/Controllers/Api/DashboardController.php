@@ -163,13 +163,16 @@ class DashboardController extends Controller {
                 ]
             ];
 
-            Cache::put($cacheKey, $data, now()->addMinutes(2));
+            Cache::put($cacheKey, $data, now()->addSeconds(config('cache_durations.dashboard', 120)));
             return response()->json($data);
         } catch (\Throwable $e) {
             Log::error('[Dashboard] AdminStats error', [
                 'error' => $e->getMessage(),
                 'user_id' => auth()->id(),
                 'timestamp' => now(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
             ]);
             return response()->json(['message' => 'Erreur lors du chargement des données'], 500);
         }
@@ -263,13 +266,16 @@ class DashboardController extends Controller {
                 ]
             ];
 
-            Cache::put($cacheKey, $data, now()->addMinutes(2));
+            Cache::put($cacheKey, $data, now()->addSeconds(config('cache_durations.dashboard', 120)));
             return response()->json($data);
         } catch (\Throwable $e) {
             Log::error('[Dashboard] HrStats error', [
                 'error' => $e->getMessage(),
                 'user_id' => auth()->id(),
                 'timestamp' => now(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
             ]);
             return response()->json(['message' => 'Erreur lors du chargement des données'], 500);
         }
@@ -392,7 +398,7 @@ class DashboardController extends Controller {
             $data = [
                 'my_schedules' => $nextSchedules,
                 'my_all_schedules' => Schedule::where('teacher_id', $teacher->id)->where('is_archived', false)->with(['subject:id,name', 'classroom:id,name'])->get(['id', 'teacher_id', 'subject_id', 'classroom_id', 'day_of_week', 'start_time', 'end_time', 'is_archived']),
-                'my_homeworks' => Homework::where('teacher_id', $teacher->id)->latest()->take(5)->get(['id', 'teacher_id', 'title', 'status', 'due_date', 'created_at']),
+                'my_homeworks' => Homework::where('teacher_id', $teacher->id)->latest()->take(5)->get(['id', 'teacher_id', 'title', 'status', 'scheduled_date', 'created_at']),
                 'my_attendance_month' => [
                     'present' => (int)($attendanceMonth->present ?? 0),
                     'absent' => (int)($attendanceMonth->absent ?? 0),
@@ -414,13 +420,16 @@ class DashboardController extends Controller {
                 'next_course' => $nextCourse,
             ];
 
-            Cache::put($cacheKey, $data, now()->addMinutes(2));
+            Cache::put($cacheKey, $data, now()->addSeconds(config('cache_durations.dashboard', 120)));
             return response()->json($data);
         } catch (\Throwable $e) {
             Log::error('[Dashboard] TeacherStats error', [
                 'error' => $e->getMessage(),
                 'user_id' => auth()->id(),
                 'timestamp' => now(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
             ]);
             return response()->json(['message' => 'Erreur lors du chargement des données'], 500);
         }
@@ -498,13 +507,16 @@ class DashboardController extends Controller {
                 ]
             ];
 
-            Cache::put($cacheKey, $data, now()->addMinutes(2));
+            Cache::put($cacheKey, $data, now()->addSeconds(config('cache_durations.dashboard', 120)));
             return response()->json($data);
         } catch (\Throwable $e) {
             Log::error('[Dashboard] AccountantStats error', [
                 'error' => $e->getMessage(),
                 'user_id' => auth()->id(),
                 'timestamp' => now(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
             ]);
             return response()->json(['message' => 'Erreur lors du chargement des données'], 500);
         }

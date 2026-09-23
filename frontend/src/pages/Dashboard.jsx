@@ -494,6 +494,30 @@ const Dashboard = () => {
                         </div>
                     </div>
                 </SectionCard>
+                <SectionCard title="Enseignants qui ont pointé" subtitle="Liste du jour">
+                    {stats.recent_attendances && stats.recent_attendances.length > 0 ? (
+                        <div className="space-y-2">
+                            {stats.recent_attendances.map((att, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100 hover:border-slate-200 transition-all">
+                                    <div className="flex items-center gap-3 flex-1">
+                                        <div className={`w-2 h-2 rounded-full ${att.status === 'present' ? 'bg-emerald-500' : att.status === 'late' ? 'bg-amber-500' : 'bg-rose-500'}`} />
+                                        <div className="flex-1">
+                                            <p className="text-sm font-semibold text-slate-700">{att.teacher?.user?.name || 'N/A'}</p>
+                                            <p className="text-xs text-slate-400">{att.check_in_time && att.check_in_time.slice(0, 5)} - {att.check_out_time && att.check_out_time.slice(0, 5)}</p>
+                                        </div>
+                                    </div>
+                                    <span className={`text-xs font-bold px-2 py-1 rounded-full ${att.status === 'present' ? 'bg-emerald-100 text-emerald-700' : att.status === 'late' ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'}`}>
+                                        {att.status === 'present' ? 'Présent' : att.status === 'late' ? 'Retard' : 'Absent'}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-8 text-slate-400">
+                            <p className="text-sm">Aucun pointage enregistré aujourd'hui</p>
+                        </div>
+                    )}
+                </SectionCard>
             </div>
         );
     }

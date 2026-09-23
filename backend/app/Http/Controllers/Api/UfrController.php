@@ -42,7 +42,7 @@ class UfrController extends Controller
                 return response()->json($cached);
             }
 
-            $query = Ufr::with(['head:id,name,email', 'teachers:id,name,email'])->withCount('teachers');
+            $query = Ufr::with(['head:id,name,email', 'teachers:id,user_id', 'teachers.user:id,name,email'])->withCount('teachers');
 
             if ($search) {
                 $query->where(function ($builder) use ($search) {
@@ -119,7 +119,7 @@ class UfrController extends Controller
 
             $response = [
                 'success' => true,
-                'data' => $ufr->load(['teachers:id,name,email', 'head:id,name,email'])->loadCount('teachers'),
+                'data' => $ufr->load(['teachers:id,user_id', 'teachers.user:id,name,email', 'head:id,name,email'])->loadCount('teachers'),
             ];
 
             Cache::put($cacheKey, $response, now()->addSeconds(self::CACHE_TTL));
@@ -269,7 +269,7 @@ class UfrController extends Controller
         }
     }
 
-    public function destroy(Ufr $ufr): JsonResponse
+    public function destroy(Request $request, Ufr $ufr): JsonResponse
     {
         try {
             $user = auth()->user();

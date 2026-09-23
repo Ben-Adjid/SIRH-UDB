@@ -82,10 +82,6 @@ class AuthController extends Controller
 
             $user = User::where('email', $validated['email'])->first();
 
-            if (!$user) {
-                Hash::check($validated['password'], '$2y$12$1h84am4sQrZ.iMErqlH2Zu3KlkWY/Ew5tRe.PJtat2BGMmtc4FocO');
-            }
-
             if (!$user || !Hash::check($validated['password'], $user->password)) {
                 cache()->put($key, $attempts + 1, now()->addMinutes(5));
 

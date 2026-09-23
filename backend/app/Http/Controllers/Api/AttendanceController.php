@@ -177,11 +177,19 @@ class AttendanceController extends Controller {
 
     private function restrictToVisibleUfr($query, User $user): void
     {
-        if ($user->hasRole('admin')) {
+        // Admin et rôles de gestion voient TOUS les pointages (pas de restriction)
+        if ($user->hasAnyRole(['admin', 'hr_manager', 'secretary', 'accountant', 'academic_manager'])) {
             return;
         }
 
+        // Chef UFR voit uniquement les pointages des profs de son UFR
         $ufrIds = $this->visibleUfrIds($user);
+        if (empty($ufrIds)) {
+            // Pas d'UFR visible: ne montrer aucun résultat
+            $query->whereRaw('1 = 0');
+            return;
+        }
+
         $query->where(function ($builder) use ($ufrIds) {
             $builder->whereHas('teacher', fn($teacher) => $teacher->whereIn('ufr_id', $ufrIds))
                 ->orWhere(function ($legacy) use ($ufrIds) {

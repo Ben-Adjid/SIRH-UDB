@@ -71,7 +71,7 @@ class NotificationController extends Controller
                 ->selectRaw("
                     COUNT(*) as total,
                     SUM(CASE WHEN read_at IS NULL THEN 1 ELSE 0 END) as unread,
-                    SUM(CASE WHEN read_at IS NOT NULL THEN 1 ELSE 0 END) as read
+                    SUM(CASE WHEN read_at IS NOT NULL THEN 1 ELSE 0 END) as `read_count`
                 ")
                 ->first();
 
@@ -131,7 +131,7 @@ class NotificationController extends Controller
                 ->selectRaw("
                     COUNT(*) as total,
                     SUM(CASE WHEN read_at IS NULL THEN 1 ELSE 0 END) as unread,
-                    SUM(CASE WHEN read_at IS NOT NULL THEN 1 ELSE 0 END) as read
+                    SUM(CASE WHEN read_at IS NOT NULL THEN 1 ELSE 0 END) as `read_count`
                 ")
                 ->first();
 
@@ -139,7 +139,7 @@ class NotificationController extends Controller
                 'success' => true,
                 'total' => (int)($stats->total ?? 0),
                 'unread' => (int)($stats->unread ?? 0),
-                'read' => (int)($stats->read ?? 0),
+                'read' => (int)($stats->read_count ?? 0),
             ];
 
             Cache::put($cacheKey, $response, now()->addSeconds(self::STATS_CACHE_TTL));

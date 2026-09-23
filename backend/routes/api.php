@@ -78,11 +78,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Dashboards
     Route::prefix('dashboards')->group(function () {
-        Route::middleware('role:admin')->get('/admin', [App\Http\Controllers\Api\DashboardController::class, 'adminStats']);
-        Route::middleware('role:admin|hr_manager|secretary')->get('/hr', [App\Http\Controllers\Api\DashboardController::class, 'hrStats']);
-        Route::middleware('role:teacher')->get('/teacher', [App\Http\Controllers\Api\DashboardController::class, 'teacherStats']);
-        Route::middleware('role:admin|academic_manager')->get('/academic', [App\Http\Controllers\Api\DashboardController::class, 'academicStats']);
-        Route::middleware('role:admin|accountant')->get('/accountant', [App\Http\Controllers\Api\DashboardController::class, 'accountantStats']);
+        Route::middleware('role:admin', 'throttle:30,1')->get('/admin', [App\Http\Controllers\Api\DashboardController::class, 'adminStats']);
+        Route::middleware('role:admin|hr_manager|secretary', 'throttle:30,1')->get('/hr', [App\Http\Controllers\Api\DashboardController::class, 'hrStats']);
+        Route::middleware('role:teacher', 'throttle:30,1')->get('/teacher', [App\Http\Controllers\Api\DashboardController::class, 'teacherStats']);
+        Route::middleware('role:admin|academic_manager', 'throttle:30,1')->get('/academic', [App\Http\Controllers\Api\DashboardController::class, 'academicStats']);
+        Route::middleware('role:admin|accountant', 'throttle:30,1')->get('/accountant', [App\Http\Controllers\Api\DashboardController::class, 'accountantStats']);
     });
 
     // ── ADMINISTRATION SYSTÈME (Admin uniquement) ──
@@ -103,21 +103,21 @@ Route::middleware('auth:sanctum')->group(function () {
     // ── DONNÉES DE RÉFÉRENCE (Lecture pour tous) ──
     Route::get('/academic-years', [App\Http\Controllers\Api\AcademicYearController::class, 'index'])->middleware('throttle:60,1');
     Route::middleware('role:admin|academic_manager')->group(function () {
-        Route::post('/academic-years', [App\Http\Controllers\Api\AcademicYearController::class, 'store']);
-        Route::put('/academic-years/{academicYear}', [App\Http\Controllers\Api\AcademicYearController::class, 'update']);
-        Route::delete('/academic-years/{academicYear}', [App\Http\Controllers\Api\AcademicYearController::class, 'destroy']);
-        Route::post('/academic-years/{academicYear}/activate', [App\Http\Controllers\Api\AcademicYearController::class, 'activate']);
-        Route::post('/academic-years/{academicYear}/archive-semester', [App\Http\Controllers\Api\AcademicYearController::class, 'archiveSemester']);
-        Route::post('/academic-years/{academicYear}/restore-semester', [App\Http\Controllers\Api\AcademicYearController::class, 'restoreSemester']);
-        Route::delete('/academic-years/{academicYear}/delete-archived', [App\Http\Controllers\Api\AcademicYearController::class, 'deleteArchived']);
+        Route::post('/academic-years', [App\Http\Controllers\Api\AcademicYearController::class, 'store'])->middleware('throttle:20,1');
+        Route::put('/academic-years/{academicYear}', [App\Http\Controllers\Api\AcademicYearController::class, 'update'])->middleware('throttle:20,1');
+        Route::delete('/academic-years/{academicYear}', [App\Http\Controllers\Api\AcademicYearController::class, 'destroy'])->middleware('throttle:20,1');
+        Route::post('/academic-years/{academicYear}/activate', [App\Http\Controllers\Api\AcademicYearController::class, 'activate'])->middleware('throttle:20,1');
+        Route::post('/academic-years/{academicYear}/archive-semester', [App\Http\Controllers\Api\AcademicYearController::class, 'archiveSemester'])->middleware('throttle:20,1');
+        Route::post('/academic-years/{academicYear}/restore-semester', [App\Http\Controllers\Api\AcademicYearController::class, 'restoreSemester'])->middleware('throttle:20,1');
+        Route::delete('/academic-years/{academicYear}/delete-archived', [App\Http\Controllers\Api\AcademicYearController::class, 'deleteArchived'])->middleware('throttle:20,1');
     });
     Route::get('/ufrs', [App\Http\Controllers\Api\UfrController::class, 'index'])->middleware('throttle:60,1');
     Route::get('/ufrs/{ufr}', [App\Http\Controllers\Api\UfrController::class, 'show'])->middleware('throttle:60,1');
     Route::get('/teaching-types', [App\Http\Controllers\Api\TeachingTypeController::class, 'index'])->middleware('throttle:60,1');
     Route::middleware('role:admin|academic_manager')->group(function () {
-        Route::post('/teaching-types', [App\Http\Controllers\Api\TeachingTypeController::class, 'store']);
-        Route::put('/teaching-types/{teachingType}', [App\Http\Controllers\Api\TeachingTypeController::class, 'update']);
-        Route::delete('/teaching-types/{teachingType}', [App\Http\Controllers\Api\TeachingTypeController::class, 'destroy']);
+        Route::post('/teaching-types', [App\Http\Controllers\Api\TeachingTypeController::class, 'store'])->middleware('throttle:20,1');
+        Route::put('/teaching-types/{teachingType}', [App\Http\Controllers\Api\TeachingTypeController::class, 'update'])->middleware('throttle:20,1');
+        Route::delete('/teaching-types/{teachingType}', [App\Http\Controllers\Api\TeachingTypeController::class, 'destroy'])->middleware('throttle:20,1');
     });
     Route::get('/teachers', [App\Http\Controllers\Api\TeacherController::class, 'index'])->middleware('throttle:60,1');
     Route::get('/teachers/{teacher}', [App\Http\Controllers\Api\TeacherController::class, 'show'])->middleware('throttle:60,1');
