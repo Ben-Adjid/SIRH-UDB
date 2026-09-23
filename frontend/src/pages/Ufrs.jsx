@@ -42,14 +42,20 @@ const Ufrs = () => {
     const fetchUfrs = async (pageNum = 1) => {
         setLoading(true);
         try {
-            const params = { page: pageNum, per_page: perPage };
+            const validPage = Math.max(1, parseInt(pageNum) || 1);
+            const params = { page: validPage, per_page: perPage };
             if (searchTerm) params.search = searchTerm;
             const response = await api.get('/ufrs', { params });
             const data = response.data;
             setUfrs(data.data || []);
-            setPagination({ current_page: data.current_page, last_page: data.last_page, total: data.total });
-        } catch {
-            toast.error('Erreur de chargement');
+            setPagination({
+                current_page: Math.max(1, parseInt(data.pagination?.current_page || data.current_page) || 1),
+                last_page: Math.max(1, parseInt(data.pagination?.last_page || data.last_page) || 1),
+                total: parseInt(data.pagination?.total || data.total) || 0
+            });
+        } catch (error) {
+            console.error('Fetch UFR error:', error);
+            toast.error(error.response?.data?.message || 'Erreur de chargement');
         } finally {
             setLoading(false);
         }
