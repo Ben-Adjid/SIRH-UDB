@@ -1,6 +1,7 @@
 {
-    "php.validate.enable": true,
+    "php.validate.enable": false,
     "php.validate.run": "onType",
+    "intelephense.diagnostics.enable": false,
     "intelephense.diagnostics.undefinedMethodAccess": false,
     "intelephense.diagnostics.undefinedConstant": false,
     "intelephense.diagnostics.undefinedFunction": false,
@@ -10,6 +11,13 @@
     "intelephense.diagnostics.undefinedClassMember": false,
     "intelephense.diagnostics.undefinedType": false,
     "intelephense.diagnostics.implementationErrors": false,
+    "intelephense.diagnostics.argumentCount": false,
+    "intelephense.diagnostics.typeErrors": false,
+    "intelephense.diagnostics.deprecated": false,
+    "intelephense.diagnostics.error": false,
+    "intelephense.diagnostics.parseerror": false,
+    "intelephense.diagnostics.notImplemented": false,
+    "intelephense.diagnostics.unexpectedToken": false,
     "[php]": {
         "editor.defaultFormatter": "bmewburn.vscode-intelephense-client",
         "editor.formatOnSave": false
