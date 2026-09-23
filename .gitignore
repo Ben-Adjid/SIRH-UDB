@@ -1,0 +1,74 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Backend
+backend/vendor/
+backend/.phpunit.result.cache
+backend/storage/logs/*
+backend/bootstrap/cache/*
+backend/public/uploads/*
+backend/*.sqlite
+backend/*.sqlite-shm
+backend/*.sqlite-wal
+backend/.DS_Store
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.dist/
+frontend/.turbo/
+frontend/coverage/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+*.log
+
+# Docker
+.dockerignore
+
+# Git
+.git/
+
+# Node
+*.tgz
+yarn-error.log
+
+# Composer
+composer.lock
+
+# Testing
+coverage/
+.coverage
+*.lcov
+
+# Build artifacts
+dist/
+build/
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+.temp/
+
+# IDE Configuration
+.vscode/settings.json
+.vscode/launch.json
+
+# Environment-specific
+.env.testing
+.env.staging

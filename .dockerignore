@@ -1,0 +1,53 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Node/Frontend
+frontend/node_modules
+frontend/dist
+frontend/build
+frontend/.env.local
+frontend/npm-debug.log
+frontend/yarn-error.log
+
+# Backend
+backend/vendor
+backend/node_modules
+backend/storage/logs
+backend/.env.testing
+backend/.env.*.local
+
+# Documentation
+README.md
+CHANGELOG.md
+docs/
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.circleci
+
+# IDE
+.vscode
+.idea
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+tests/
+phpunit.xml
+jest.config.js
+
+# Cache
+.cache
+.turbo
+
+# Temporary
+*.tmp
+*.log
+*.bak
