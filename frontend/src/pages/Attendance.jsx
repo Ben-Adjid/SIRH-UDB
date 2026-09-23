@@ -204,7 +204,12 @@ const Attendance = () => {
     const loadSelfAttendance = useCallback(async () => {
         try {
             const res = await api.get('/attendance', { params: { self: 1 } });
-            setSelfAttendance(res.data.today || null);
+            console.log('[DEBUG] loadSelfAttendance response:', {
+                data: res.data,
+                today: res.data?.today,
+                check_in: res.data?.today?.check_in_time
+            });
+            setSelfAttendance(res.data?.today || null);
         } catch (err) {
             console.error('Error loading self attendance:', err);
         }
@@ -361,13 +366,17 @@ const Attendance = () => {
     const handleStaffCheckIn = useCallback(async () => {
         if (staffPin.length < 4) { toast.error('Saisissez votre PIN administratif'); return; }
         try {
+            console.log('[DEBUG] Check-in POST starting...');
             const res = await api.post('/attendance/check-in', { pin: staffPin });
+            console.log('[DEBUG] Check-in response:', res.data);
             toast.success(res.data.message);
             setStaffPin('');
+            console.log('[DEBUG] Loading self attendance and management data...');
             await Promise.all([
                 loadSelfAttendance(),
                 loadManagementData(new AbortController().signal, page)
             ]);
+            console.log('[DEBUG] Data loaded successfully');
         } catch (error) { toast.error(error.response?.data?.message || 'Erreur de pointage'); }
     }, [staffPin, loadManagementData, loadSelfAttendance, page]);
 
