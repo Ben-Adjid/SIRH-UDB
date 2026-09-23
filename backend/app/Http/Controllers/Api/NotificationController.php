@@ -94,8 +94,8 @@ class NotificationController extends Controller
 
             Log::info('[Notification] List fetched', [
                 'user_id' => $user->id,
-                'total' => $response['stats']['total'],
-                'unread' => $response['stats']['unread'],
+                'total' => $response['total_count'],
+                'unread' => $response['unread_count'],
             ]);
 
             return response()->json($response);
