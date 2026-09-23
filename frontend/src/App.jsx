@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import useAuthStore from './store/authStore';
 import { setNavigate } from './services/api';
@@ -110,19 +110,6 @@ function AppContent() {
 }
 
 function App() {
-    const [isHydrated, setIsHydrated] = useState(false);
-    useEffect(() => {
-        setIsHydrated(true);
-    }, []);
-
-    if (!isHydrated) {
-        return (
-            <div className="flex items-center justify-center h-screen bg-slate-950">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-            </div>
-        );
-    }
-
     return <AppContent />;
 }
 

@@ -19,7 +19,9 @@ const LEVEL_COLORS = {
 const Subjects = () => {
     const userAuth = useAuthStore((s) => s.user);
     const canManage = hasAnyRole(userAuth, ['admin', 'academic_manager']);
+    const isAdmin = hasAnyRole(userAuth, ['admin']);
     const [subjects, setSubjects] = useState([]);
+    const [ufrs, setUfrs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -33,7 +35,7 @@ const Subjects = () => {
     const [subjectToDelete, setSubjectToDelete] = useState(null);
 
     const [formData, setFormData] = useState({
-        name: '', code: '', level: '', credit_hours: '', description: ''
+        ufr_id: '', name: '', code: '', level: '', credit_hours: '', description: ''
     });
 
     const fetchSubjects = async (pageNum = 1) => {
@@ -53,6 +55,12 @@ const Subjects = () => {
     };
 
     useEffect(() => {
+        api.get('/ufrs', { params: { per_page: 100 } })
+            .then(res => setUfrs(res.data?.data || []))
+            .catch(() => {});
+    }, []);
+
+    useEffect(() => {
         fetchSubjects(page);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [page, searchTerm]);
@@ -62,7 +70,7 @@ const Subjects = () => {
     const handleOpenAdd = () => {
         setIsEditing(false);
         setSelectedSubject(null);
-        setFormData({ name: '', code: '', level: '', credit_hours: '', description: '' });
+        setFormData({ ufr_id: ufrs.length === 1 ? ufrs[0].id : '', name: '', code: '', level: '', credit_hours: '', description: '' });
         setShowModal(true);
     };
 
@@ -70,6 +78,7 @@ const Subjects = () => {
         setIsEditing(true);
         setSelectedSubject(subject);
         setFormData({
+            ufr_id: subject.ufr_id ?? '',
             name: subject.name,
             code: subject.code,
             level: subject.level ?? '',
@@ -203,6 +212,11 @@ const Subjects = () => {
                                         <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border ${levelClass}`}>
                                             {s.level || 'Niveau'}
                                         </span>
+                                        {s.ufr && (
+                                            <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border bg-cyan-50 text-cyan-700 border-cyan-200">
+                                                {s.ufr.code || s.ufr.name}
+                                            </span>
+                                        )}
                                         {s.credit_hours != null && s.credit_hours !== '' && (
                                             <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border bg-amber-50 text-amber-700 border-amber-200">
                                                 {s.credit_hours} Credits
@@ -248,6 +262,15 @@ const Subjects = () => {
                             <input required type="text" className="input-field" placeholder="EX: MTH101"
                                 value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})} />
                         </div>
+                    </div>
+
+                    <div className="form-group">
+                        <label className="form-label">UFR</label>
+                        <select required={!isAdmin} className="select-field"
+                            value={formData.ufr_id} onChange={e => setFormData({...formData, ufr_id: e.target.value})}>
+                            <option value="">{isAdmin ? 'Aucune (transversale)' : 'Selectionner une UFR'}</option>
+                            {ufrs.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                        </select>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">

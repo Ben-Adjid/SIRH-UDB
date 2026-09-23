@@ -64,10 +64,10 @@ const Documents = () => {
             if (editing) await api.post(`/documents/${editing.id}?_method=PUT`, payload);
             else await api.post(`/teachers/${teacherId}/documents`, payload);
             toast.success(editing ? 'Document modifie' : 'Document uploade');
-            setShowForm(false);
             setEditing(null);
             setForm({ name: '', type: 'other', file: null });
-            loadDocuments();
+            await loadDocuments();
+            setShowForm(false);
         } catch (error) { toast.error(error.response?.data?.message || 'Operation impossible'); }
     };
 
@@ -83,7 +83,7 @@ const Documents = () => {
         try {
             await api.delete(`/documents/${deleteDocument.id}`);
             toast.success('Document supprime');
-            loadDocuments();
+            await loadDocuments();
         } catch (error) {
             toast.error(error.response?.data?.message || 'Suppression impossible');
         } finally {

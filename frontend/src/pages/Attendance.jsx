@@ -135,6 +135,12 @@ const Attendance = () => {
     const [currentSchedule, setCurrentSchedule] = useState(null);
     const [attendanceMode, setAttendanceMode] = useState(null); // 'physical' ou 'online'
     const [teachers, setTeachers] = useState([]);
+    const [onlineCourseRequest, setOnlineCourseRequest] = useState(null);
+    const [showOnlineRequestModal, setShowOnlineRequestModal] = useState(false);
+    const [onlineRequestForm, setOnlineRequestForm] = useState({ schedule_id: '', course_date: '' });
+    const [submittingOnlineRequest, setSubmittingOnlineRequest] = useState(false);
+    const [schedules, setSchedules] = useState([]);
+    const [userPinCode, setUserPinCode] = useState('••••••');
 
     const [absenceForm, setAbsenceForm] = useState({ attendance_date: new Date().toISOString().split('T')[0], status: 'absent', reason: '' });
     const [recordAbsenceForm, setRecordAbsenceForm] = useState({ teacher_id: '', attendance_date: new Date().toISOString().split('T')[0], status: 'absent', reason: '' });
@@ -144,9 +150,18 @@ const Attendance = () => {
     const userRoles = getUserRoles(user);
     const isAdminOrHR = userRoles.includes('admin') || userRoles.includes('hr_manager') || userRoles.includes('secretary');
     const isAccountant = userRoles.includes('accountant');
-    const isAcademicManager = userRoles.includes('academic_manager') && !isAdminOrHR;
+    const isAcademicManager = userRoles.includes('academic_manager');
     const isTeacher = userRoles.includes('teacher');
     const isManagement = isAdminOrHR || isAccountant || isAcademicManager;
+    const hasDualRole = isTeacher && isManagement;
+    const [viewMode, setViewMode] = useState(isTeacher ? 'teacher' : 'management');
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const todayAttendance = todaySchedules.find(s => s.check_in_time) ||
+        history.find(h => {
+            const d = typeof h.attendance_date === 'string' ? h.attendance_date.substring(0, 10) : '';
+            return d === todayStr && h.check_in_time;
+        }) || selfAttendance;
 
     const loadManagementData = useCallback(async (signal, pageNum = 1) => {
         const params = { date: filterDate, page: pageNum, per_page: perPage };
@@ -169,10 +184,16 @@ const Attendance = () => {
     useEffect(() => { setPage(1); }, [filterDate, filterDepartment, filterStatus, debouncedSearch]);
 
     const loadTeacherData = useCallback(async (signal) => {
-        const attRes = await api.get('/attendance', { signal });
-        const histData = attRes.data.data || attRes.data;
-        setHistory(attRes.data.history || (Array.isArray(histData) ? histData : []));
-        setTodaySchedules(attRes.data.today_schedules || []);
+        await Promise.all([
+            api.get('/attendance', { signal }).then(res => {
+                const histData = res.data.data || res.data;
+                setHistory(res.data.history || (Array.isArray(histData) ? histData : []));
+                setTodaySchedules(res.data.today_schedules || []);
+            }),
+            api.get('/online-course-requests/today', { signal }).then(res => {
+                setOnlineCourseRequest(res.data.request || null);
+            }).catch(() => setOnlineCourseRequest(null)),
+        ]);
     }, []);
 
     const loadWeekData = useCallback(async (signal) => {
@@ -192,7 +213,8 @@ const Attendance = () => {
                 if (isTeacher) {
                     await loadTeacherData(controller.signal);
                     await loadWeekData(controller.signal);
-                } else if (isManagement) {
+                }
+                if (isManagement) {
                     await loadManagementData(controller.signal, page);
                     const self = await api.get('/attendance', { params: { self: 1 }, signal: controller.signal });
                     if (!cancelled) setSelfAttendance(self.data.today || null);
@@ -221,11 +243,30 @@ const Attendance = () => {
 
     const fetchMyAttendance = useCallback(async () => {
         try {
-            const attRes = await api.get('/attendance');
-            setTodaySchedules(attRes.data.today_schedules || []);
-            const histData = attRes.data.data || attRes.data;
-            setHistory(attRes.data.history || (Array.isArray(histData) ? histData : []));
-        } catch { toast.error('Erreur chargement'); }
+            await Promise.all([
+                api.get('/attendance').then(res => {
+                    setTodaySchedules(res.data.today_schedules || []);
+                    const histData = res.data.data || res.data;
+                    setHistory(res.data.history || (Array.isArray(histData) ? histData : []));
+                }),
+                api.get('/schedules').then(res => {
+                    const data = res.data?.data || res.data || [];
+                    setSchedules(Array.isArray(data) ? data : []);
+                }).catch(err => {
+                    console.error('Erreur chargement schedules:', err.message);
+                    setSchedules([]);
+                }),
+                api.get('/online-course-requests/today').then(res => {
+                    setOnlineCourseRequest(res.data.request || null);
+                }).catch(err => {
+                    console.error('Erreur chargement online-course-requests:', err.message);
+                    setOnlineCourseRequest(null);
+                }),
+            ]);
+        } catch (err) {
+            console.error('Erreur fetchMyAttendance:', err);
+            toast.error('Erreur chargement');
+        }
     }, []);
 
     useEffect(() => {
@@ -238,10 +279,35 @@ const Attendance = () => {
         }
     }, [todaySchedules]);
 
+    const handleSubmitOnlineRequest = useCallback(async (e) => {
+        e.preventDefault();
+        if (!onlineRequestForm.schedule_id || !onlineRequestForm.course_date) {
+            toast.error('Veuillez remplir tous les champs');
+            return;
+        }
+        setSubmittingOnlineRequest(true);
+        try {
+            const payload = {
+                schedule_id: parseInt(onlineRequestForm.schedule_id),
+                course_date: onlineRequestForm.course_date
+            };
+            await api.post('/online-course-requests', payload);
+            toast.success('✅ Demande soumise! En attente de validation par l\'administration');
+            setShowOnlineRequestModal(false);
+            setOnlineRequestForm({ schedule_id: '', course_date: '' });
+            await fetchMyAttendance();
+        } catch (err) {
+            console.error('Erreur submission:', err);
+            toast.error(err.response?.data?.message || 'Erreur de soumission');
+        } finally {
+            setSubmittingOnlineRequest(false);
+        }
+    }, [onlineRequestForm, fetchMyAttendance]);
+
     const handleCheckIn = useCallback(async (e) => {
         e.preventDefault();
         if (!code || code.length < 4) { toast.error('Veuillez saisir votre code PIN (4 à 6 chiffres)'); return; }
-        try { const res = await api.post('/attendance/check-in', { pin: code }); toast.success(res.data.message); fetchMyAttendance(); setCode(''); }
+        try { const res = await api.post('/attendance/check-in', { pin: code }); toast.success(res.data.message); await fetchMyAttendance(); setCode(''); }
         catch (error) { toast.error(error.response?.data?.message || 'Erreur de pointage'); }
     }, [code, fetchMyAttendance]);
 
@@ -250,7 +316,7 @@ const Attendance = () => {
             const res = await api.post('/attendance/check-out');
             toast.success(res.data.message);
             if (isManagement) setSelfAttendance(res.data.attendance);
-            else fetchMyAttendance();
+            else await fetchMyAttendance();
         }
         catch (error) { toast.error(error.response?.data?.message || 'Erreur'); }
     }, [fetchMyAttendance, isManagement]);
@@ -260,7 +326,7 @@ const Attendance = () => {
         try {
             const res = await api.post('/attendance/check-in-online', { schedule_id: activeSchedule.id });
             toast.success(res.data.message);
-            fetchMyAttendance();
+            await fetchMyAttendance();
         } catch (error) { toast.error(error?.response?.data?.message || 'Erreur du pointage en ligne'); }
     }, [activeSchedule, fetchMyAttendance]);
 
@@ -269,7 +335,7 @@ const Attendance = () => {
         try {
             const res = await api.post('/attendance/check-out-online', { schedule_id: activeSchedule.id });
             toast.success(res.data.message);
-            fetchMyAttendance();
+            await fetchMyAttendance();
         } catch (error) { toast.error(error?.response?.data?.message || 'Erreur lors de la sortie en ligne'); }
     }, [activeSchedule, fetchMyAttendance]);
 
@@ -288,13 +354,13 @@ const Attendance = () => {
         try {
             await api.post('/attendance/report-absence', { attendance_date: absenceForm.attendance_date, status: absenceForm.status, reason: absenceForm.reason || null });
             toast.success('Signalement enregistre');
-            setShowAbsenceModal(false);
             setAbsenceForm({ attendance_date: new Date().toISOString().split('T')[0], status: 'absent', reason: '' });
-            fetchMyAttendance();
+            await fetchMyAttendance();
             if (isManagement) {
                 const response = await api.get('/attendance', { params: { self: 1 } });
                 setSelfAttendance(response.data.today || null);
             }
+            setShowAbsenceModal(false);
         } catch (error) {
             const data = error.response?.data;
             const msg = data?.messages ? Object.values(data.messages).flat().join(' | ') : data?.message || 'Erreur';
@@ -308,9 +374,9 @@ const Attendance = () => {
             const slots = availabilityForm.time_slots ? availabilityForm.time_slots.split(',').map(s => s.trim()).filter(Boolean) : [];
             await api.post('/attendance/declare-availability', { date: availabilityForm.date, available: availabilityForm.available, time_slots: slots });
             toast.success('Disponibilite enregistree');
-            setShowAvailabilityModal(false);
             setAvailabilityForm({ date: new Date().toISOString().split('T')[0], available: true, time_slots: '' });
-            fetchMyAttendance();
+            await fetchMyAttendance();
+            setShowAvailabilityModal(false);
         } catch (error) {
             const data = error.response?.data;
             const msg = data?.messages ? Object.values(data.messages).flat().join(' | ') : data?.message || 'Erreur';
@@ -323,10 +389,10 @@ const Attendance = () => {
         try {
             await api.post('/attendance/record-absence', { teacher_id: recordAbsenceForm.teacher_id, attendance_date: recordAbsenceForm.attendance_date, status: recordAbsenceForm.status, reason: recordAbsenceForm.reason || null });
             toast.success('Absence enregistree');
-            setShowRecordAbsenceModal(false);
             setRecordAbsenceForm({ teacher_id: '', attendance_date: new Date().toISOString().split('T')[0], status: 'absent', reason: '' });
             const c = new AbortController();
-            loadManagementData(c.signal, page);
+            await loadManagementData(c.signal, page);
+            setShowRecordAbsenceModal(false);
         } catch (error) {
             const data = error.response?.data;
             const msg = data?.messages ? Object.values(data.messages).flat().join(' | ') : data?.message || 'Erreur';
@@ -339,11 +405,11 @@ const Attendance = () => {
         try {
             await api.patch(`/attendance/${selectedAttendance.id}/validate-absence`, { justified: validateForm.justified, notes: validateForm.notes || null });
             toast.success('Absence ' + (validateForm.justified ? 'justifiee' : 'non justifiee'));
-            setShowValidateAbsenceModal(false);
             setSelectedAttendance(null);
             setValidateForm({ justified: true, notes: '' });
             const c = new AbortController();
-            loadManagementData(c.signal, page);
+            await loadManagementData(c.signal, page);
+            setShowValidateAbsenceModal(false);
         } catch (error) {
             const data = error.response?.data;
             const msg = data?.messages ? Object.values(data.messages).flat().join(' | ') : data?.message || 'Erreur';
@@ -388,25 +454,141 @@ const Attendance = () => {
         </div>
     );
 
-    if (isTeacher) {
+    if (viewMode === 'teacher' || (!isManagement && isTeacher)) {
         const hasAnyCourse = todaySchedules.length > 0;
 
         return (
             <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 animate-fade-in pb-20 px-2 sm:px-0">
-                <header className="text-center space-y-2">
+                {hasDualRole && (
+                    <div className="flex items-center gap-2 p-1.5 bg-slate-100 rounded-2xl w-fit">
+                        <button
+                            type="button"
+                            onClick={() => setViewMode('teacher')}
+                            className="px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider bg-white text-indigo-700 shadow-md shadow-slate-200"
+                        >
+                            👨‍🏫 Mon Pointage Enseignant
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setViewMode('management')}
+                            className="px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider text-slate-500 hover:text-slate-900"
+                        >
+                            📋 Registre des Présences (UFR)
+                        </button>
+                    </div>
+                )}
+
+                <header className="text-center space-y-3">
                     <h1 className="text-2xl sm:text-4xl font-black text-gray-900 tracking-tighter italic">Mon Pointage</h1>
                     <p className="text-gray-500 font-medium text-sm sm:text-base">{new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                    <div className="inline-block bg-amber-100 border-2 border-amber-300 rounded-xl px-6 py-3">
+                        <p className="text-xs text-amber-700 uppercase font-bold mb-1">🔑 Votre PIN Permanent</p>
+                        <p className="text-2xl font-black text-amber-600 font-mono tracking-wider">{configuredPin || '••••••'}</p>
+                    </div>
                 </header>
 
-                {!hasAnyCourse && (
-                    <div className="bg-white rounded-[2rem] sm:rounded-[3rem] shadow-2xl shadow-gray-200/60 border border-gray-50 p-10 relative overflow-hidden">
-                        <div className="flex flex-col items-center text-center space-y-4">
-                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center"><BookOpen size={28} className="text-gray-300" /></div>
-                            <p className="text-sm font-bold text-gray-500">Aucun cours programmé aujourd'hui</p>
-                            <p className="text-xs text-gray-400">Vous ne pouvez pas pointer un jour sans cours.</p>
+                {onlineCourseRequest && onlineCourseRequest.status === 'approved' && (
+                    <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-[2rem] border-2 border-emerald-200 p-6 sm:p-8 shadow-lg shadow-emerald-100/50">
+                        <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                <CheckCircle size={24} className="text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <h3 className="text-lg font-black text-emerald-900 mb-2">✅ Cours en ligne approuvé</h3>
+                                <p className="text-sm text-emerald-800 mb-3">L'administration a validé votre demande de faire cours en ligne aujourd'hui.</p>
+                                <div className="bg-white rounded-xl p-4 border border-emerald-200">
+                                    <p className="text-xs text-gray-600 uppercase tracking-widest font-bold mb-1">Code d'accès temporaire</p>
+                                    <p className="text-2xl font-black text-emerald-600 font-mono tracking-wider">{onlineCourseRequest.temporary_code}</p>
+                                    <p className="text-xs text-gray-500 mt-2">Utilisez ce code pour pointer votre présence en ligne</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )}
+
+                {!hasAnyCourse && (
+                    <div className="bg-indigo-50/70 border border-indigo-200 rounded-2xl p-5 flex items-center gap-4">
+                        <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0 text-indigo-600">
+                            <BookOpen size={20} />
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-indigo-900">Aucun cours planifié aujourd'hui</p>
+                            <p className="text-xs text-indigo-600">Vous pouvez enregistrer votre présence générale sur le campus avec le formulaire ci-dessous.</p>
+                        </div>
+                    </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-[2.5rem] shadow-xl border-2 border-blue-200 p-6">
+                        <h3 className="text-lg font-black text-blue-900 mb-4">📱 POINTAGE EN LIGNE</h3>
+                        {onlineCourseRequest?.status === 'approved' ? (
+                            <div className="space-y-3">
+                                <div className="bg-white rounded-xl p-4 border-2 border-emerald-200">
+                                    <p className="text-xs text-emerald-700 uppercase font-bold mb-2">Code temporaire</p>
+                                    <p className="text-3xl font-black text-emerald-600 font-mono tracking-wider">{onlineCourseRequest.temporary_code}</p>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button onClick={handleCheckInOnline} className="px-4 py-3 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700">▶️ Démarrer</button>
+                                    <button onClick={handleCheckOutOnline} className="px-4 py-3 bg-red-600 text-white text-sm font-bold rounded-lg hover:bg-red-700">⏹️ Terminer</button>
+                                </div>
+                            </div>
+                        ) : (
+                            <button onClick={() => setShowOnlineRequestModal(true)} className="w-full px-4 py-3 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700">
+                                📤 Demander Cours en Ligne
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-[2.5rem] shadow-xl border-2 border-orange-200 p-6">
+                        <h3 className="text-lg font-black text-orange-900 mb-4">🏫 POINTAGE EN PRÉSENTIEL</h3>
+                        <div className="space-y-3">
+                            <div className="bg-white rounded-xl p-4 border-2 border-amber-200">
+                                <p className="text-xs text-amber-700 uppercase font-bold mb-2">Votre PIN Permanent</p>
+                                <p className="text-3xl font-black text-amber-600 font-mono tracking-wider">{configuredPin || '••••••'}</p>
+                                <p className="text-xs text-gray-600 mt-2">Code à saisir pour pointer en présentiel</p>
+                            </div>
+
+                            {todayAttendance?.check_in_time && !todayAttendance?.check_out_time ? (
+                                <div className="space-y-3">
+                                    <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
+                                        <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm">
+                                            <CheckCircle size={18} className="text-emerald-600" />
+                                            Arrivée enregistrée à {todayAttendance.check_in_time.substring(0, 5)}
+                                        </div>
+                                        <p className="text-xs text-emerald-600 mt-1">N'oubliez pas d'enregistrer votre départ à la fin de vos cours.</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={handleCheckOut}
+                                        className="w-full px-4 py-3 bg-red-600 text-white text-sm font-bold rounded-lg hover:bg-red-700 transition-all flex items-center justify-center gap-2 shadow-md active:scale-95"
+                                    >
+                                        ⏹️ Pointer mon départ
+                                    </button>
+                                </div>
+                            ) : todayAttendance?.check_in_time && todayAttendance?.check_out_time ? (
+                                <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200 text-center space-y-1">
+                                    <p className="text-sm font-bold text-emerald-800">✅ Pointage terminé pour aujourd'hui</p>
+                                    <p className="text-xs text-emerald-600 font-mono">
+                                        Entrée : {todayAttendance.check_in_time.substring(0, 5)} — Sortie : {todayAttendance.check_out_time.substring(0, 5)}
+                                    </p>
+                                </div>
+                            ) : (
+                                <form onSubmit={handleCheckIn} className="space-y-3">
+                                    <input
+                                        type="password"
+                                        placeholder="Entrez votre PIN"
+                                        value={code}
+                                        onChange={(e) => setCode(e.target.value)}
+                                        className="w-full px-4 py-3 rounded-lg border border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-500 text-lg font-mono tracking-widest text-center"
+                                    />
+                                    <button type="submit" className="w-full px-4 py-3 bg-orange-600 text-white text-sm font-bold rounded-lg hover:bg-orange-700 shadow-md transition-all active:scale-95">
+                                        🏢 Pointer Présence (Arrivée)
+                                    </button>
+                                </form>
+                            )}
+                        </div>
+                    </div>
+                </div>
 
                 {hasAnyCourse && (
                     <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-gray-200/60 border border-gray-50 p-6 sm:p-8">
@@ -456,95 +638,6 @@ const Attendance = () => {
                     </div>
                 )}
 
-                {activeSchedule && (
-                    <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-gray-200/60 border border-gray-50 p-6 sm:p-8 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-emerald-100 to-transparent rounded-bl-full opacity-60"></div>
-                        <div className="relative z-10 flex flex-col items-center text-center space-y-6">
-                            <div className="flex items-center justify-center gap-3"><div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div><p className="text-sm font-black text-gray-500 uppercase tracking-widest">En service — {activeSchedule.subject_name}</p></div>
-                            <WorkTimer checkInTime={activeSchedule.check_in_time} />
-                            <p className="text-xs text-gray-400">Arrivée : <span className="font-mono font-black">{activeSchedule.check_in_time?.substring(0, 5)}</span> · Salle {activeSchedule.classroom_name}</p>
-                            <button onClick={handleCheckOut} className="w-full py-5 bg-red-600 hover:bg-red-700 text-white rounded-[2rem] font-black text-sm uppercase tracking-widest transition-all active:scale-95 shadow-xl shadow-red-200"><span className="flex items-center justify-center gap-2">Pointer mon départ <ArrowRight size={16} /></span></button>
-                        </div>
-                    </div>
-                )}
-
-                {currentSchedule && !activeSchedule && (
-                    <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-gray-200/60 border border-gray-50 p-6 sm:p-10 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-indigo-100 to-transparent rounded-bl-full opacity-60"></div>
-                        <div className="relative z-10 flex flex-col items-center text-center space-y-6">
-                            <div className="flex flex-col items-center gap-2">
-                                <div className="w-14 h-14 bg-indigo-100 rounded-2xl flex items-center justify-center"><BookOpen size={26} className="text-indigo-600" /></div>
-                                <p className="text-sm font-black text-gray-500 uppercase tracking-widest">Cours à pointer</p>
-                                <h3 className="text-2xl font-black text-gray-900 tracking-tighter">{currentSchedule.subject_name || 'Matière'}</h3>
-                                <div className="flex items-center gap-3 text-xs text-slate-500 flex-wrap justify-center">
-                                    <span className="flex items-center gap-1"><MapPin size={12} /> {currentSchedule.classroom_name || '—'}</span>
-                                    {currentSchedule.level && <span className="font-bold text-indigo-600">Niveau {currentSchedule.level}</span>}
-                                    <span className="font-mono font-bold">{currentSchedule.start_time?.substring(0, 5)} - {currentSchedule.end_time?.substring(0, 5)}</span>
-                                </div>
-                            </div>
-
-                            {!attendanceMode ? (
-                                <div className="w-full space-y-4 bg-gradient-to-b from-purple-50 to-transparent p-6 rounded-2xl">
-                                    <p className="text-sm font-black text-gray-700 uppercase tracking-widest">Aujourd'hui, je fais mon cours:</p>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <button type="button" onClick={() => setAttendanceMode('physical')} className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-orange-200">
-                                            <span className="text-3xl">🏫</span>
-                                            <span>En présentiel</span>
-                                        </button>
-                                        <button type="button" onClick={() => setAttendanceMode('online')} className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-blue-200">
-                                            <span className="text-3xl">📱</span>
-                                            <span>En ligne</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            ) : attendanceMode === 'physical' ? (
-                                <div className="w-full space-y-4">
-                                    <div className="flex items-center justify-center gap-2 mb-4">
-                                        <span className="text-2xl">🏫</span>
-                                        <p className="text-sm font-black text-gray-600 uppercase">Pointage en présentiel</p>
-                                        <button type="button" onClick={() => setAttendanceMode(null)} className="ml-auto text-xs text-gray-400 hover:text-gray-600 underline">Changer</button>
-                                    </div>
-                                    <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
-                                        <Fingerprint size={16} className="text-indigo-400" />
-                                        <span>Saisissez votre code PIN personnel</span>
-                                    </div>
-                                    <form onSubmit={handleCheckIn} className="space-y-4">
-                                        <input type="password" inputMode="numeric" pattern="[0-9]*" placeholder="Code PIN (4-6 chiffres)"
-                                            className="w-full text-center text-4xl font-mono p-6 bg-gray-50 border-2 border-transparent focus:border-indigo-500 rounded-[2rem] outline-none transition-all font-black tracking-widest"
-                                            maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, ''))} />
-                                        <button type="submit" disabled={!code || code.length < 4}
-                                            className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[2rem] font-black text-sm uppercase tracking-widest transition-all active:scale-95 shadow-xl shadow-indigo-200 disabled:opacity-40 disabled:cursor-not-allowed">
-                                            Pointer mon arrivée
-                                        </button>
-                                    </form>
-                                </div>
-                            ) : (
-                                <div className="w-full space-y-4">
-                                    <div className="flex items-center justify-center gap-2 mb-4">
-                                        <span className="text-2xl">📱</span>
-                                        <p className="text-sm font-black text-gray-600 uppercase">Pointage en ligne</p>
-                                        <button type="button" onClick={() => setAttendanceMode(null)} className="ml-auto text-xs text-gray-400 hover:text-gray-600 underline">Changer</button>
-                                    </div>
-                                    <div className="flex gap-3">
-                                        <button type="button" onClick={handleCheckInOnline} className="flex-1 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-blue-200 flex items-center justify-center gap-2">
-                                            <span>▶️</span>
-                                            <span>Démarrer session</span>
-                                        </button>
-                                        <button type="button" onClick={handleCheckOutOnline} className="flex-1 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-emerald-200 flex items-center justify-center gap-2">
-                                            <span>⏹️</span>
-                                            <span>Terminer</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-
-                <div className="flex justify-center gap-4 flex-wrap">
-                    <button onClick={() => setShowAbsenceModal(true)} className="bg-amber-600 text-white px-6 py-3 rounded-2xl flex items-center space-x-2 hover:bg-amber-700 transition-all shadow-xl active:scale-95"><AlertCircle size={18} /><span className="font-black text-xs uppercase tracking-widest">Signaler Absence/Retard</span></button>
-                    <button onClick={() => { setAvailabilityForm({ date: new Date().toISOString().split('T')[0], available: true, time_slots: '' }); setShowAvailabilityModal(true); }} className="bg-emerald-600 text-white px-6 py-3 rounded-2xl flex items-center space-x-2 hover:bg-emerald-700 transition-all shadow-xl active:scale-95"><CalendarCheck size={18} /><span className="font-black text-xs uppercase tracking-widest">Declarer ma Disponibilite</span></button>
-                </div>
                 <div className="bg-white rounded-[2.5rem] shadow-xl shadow-gray-200/40 border border-gray-50 p-8">
                     <h3 className="text-xl font-black text-gray-900 tracking-tighter mb-6">Historique - 4 semaines</h3>
                     <CalendarHistory weekData={weekData} weeksBack={weeksBack} onPrevWeek={() => setWeeksBack(w => Math.min(w + 1, 3))} onNextWeek={() => setWeeksBack(w => Math.max(w - 1, 0))} />
@@ -593,6 +686,24 @@ const Attendance = () => {
         return (
             <div className="min-h-screen">
                 <div className="max-w-[1400px] mx-auto space-y-6 px-2 sm:px-4 pt-2">
+                    {hasDualRole && (
+                        <div className="flex items-center gap-2 mb-2 p-1.5 bg-slate-100 rounded-2xl w-fit">
+                            <button
+                                type="button"
+                                onClick={() => setViewMode('teacher')}
+                                className="px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider text-slate-500 hover:text-slate-900"
+                            >
+                                👨‍🏫 Mon Pointage Enseignant
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setViewMode('management')}
+                                className="px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider bg-white text-indigo-700 shadow-md shadow-slate-200"
+                            >
+                                📋 Registre des Présences (UFR)
+                            </button>
+                        </div>
+                    )}
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div>
                             <div className="flex items-center gap-3 mb-1">
@@ -778,6 +889,22 @@ const Attendance = () => {
 
                     <FormModal isOpen={showAbsenceModal} onClose={() => setShowAbsenceModal(false)} onSubmit={handleReportAbsence} title="Signaler une absence ou un retard" submitText="Signaler">
                         <div className="space-y-5"><div className="form-group"><label className="form-label">Date</label><input required type="date" className="input-field" max={new Date().toISOString().split('T')[0]} value={absenceForm.attendance_date} onChange={e => setAbsenceForm({...absenceForm, attendance_date: e.target.value})} /></div><div className="form-group"><label className="form-label">Type</label><select required className="select-field" value={absenceForm.status} onChange={e => setAbsenceForm({...absenceForm, status: e.target.value})}><option value="absent">Absent</option><option value="late">Retard</option></select></div><div className="form-group"><label className="form-label">Motif</label><textarea className="textarea-field" rows="3" value={absenceForm.reason} onChange={e => setAbsenceForm({...absenceForm, reason: e.target.value})} /></div></div>
+                    </FormModal>
+
+                    <FormModal isOpen={showOnlineRequestModal} onClose={() => setShowOnlineRequestModal(false)} onSubmit={handleSubmitOnlineRequest} title="Demander un Cours en Ligne" submitText={submittingOnlineRequest ? "..." : "Soumettre"} disableSubmit={!onlineRequestForm.schedule_id || !onlineRequestForm.course_date}>
+                        <div className="space-y-5">
+                            {schedules.length === 0 ? (
+                                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                    <p className="text-sm text-yellow-800">⚠️ Aucun cours trouvé. Veuillez vous assurer que vous avez des cours assignés.</p>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="form-group"><label className="form-label">Cours</label><select required className="select-field" value={onlineRequestForm.schedule_id} onChange={e => setOnlineRequestForm({...onlineRequestForm, schedule_id: e.target.value})}><option value="">Sélectionner un cours...</option>{schedules.map(s => <option key={s.id} value={s.id}>{s.subject?.name} - {s.start_time?.substring(0, 5)}</option>)}</select></div>
+                                    <div className="form-group"><label className="form-label">Date du cours (minimum 2 jours avant)</label><input required type="date" className="input-field" min={new Date(Date.now() + 2*24*60*60*1000).toISOString().split('T')[0]} value={onlineRequestForm.course_date} onChange={e => setOnlineRequestForm({...onlineRequestForm, course_date: e.target.value})} /></div>
+                                </>
+                            )}
+                            <p className="text-xs text-blue-600 bg-blue-50 p-3 rounded-lg">ℹ️ L'administration validera votre demande. Un code temporaire vous sera généré automatiquement.</p>
+                        </div>
                     </FormModal>
                 </div>
             </div>

@@ -43,7 +43,6 @@ const Sidebar = ({ sidebarOpen, onToggle }) => {
         },
         {
             label: 'Gestion Ressources Humaines',
-            roles: ['admin', 'hr_manager', 'secretary'],
             items: [
                 { icon: <Users size={18} />, label: 'Enseignants', path: '/teachers', roles: ['admin', 'hr_manager', 'secretary', 'academic_manager', 'accountant'] },
                 { icon: <Palmtree size={18} />, label: 'Congés & Absences', path: '/leaves', roles: ['admin', 'hr_manager', 'secretary', 'academic_manager', 'accountant'] },
@@ -52,13 +51,12 @@ const Sidebar = ({ sidebarOpen, onToggle }) => {
         },
         {
             label: 'Académique',
-            roles: ['admin', 'academic_manager'],
             items: [
                 { icon: <LayoutGrid size={18} />, label: 'UFR', path: '/ufrs', roles: ['admin', 'academic_manager'] },
                 { icon: <GraduationCap size={18} />, label: 'Matières', path: '/subjects', roles: ['admin', 'academic_manager'] },
                 { icon: <MapPin size={18} />, label: 'Salles', path: '/classrooms', roles: ['admin', 'academic_manager'] },
-                { icon: <Calendar size={18} />, label: 'Emploi du Temps', path: '/schedules', roles: ['admin', 'academic_manager', 'teacher'] },
-                { icon: <BookOpen size={18} />, label: 'Cours & Devoirs', path: '/homeworks', roles: ['admin', 'academic_manager', 'teacher'] },
+                { icon: <Calendar size={18} />, label: 'Emploi du Temps', path: '/schedules', roles: ['admin', 'academic_manager', 'teacher', 'hr_manager', 'secretary'] },
+                { icon: <BookOpen size={18} />, label: 'Cours & Devoirs', path: '/homeworks', roles: ['admin', 'academic_manager', 'teacher', 'hr_manager', 'secretary'] },
             ]
         },
         {

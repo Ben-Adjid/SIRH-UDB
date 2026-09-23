@@ -402,7 +402,10 @@ class DashboardController extends Controller {
             $scheduleScope($recentSchedules);
 
             return response()->json([
-                'total_subjects' => $isScoped ? Subject::whereHas('schedules.teacher', fn($teacher) => $teacher->whereIn('ufr_id', $visibleUfrIds))->count() : Subject::count(),
+                'total_subjects' => $isScoped
+                    ? Subject::where(fn($q) => $q->whereIn('ufr_id', $visibleUfrIds)
+                        ->orWhereHas('schedules.teacher', fn($teacher) => $teacher->whereIn('ufr_id', $visibleUfrIds)))->count()
+                    : Subject::count(),
                 'total_classrooms' => Classroom::count(),
                 'total_schedules' => (clone $schedules)->count(),
                 'active_homeworks' => $pendingHomeworks,

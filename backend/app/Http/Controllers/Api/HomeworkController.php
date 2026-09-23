@@ -56,9 +56,12 @@ class HomeworkController extends Controller {
 
     private function subjectBelongsToVisibleUfr(int $subjectId, User $user): bool
     {
-        return $user->hasRole('admin') || Schedule::where('subject_id', $subjectId)
-            ->whereHas('teacher', fn($teacher) => $teacher->whereIn('ufr_id', $this->visibleUfrIds($user)))
-            ->exists();
+        if ($user->hasRole('admin')) return true;
+        $ufrIds = $this->visibleUfrIds($user);
+        return \App\Models\Subject::whereKey($subjectId)->whereIn('ufr_id', $ufrIds)->exists()
+            || Schedule::where('subject_id', $subjectId)
+                ->whereHas('teacher', fn($teacher) => $teacher->whereIn('ufr_id', $ufrIds))
+                ->exists();
     }
     
     public function index(Request $request): JsonResponse {

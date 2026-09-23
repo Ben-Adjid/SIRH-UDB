@@ -183,7 +183,14 @@ class AuthController extends Controller {
 
         $updates = $validated;
         if (array_key_exists('attendance_pin', $validated)) {
-            $updates['attendance_pin'] = $validated['attendance_pin'] ?: null;
+            $pinValue = $validated['attendance_pin'] ?: null;
+            $updates['attendance_pin'] = $pinValue;
+            if ($user->hasRole('teacher')) {
+                $teacher = \App\Models\Teacher::where('user_id', $user->id)->first();
+                if ($teacher) {
+                    $teacher->update(['pin_code' => $pinValue]);
+                }
+            }
         }
         if (array_key_exists('email', $validated) && $validated['email'] !== $user->email) {
             $updates['email_verified_at'] = null;

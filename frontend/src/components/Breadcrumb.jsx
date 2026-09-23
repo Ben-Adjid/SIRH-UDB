@@ -44,7 +44,7 @@ const Breadcrumb = () => {
                 <Home size={16} />
             </Link>
 
-            {breadcrumbs.map((crumb, index) => (
+            {breadcrumbs.map((crumb) => (
                 <div key={crumb.path} className="flex items-center gap-2">
                     <ChevronRight size={16} className="text-slate-300" />
                     {crumb.isCurrent ? (

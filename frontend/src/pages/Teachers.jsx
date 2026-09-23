@@ -40,6 +40,7 @@ const emptyForm = {
 const Teachers = () => {
     const user = useAuthStore((s) => s.user);
     const canManage = hasAnyRole(user, ['admin', 'hr_manager', 'secretary']);
+    const canEdit = hasAnyRole(user, ['admin', 'hr_manager', 'secretary', 'academic_manager']);
     const [teachers, setTeachers] = useState([]);
     const [ufrs, setUfrs] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -102,7 +103,8 @@ const Teachers = () => {
         setIsEditing(false);
         setSelectedTeacher(null);
         setFieldErrors({});
-        setFormData({ ...emptyForm });
+        // Chef UFR : une seule UFR visible, on la présélectionne
+        setFormData({ ...emptyForm, ufr_id: ufrs.length === 1 ? ufrs[0].id : '' });
         setShowModal(true);
     };
 
@@ -230,7 +232,7 @@ const Teachers = () => {
                         </div>
                         <p className="text-slate-400 text-sm ml-[52px]">Gestion du corps professoral</p>
                     </div>
-                    {canManage && (
+                    {canEdit && (
                     <button
                         onClick={handleOpenAddModal}
                         className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold text-sm shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 active:scale-[0.97]"
@@ -324,7 +326,7 @@ const Teachers = () => {
                                 ? "Essayez de modifier vos filtres"
                                 : "Commencez par ajouter un enseignant"}
                         </p>
-                        {!searchTerm && !ufrFilter && !statusFilter && canManage && (
+                        {!searchTerm && !ufrFilter && !statusFilter && canEdit && (
                             <button
                                 onClick={handleOpenAddModal}
                                 className="mt-4 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-sm font-semibold hover:bg-blue-100 transition-colors"
@@ -371,7 +373,7 @@ const Teachers = () => {
                                             >
                                                 {isExpanded ? <EyeOff size={14} /> : <Eye size={14} />}
                                             </button>
-                                            {canManage && (
+                                            {canEdit && (
                                             <button
                                                 onClick={() => handleOpenEditModal(teacher)}
                                                 className="p-1.5 rounded-lg text-slate-300 hover:text-amber-500 hover:bg-amber-50 transition-all"

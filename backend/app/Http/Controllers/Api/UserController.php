@@ -132,15 +132,18 @@ class UserController extends Controller {
                 if (!$ufrId) {
                     return response()->json(['message' => 'Aucun UFR disponible pour créer la fiche enseignant'], 422);
                 }
+                $pin = str_pad(1000 + ($user->id % 9000), 4, '0', STR_PAD_LEFT);
                 \App\Models\Teacher::create([
                     'user_id' => $user->id,
                     'ufr_id' => $ufrId,
-                    'employee_id' => 'TEMP-' . $user->id . '-' . time(),
+                    'employee_id' => 'ENS-' . str_pad($user->id, 5, '0', STR_PAD_LEFT),
+                    'pin_code' => $pin,
                     'hire_date' => now(),
                     'volume_hours' => 0,
                     'hourly_rate' => 0,
                     'status' => 'active',
                 ]);
+                $user->update(['attendance_pin' => $pin]);
             }
         }
 

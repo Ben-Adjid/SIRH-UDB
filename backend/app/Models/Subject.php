@@ -9,12 +9,16 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Subject extends Model {
     use SoftDeletes;
 
-    protected $fillable = ['name', 'code', 'level', 'credit_hours', 'description'];
+    protected $fillable = ['ufr_id', 'name', 'code', 'level', 'credit_hours', 'description'];
 
     protected $casts = [
         'credit_hours' => 'integer',
         'deleted_at' => 'datetime',
     ];
+
+    public function ufr(): \Illuminate\Database\Eloquent\Relations\BelongsTo {
+        return $this->belongsTo(Ufr::class);
+    }
 
     public function schedules(): HasMany {
         return $this->hasMany(Schedule::class);

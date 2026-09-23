@@ -69,7 +69,7 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText 
         >
             <div
                 ref={overlayRef}
-                className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fadeIn"
+                className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in"
                 onClick={onClose}
             />
             <div className="relative z-10 w-full max-w-md p-8 bg-white rounded-3xl shadow-xl border border-slate-100 animate-scale-in">

@@ -53,7 +53,7 @@ const FormModal = ({
         >
             <div
                 ref={overlayRef}
-                className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fadeIn"
+                className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in"
                 onClick={onClose}
             />
             <div className={`relative w-full ${maxW} max-h-[calc(100vh-4rem)] flex flex-col overflow-hidden bg-white rounded-3xl shadow-xl border border-slate-100 animate-scale-in`}>

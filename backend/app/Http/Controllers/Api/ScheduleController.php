@@ -38,8 +38,11 @@ class ScheduleController extends Controller {
 
     private function subjectBelongsToVisibleUfr(int $subjectId, User $user): bool
     {
-        return $user->hasRole('admin') || Subject::whereKey($subjectId)
-            ->whereHas('schedules.teacher', fn($teacher) => $teacher->whereIn('ufr_id', $this->visibleUfrIds($user)))
+        if ($user->hasRole('admin')) return true;
+        $ufrIds = $this->visibleUfrIds($user);
+        return Subject::whereKey($subjectId)
+            ->where(fn($q) => $q->whereIn('ufr_id', $ufrIds)
+                ->orWhereHas('schedules.teacher', fn($teacher) => $teacher->whereIn('ufr_id', $ufrIds)))
             ->exists();
     }
     

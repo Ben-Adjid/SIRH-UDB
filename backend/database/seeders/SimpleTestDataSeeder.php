@@ -60,6 +60,7 @@ class SimpleTestDataSeeder extends Seeder
                 'year' => $year,
                 'month' => $month,
             ], [
+                'base_salary' => $baseAmount,
                 'honorarium_amount' => $baseAmount,
                 'brs_amount' => $brsAmount,
                 'gross_salary' => $baseAmount,

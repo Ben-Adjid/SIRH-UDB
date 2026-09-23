@@ -51,8 +51,8 @@ class AcademicYearController extends Controller {
     }
 
     public function destroy(AcademicYear $academicYear): JsonResponse {
-        if (!auth()->user()->hasRole('admin')) {
-            return response()->json(['message' => 'Action réservée aux administrateurs'], 403);
+        if (!auth()->user()->hasAnyRole(['admin', 'academic_manager'])) {
+            return response()->json(['message' => 'Action réservée aux administrateurs et chefs d\'UFR'], 403);
         }
 
         $wasActive = $academicYear->is_active;

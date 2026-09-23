@@ -8,7 +8,7 @@ class StoreTeacherRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->user()->hasAnyRole(['admin', 'hr_manager', 'secretary']);
+        return auth()->user()->hasAnyRole(['admin', 'hr_manager', 'secretary', 'academic_manager']);
     }
 
     public function rules(): array

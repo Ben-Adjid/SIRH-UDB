@@ -81,8 +81,8 @@ const Profile = () => {
         try {
             await api.post('/auth/change-password', passwordData);
             toast.success('Mot de passe changé');
-            setShowPasswordModal(false);
             setPasswordData({ current_password: '', new_password: '', new_password_confirmation: '' });
+            setShowPasswordModal(false);
         } catch (error) {
             toast.error(error.response?.data?.message || 'Erreur');
         }
@@ -222,8 +222,8 @@ const Profile = () => {
                 </div>
 
                 <div className="space-y-4">
-                    {/* Code PIN de pointage (enseignants uniquement) */}
-                    {user?.teacher?.pin_code && (
+                    {/* Code PIN de pointage */}
+                    {(user?.teacher?.pin_code || currentAttendancePin) && (
                         <div className="flex items-center justify-between p-4 bg-indigo-50 rounded-xl border border-indigo-100">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
@@ -231,22 +231,15 @@ const Profile = () => {
                                 </div>
                                 <div>
                                     <p className="font-bold text-gray-900 text-sm">Code PIN de pointage</p>
-                                    <p className="text-xs text-gray-500">Saisissez ce code pour pointer votre arrivée</p>
+                                    <p className="text-xs text-gray-500">Saisissez ce code pour pointer votre présence</p>
                                 </div>
                             </div>
                             <span className="text-2xl font-black font-mono tracking-widest text-indigo-700">
-                                {user.teacher.pin_code}
+                                {(() => {
+                                    const p = user?.teacher?.pin_code || currentAttendancePin;
+                                    return (typeof p === 'string' && (p.startsWith('$2y$') || p.startsWith('$2b$'))) ? '••••••' : p;
+                                })()}
                             </span>
-                        </div>
-                    )}
-
-                    {!user?.teacher && currentAttendancePin && (
-                        <div className="flex items-center justify-between p-4 bg-indigo-50 rounded-xl border border-indigo-100">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center"><Shield size={20} className="text-indigo-600" /></div>
-                                <div><p className="font-bold text-gray-900 text-sm">Code PIN de pointage</p><p className="text-xs text-gray-500">Utilisez ce code pour pointer votre arrivée</p></div>
-                            </div>
-                            <span className="text-2xl font-black font-mono tracking-widest text-indigo-700">{currentAttendancePin}</span>
                         </div>
                     )}
 

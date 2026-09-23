@@ -40,6 +40,7 @@ const quickActions = {
         { label: 'Nouveau devoir', icon: BookOpen, path: '/homeworks', color: 'from-amber-500 to-orange-600' },
     ],
     teacher: [
+        { label: 'Mon pointage', icon: Clock, path: '/attendance', color: 'from-emerald-500 to-teal-600' },
         { label: 'Emploi du temps', icon: Calendar, path: '/schedules', color: 'from-blue-500 to-indigo-600' },
         { label: 'Mes honoraires', icon: Wallet, path: '/payroll', color: 'from-amber-500 to-orange-600' },
         { label: 'Mes documents', icon: FileText, path: '/documents', color: 'from-purple-500 to-pink-600' },
@@ -242,7 +243,8 @@ const Dashboard = () => {
         if (role === 'hr_manager' || role === 'secretary') return 'hr';
         if (role === 'accountant') return 'accountant';
         if (role === 'academic_manager') return 'academic';
-        return 'teacher';
+        if (role === 'teacher') return 'teacher';
+        return 'teacher'; // Default fallback
     };
 
     const fetchStats = useCallback(async () => {

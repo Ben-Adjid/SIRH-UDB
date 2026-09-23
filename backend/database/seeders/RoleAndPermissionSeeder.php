@@ -72,6 +72,7 @@ class RoleAndPermissionSeeder extends Seeder
             'homeworks.publish',
             'attendance.report_absence',
             'attendance.mark_own',
+            'attendance.track',
             'availability.declare',
             'notifications.receive',
         ];

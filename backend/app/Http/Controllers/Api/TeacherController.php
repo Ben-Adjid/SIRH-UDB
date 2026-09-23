@@ -30,6 +30,13 @@ class TeacherController extends Controller {
         return $ids->unique()->values()->all();
     }
 
+    /** Chef UFR sans rôle RH/admin : ses actions sont limitées à son UFR. */
+    private function isUfrHeadOnly(User $user): bool
+    {
+        return $user->hasRole('academic_manager')
+            && !$user->hasAnyRole(['admin', 'hr_manager', 'secretary']);
+    }
+
     private function canAccessTeacher(Teacher $teacher, User $user): bool
     {
         return $user->hasRole('admin')
@@ -77,6 +84,11 @@ class TeacherController extends Controller {
     public function store(StoreTeacherRequest $request): JsonResponse {
         try {
             $validated = $request->validated();
+
+            if ($this->isUfrHeadOnly(auth()->user())
+                && !in_array((int) $validated['ufr_id'], array_map('intval', $this->visibleUfrIds(auth()->user())))) {
+                return response()->json(['message' => 'Vous ne pouvez ajouter des enseignants que dans votre UFR'], 403);
+            }
 
             $teacherData = array_intersect_key($validated, array_flip([
                 'ufr_id', 'employee_id', 'mobile', 'address', 'hire_date',
@@ -206,8 +218,12 @@ class TeacherController extends Controller {
 
     public function update(Request $request, Teacher $teacher): JsonResponse {
         try {
-            if (!auth()->user()->hasAnyRole(['admin', 'hr_manager', 'secretary'])) {
+            $authUser = auth()->user();
+            if (!$authUser->hasAnyRole(['admin', 'hr_manager', 'secretary', 'academic_manager'])) {
                 return response()->json(['message' => 'Non autorisé'], 403);
+            }
+            if ($this->isUfrHeadOnly($authUser) && !$this->canAccessTeacher($teacher, $authUser)) {
+                return response()->json(['message' => 'Vous ne pouvez modifier que les enseignants de votre UFR'], 403);
             }
 
             $validated = $request->validate([
@@ -221,6 +237,11 @@ class TeacherController extends Controller {
                 'status' => 'sometimes|in:active,inactive',
                 'hire_date' => 'sometimes|date',
             ]);
+
+            if ($this->isUfrHeadOnly($authUser) && isset($validated['ufr_id'])
+                && !in_array((int) $validated['ufr_id'], array_map('intval', $this->visibleUfrIds($authUser)))) {
+                return response()->json(['message' => 'Vous ne pouvez affecter un enseignant qu\'à votre UFR'], 403);
+            }
 
             return DB::transaction(function () use ($validated, $request, $teacher) {
                 if (isset($validated['name']) && $teacher->user) {

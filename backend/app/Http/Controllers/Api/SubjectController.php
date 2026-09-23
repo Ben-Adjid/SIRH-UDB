@@ -23,16 +23,36 @@ class SubjectController extends Controller {
 
     private function canAccessSubject(Subject $subject, User $user): bool
     {
-        return $user->hasRole('admin') || $subject->schedules()
-            ->whereHas('teacher', fn($teacher) => $teacher->whereIn('ufr_id', $this->visibleUfrIds($user)))
-            ->exists();
+        if ($user->hasRole('admin')) return true;
+        $ufrIds = $this->visibleUfrIds($user);
+        return in_array($subject->ufr_id, $ufrIds)
+            || $subject->schedules()
+                ->whereHas('teacher', fn($teacher) => $teacher->whereIn('ufr_id', $ufrIds))
+                ->exists();
+    }
+
+    /** Enseignant "pur" (pas de rôle de gestion) : ne voit que ses propres matières. */
+    private function isTeacherOnly(User $user): bool
+    {
+        return $user->hasRole('teacher')
+            && !$user->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'secretary']);
     }
 
     public function index(Request $request): JsonResponse {
-        $query = Subject::query();
+        $query = Subject::with('ufr:id,name,code');
         $user = auth()->user();
-        if (!$user->hasRole('admin')) {
-            $query->whereHas('schedules.teacher', fn($teacher) => $teacher->whereIn('ufr_id', $this->visibleUfrIds($user)));
+        if ($this->isTeacherOnly($user)) {
+            $teacherId = Teacher::where('user_id', $user->id)->value('id');
+            // Mêmes critères que HomeworkController::teacherTeachesSubject
+            $query->whereHas('schedules', fn($s) => $s->where('teacher_id', $teacherId ?? 0)
+                ->where(fn($q) => $q->whereNull('is_archived')->orWhere('is_archived', false))
+                ->where('status', '!=', 'cancelled'));
+        } elseif (!$user->hasRole('admin')) {
+            $ufrIds = $this->visibleUfrIds($user);
+            $query->where(function ($q) use ($ufrIds) {
+                $q->whereIn('ufr_id', $ufrIds)
+                    ->orWhereHas('schedules.teacher', fn($teacher) => $teacher->whereIn('ufr_id', $ufrIds));
+            });
         }
         if ($request->filled('search')) {
             $search = trim($request->input('search'));
@@ -48,11 +68,13 @@ class SubjectController extends Controller {
     }
 
     public function store(Request $request): JsonResponse {
-        if (!auth()->user()->hasRole('admin')) {
-            return response()->json(['message' => 'Seul un administrateur peut créer une matière'], 403);
+        $user = auth()->user();
+        if (!$user->hasAnyRole(['admin', 'academic_manager'])) {
+            return response()->json(['message' => 'Seuls l\'administrateur et le chef d\'UFR peuvent créer une matière'], 403);
         }
         try {
             $validated = $request->validate([
+                'ufr_id' => 'nullable|exists:ufrs,id',
                 'name' => 'required|string|max:255|unique:subjects,name',
                 'code' => 'required|string|max:50|unique:subjects,code',
                 'level' => 'required|in:L1,L2,L3,M1,M2',
@@ -61,6 +83,18 @@ class SubjectController extends Controller {
             ]);
 
             $validated['credit_hours'] ??= 0;
+
+            // Chef UFR : la matière est rattachée à son UFR
+            if (!$user->hasRole('admin')) {
+                $ufrIds = array_map('intval', $this->visibleUfrIds($user));
+                if (empty($ufrIds)) {
+                    return response()->json(['message' => 'Aucune UFR ne vous est rattachée'], 403);
+                }
+                if (!empty($validated['ufr_id']) && !in_array((int) $validated['ufr_id'], $ufrIds)) {
+                    return response()->json(['message' => 'Vous ne pouvez créer des matières que pour votre UFR'], 403);
+                }
+                $validated['ufr_id'] = $validated['ufr_id'] ?? $ufrIds[0];
+            }
 
             $subject = Subject::create($validated);
 
@@ -95,12 +129,18 @@ class SubjectController extends Controller {
                 return response()->json(['message' => 'Vous ne pouvez modifier que les matières de votre UFR'], 403);
             }
             $validated = $request->validate([
+                'ufr_id' => 'sometimes|nullable|exists:ufrs,id',
                 'name' => 'sometimes|unique:subjects,name,' . $subject->id,
                 'code' => 'sometimes|unique:subjects,code,' . $subject->id,
                 'level' => 'sometimes|in:L1,L2,L3,M1,M2',
                 'credit_hours' => 'sometimes|integer|min:0',
                 'description' => 'nullable|string',
             ]);
+
+            if (!auth()->user()->hasRole('admin') && array_key_exists('ufr_id', $validated)
+                && !in_array((int) $validated['ufr_id'], array_map('intval', $this->visibleUfrIds(auth()->user())))) {
+                return response()->json(['message' => 'Vous ne pouvez rattacher une matière qu\'à votre UFR'], 403);
+            }
 
             $oldValues = $subject->toArray();
             $subject->update($validated);

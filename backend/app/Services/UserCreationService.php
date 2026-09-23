@@ -31,16 +31,22 @@ class UserCreationService
             $ufr = Ufr::first();
             if (!$ufr) {
                 $user->delete();
-                throw new \RuntimeException('Aucune UFR disponible.');
+                throw new \RuntimeException('Aucune UFR disponible. Créez d\'abord une UFR avant de créer des enseignants.');
+            }
+
+            if (empty($teacherData['ufr_id'])) {
+                $user->delete();
+                throw new \RuntimeException('L\'UFR est obligatoire pour créer un enseignant.');
             }
 
             $pinCode = $this->generateUniquePinCode();
+            $user->update(['attendance_pin' => $pinCode]);
 
             Teacher::create(array_merge([
                 'user_id' => $user->id,
-                'ufr_id' => $teacherData['ufr_id'] ?? $ufr->id,
+                'ufr_id' => $teacherData['ufr_id'],
                 'employee_id' => $teacherData['employee_id'] ?? ('ENS-' . str_pad($user->id, 5, '0', STR_PAD_LEFT) . '-' . now()->format('ymd')),
-                'pin_code' => Hash::make($pinCode),
+                'pin_code' => $pinCode,
                 'hire_date' => $teacherData['hire_date'] ?? now(),
                 'volume_hours' => $teacherData['volume_hours'] ?? 0,
                 'hourly_rate' => $teacherData['hourly_rate'] ?? 0,
@@ -59,7 +65,7 @@ class UserCreationService
     {
         do {
             $pin = str_pad(random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
-        } while (Teacher::where('pin_code', Hash::make($pin))->exists());
+        } while (Teacher::where('pin_code', $pin)->exists());
 
         return $pin;
     }

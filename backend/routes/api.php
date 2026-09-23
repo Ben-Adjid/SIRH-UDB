@@ -108,11 +108,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/classrooms', [App\Http\Controllers\Api\ClassroomController::class, 'index'])->middleware('throttle:60,1');
     Route::get('/classrooms/{classroom}', [App\Http\Controllers\Api\ClassroomController::class, 'show'])->middleware('throttle:60,1');
 
+    // Enseignants : création/modification (RH + Chef UFR, limité à son UFR côté contrôleur)
+    Route::middleware('role:admin|hr_manager|secretary|academic_manager')->group(function () {
+        Route::post('/teachers', [App\Http\Controllers\Api\TeacherController::class, 'store'])->middleware('throttle:30,1');
+        Route::put('/teachers/{teacher}', [App\Http\Controllers\Api\TeacherController::class, 'update'])->middleware('throttle:60,1');
+    });
+
     // ── RESSOURCES HUMAINES (Admin + RH) ──
     Route::middleware('role:admin|hr_manager|secretary')->group(function () {
         // Enseignants
-        Route::post('/teachers', [App\Http\Controllers\Api\TeacherController::class, 'store'])->middleware('throttle:30,1');
-        Route::put('/teachers/{teacher}', [App\Http\Controllers\Api\TeacherController::class, 'update'])->middleware('throttle:60,1');
         Route::delete('/teachers/{teacher}', [App\Http\Controllers\Api\TeacherController::class, 'destroy'])->middleware('throttle:30,1');
         Route::patch('/teachers/{teacher}/archive', [App\Http\Controllers\Api\TeacherController::class, 'archive']);
 
