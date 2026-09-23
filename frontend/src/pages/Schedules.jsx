@@ -69,13 +69,16 @@ const Schedules = () => {
         try { const u = (await api.get('/ufrs', { params: { per_page: 200 } })).data; setUfrs(Array.isArray(u) ? u : (u?.data || [])); } catch { /* keep the current reference data */ }
         try {
             const [schedRes, teacherRes, subjectRes, classRes, typeRes] = await Promise.all([
-                api.get('/schedules', { params: { per_page: 500 } }),
+                api.get('/schedules', { params: { per_page: 500, include_archived: false } }),
                 api.get('/teachers', { params: { per_page: 200 } }),
                 api.get('/subjects', { params: { per_page: 200 } }),
                 api.get('/classrooms', { params: { per_page: 200 } }),
                 api.get('/teaching-types'),
             ]);
-            const s = schedRes.data; setSchedules(Array.isArray(s) ? s : (s?.data || []));
+            const s = schedRes.data;
+            const schedulesData = Array.isArray(s) ? s : (s?.data || []);
+            console.log('Schedules loaded:', schedulesData.length, 'items'); // Debug
+            setSchedules(schedulesData);
             const examRes = await api.get('/exams', { params: { per_page: 500 } });
             const examData = examRes.data; setExams(Array.isArray(examData) ? examData : (examData?.data || []));
             const t = teacherRes.data; setTeachers(Array.isArray(t) ? t : (t?.data || []));

@@ -519,6 +519,7 @@ const Attendance = () => {
                 )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {hasAnyCourse && (
                     <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-[2.5rem] shadow-xl border-2 border-blue-200 p-6">
                         <h3 className="text-lg font-black text-blue-900 mb-4">📱 POINTAGE EN LIGNE</h3>
                         {onlineCourseRequest?.status === 'approved' ? (
@@ -538,8 +539,9 @@ const Attendance = () => {
                             </button>
                         )}
                     </div>
+                    )}
 
-                    <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-[2.5rem] shadow-xl border-2 border-orange-200 p-6">
+                    <div className={`bg-gradient-to-br from-orange-50 to-red-50 rounded-[2.5rem] shadow-xl border-2 border-orange-200 p-6 ${!hasAnyCourse ? 'sm:col-span-2' : ''}`}>
                         <h3 className="text-lg font-black text-orange-900 mb-4">🏫 POINTAGE EN PRÉSENTIEL</h3>
                         <div className="space-y-3">
                             {todayAttendance?.check_in_time && !todayAttendance?.check_out_time ? (
