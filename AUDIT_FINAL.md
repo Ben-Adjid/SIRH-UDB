@@ -255,6 +255,16 @@ Le système de gestion RH (SIRH) a fait l'objet d'un audit complet. **90% des fo
 ✅ Résultat: Chef UFR voit immédiatement son pointage après check-in
 ```
 
+### Commit b3fbbed - Display Chef UFR Personal Attendance in Management List
+```
+✅ Chef UFR voit MAINTENANT ses 2 listes combinées:
+   - Son pointage personnel (en haut, avec badge 👤 MON POINTAGE)
+   - Les pointages des enseignants de son UFR (en dessous)
+✅ Pointage personnel surligné en indigo pour visibilité
+✅ attendanceList = [selfAttendance, ...allAttendance]
+✅ Gestion claire et intuitive pour Chef UFR
+```
+
 ---
 
 ## ✨ RÉSUMÉ FINAL
