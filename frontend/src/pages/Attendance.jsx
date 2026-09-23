@@ -165,7 +165,12 @@ const Attendance = () => {
 
     const loadManagementData = useCallback(async (signal, pageNum = 1) => {
         const params = { date: filterDate, page: pageNum, per_page: perPage };
-        if (filterDepartment) params.ufr_id = filterDepartment;
+        // Chef UFR only sees their own UFR
+        if (isAcademicManager && user?.teacher?.ufr_id) {
+            params.ufr_id = user.teacher.ufr_id;
+        } else if (filterDepartment) {
+            params.ufr_id = filterDepartment;
+        }
         if (filterStatus) params.status = filterStatus;
         if (debouncedSearch) params.search = debouncedSearch;
 
@@ -786,10 +791,12 @@ const Attendance = () => {
                                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
                                 <input type="text" placeholder="Rechercher un enseignant..." className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm text-slate-700 placeholder:text-slate-300 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/10 transition-all" value={searchName} onChange={e => setSearchName(e.target.value)} />
                             </div>
-                            <select className="px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium text-slate-600 cursor-pointer focus:outline-none" value={filterDepartment} onChange={e => setFilterDepartment(e.target.value)}>
-                                <option value="">Tous les departements</option>
-                                {ufrs.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                            </select>
+                            {!isAcademicManager && (
+                                <select className="px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium text-slate-600 cursor-pointer focus:outline-none" value={filterDepartment} onChange={e => setFilterDepartment(e.target.value)}>
+                                    <option value="">Tous les departements</option>
+                                    {ufrs.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                                </select>
+                            )}
                             <select className="px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium text-slate-600 cursor-pointer focus:outline-none" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
                                 <option value="">Tous les statuts</option>
                                 <option value="present">Present</option>
