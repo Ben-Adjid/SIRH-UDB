@@ -264,9 +264,7 @@ const Dashboard = () => {
             const endpoint = `/dashboards/${getRolePath(userRole)}`;
             console.log('[Dashboard] Fetching from endpoint:', endpoint, 'for user:', user?.id, 'role:', userRole);
 
-            const response = await api.get(endpoint, {
-                headers: { 'Cache-Control': 'no-cache' }
-            });
+            const response = await api.get(endpoint);
 
             console.log('[Dashboard] Full response received:', {
                 status: response.status,
