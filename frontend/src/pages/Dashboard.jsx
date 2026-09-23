@@ -253,6 +253,7 @@ const Dashboard = () => {
     };
 
     const fetchStats = useCallback(async () => {
+        if (!userRole) return;
         setLoading(true);
         try {
             const response = await api.get(`/dashboards/${getRolePath(userRole)}`);
@@ -265,8 +266,10 @@ const Dashboard = () => {
     }, [userRole]);
 
     useEffect(() => {
-        fetchStats();
-    }, [fetchStats]);
+        if (user && userRole) {
+            fetchStats();
+        }
+    }, [user, userRole, fetchStats]);
 
     const renderBar = (val, max, color) => (
         <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
