@@ -235,8 +235,8 @@ class PayrollController extends Controller {
                     'payroll' => $payroll->load('details'),
                     'summary' => [
                         'type' => 'vacataire',
-                         'honorarium_amount' => $baseAmount,
-                         'base_amount' => $baseAmount,
+                        'honorarium_amount' => $baseAmount,
+                        'base_amount' => $baseAmount,
                         'brs_amount' => $brsAmount,
                         'gross_salary' => $grossSalary,
                         'net_salary' => $netSalary,

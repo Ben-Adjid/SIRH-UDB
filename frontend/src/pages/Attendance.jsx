@@ -542,12 +542,6 @@ const Attendance = () => {
                     <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-[2.5rem] shadow-xl border-2 border-orange-200 p-6">
                         <h3 className="text-lg font-black text-orange-900 mb-4">🏫 POINTAGE EN PRÉSENTIEL</h3>
                         <div className="space-y-3">
-                            <div className="bg-white rounded-xl p-4 border-2 border-amber-200">
-                                <p className="text-xs text-amber-700 uppercase font-bold mb-2">Votre PIN Permanent</p>
-                                <p className="text-3xl font-black text-amber-600 font-mono tracking-wider">{configuredPin || '••••••'}</p>
-                                <p className="text-xs text-gray-600 mt-2">Code à saisir pour pointer en présentiel</p>
-                            </div>
-
                             {todayAttendance?.check_in_time && !todayAttendance?.check_out_time ? (
                                 <div className="space-y-3">
                                     <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
@@ -573,13 +567,18 @@ const Attendance = () => {
                                     </p>
                                 </div>
                             ) : (
-                                <form onSubmit={handleCheckIn} className="space-y-3">
+                                <form onSubmit={handleCheckIn} className="space-y-4">
+                                    <div className="bg-white rounded-xl p-4 border-2 border-amber-200 text-center">
+                                        <p className="text-xs text-amber-700 uppercase font-bold mb-2">👇 Votre PIN Permanent</p>
+                                        <p className="text-3xl font-black text-amber-600 font-mono tracking-wider mb-3">{configuredPin || '••••••'}</p>
+                                    </div>
                                     <input
                                         type="password"
-                                        placeholder="Entrez votre PIN"
+                                        placeholder="Entrez le code ci-dessus"
                                         value={code}
                                         onChange={(e) => setCode(e.target.value)}
                                         className="w-full px-4 py-3 rounded-lg border border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-500 text-lg font-mono tracking-widest text-center"
+                                        autoFocus
                                     />
                                     <button type="submit" className="w-full px-4 py-3 bg-orange-600 text-white text-sm font-bold rounded-lg hover:bg-orange-700 shadow-md transition-all active:scale-95">
                                         🏢 Pointer Présence (Arrivée)
