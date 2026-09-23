@@ -253,32 +253,66 @@ const Dashboard = () => {
     };
 
     const fetchStats = useCallback(async () => {
-        if (!userRole) return;
+        if (!user?.id || !userRole) {
+            console.log('[Dashboard] Skipping fetch: user or role not ready', { userId: user?.id, userRole });
+            setLoading(false);
+            return;
+        }
+
         setLoading(true);
         try {
             const endpoint = `/dashboards/${getRolePath(userRole)}`;
-            console.log('[Dashboard] Fetching stats from:', endpoint);
-            const response = await api.get(endpoint);
-            console.log('[Dashboard] Stats response:', response.data);
-            setStats(response.data || {});
-            if (!response.data) {
-                toast.error('Aucune donnée retournée du serveur');
+            console.log('[Dashboard] Fetching from endpoint:', endpoint, 'for user:', user?.id, 'role:', userRole);
+
+            const response = await api.get(endpoint, {
+                headers: { 'Cache-Control': 'no-cache' }
+            });
+
+            console.log('[Dashboard] Full response received:', {
+                status: response.status,
+                hasData: !!response.data,
+                keys: response.data ? Object.keys(response.data) : 'NULL',
+                totalUsers: response.data?.total_users,
+                totalTeachers: response.data?.total_teachers
+            });
+
+            if (response.data && Object.keys(response.data).length > 0) {
+                console.log('[Dashboard] Setting stats successfully');
+                setStats(response.data);
+            } else {
+                console.error('[Dashboard] Response data is empty');
+                setStats(null);
+                toast.error('Données vides retournées par le serveur');
             }
         } catch (error) {
-            console.error('[Dashboard] Stats error:', error);
-            const message = error.response?.data?.message || error.message || 'Erreur chargement des statistiques';
-            toast.error(message);
-            setStats({});
+            console.error('[Dashboard] Fetch error:', {
+                message: error.message,
+                status: error.response?.status,
+                data: error.response?.data
+            });
+
+            if (error.response?.status === 401) {
+                toast.error('Session expirée');
+            } else if (error.response?.status === 403) {
+                toast.error('Accès refusé');
+            } else {
+                toast.error('Erreur: ' + (error.response?.data?.message || error.message));
+            }
+            setStats(null);
         } finally {
             setLoading(false);
         }
-    }, [userRole]);
+    }, [user?.id, userRole]);
 
     useEffect(() => {
-        if (user && userRole) {
+        console.log('[Dashboard] useEffect: checking user and role', { userId: user?.id, userRole });
+        if (user?.id && userRole) {
             fetchStats();
+        } else {
+            console.log('[Dashboard] Skipping fetch - user or role not ready');
+            setLoading(false);
         }
-    }, [user, userRole, fetchStats]);
+    }, [user?.id, userRole, fetchStats]);
 
     const renderBar = (val, max, color) => (
         <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
@@ -325,12 +359,23 @@ const Dashboard = () => {
         </div>
     );
 
-    if (!stats) return (
-        <div className="bg-white rounded-2xl p-6 border border-rose-100 shadow-sm">
-            <h2 className="font-bold text-slate-800 flex items-center gap-2"><AlertCircle size={18} className="text-rose-500" /> Erreur de chargement</h2>
-            <p className="text-sm text-slate-500 mt-1">Impossible de récupérer les statistiques. Veuillez vous reconnecter.</p>
-        </div>
-    );
+    if (!stats || Object.keys(stats).length === 0) {
+        console.error('[Dashboard] Stats is empty or null:', stats);
+        return (
+            <div className="bg-white rounded-2xl p-6 border border-rose-100 shadow-sm">
+                <h2 className="font-bold text-slate-800 flex items-center gap-2">
+                    <AlertCircle size={18} className="text-rose-500" /> Erreur de chargement
+                </h2>
+                <p className="text-sm text-slate-500 mt-1">Impossible de récupérer les statistiques.</p>
+                <button
+                    onClick={fetchStats}
+                    className="mt-4 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-all"
+                >
+                    Réessayer
+                </button>
+            </div>
+        );
+    }
 
     if (userRole === 'admin') {
         return (
