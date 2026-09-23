@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, memo } from 'react';
 import api from '../services/api';
+import { dataRefresh } from '../services/dataRefresh';
 import useAuthStore from '../store/authStore';
 import {
     Clock, Calendar, CheckCircle, AlertCircle, ArrowRight,
@@ -261,6 +262,18 @@ const Attendance = () => {
         const t = setInterval(() => { const c = new AbortController(); loadManagementData(c.signal, page); }, 30000);
         return () => clearInterval(t);
     }, [autoRefresh, isManagement, loadManagementData, page]);
+
+    // Subscribe to auto-refresh after mutations
+    useEffect(() => {
+        const unsubscribe = dataRefresh.subscribe('attendance', () => {
+            const c = new AbortController();
+            return Promise.all([
+                loadManagementData(c.signal, page),
+                fetchMyAttendance()
+            ]);
+        });
+        return unsubscribe;
+    }, [page, loadManagementData, fetchMyAttendance]);
 
     useEffect(() => { const t = setTimeout(() => setDebouncedSearch(searchName), 400); return () => clearTimeout(t); }, [searchName]);
 
