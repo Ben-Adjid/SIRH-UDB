@@ -52,7 +52,7 @@ const Sidebar = ({ sidebarOpen, onToggle }) => {
         {
             label: 'Académique',
             items: [
-                { icon: <LayoutGrid size={18} />, label: 'UFR', path: '/ufrs', roles: ['admin', 'academic_manager'] },
+                { icon: <LayoutGrid size={18} />, label: 'UFR', path: '/ufrs', roles: ['admin'] }, // Admin only - UFR management
                 { icon: <GraduationCap size={18} />, label: 'Matières', path: '/subjects', roles: ['admin', 'academic_manager'] },
                 { icon: <MapPin size={18} />, label: 'Salles', path: '/classrooms', roles: ['admin', 'academic_manager'] },
                 { icon: <Calendar size={18} />, label: 'Emploi du Temps', path: '/schedules', roles: ['admin', 'academic_manager', 'teacher', 'hr_manager', 'secretary'] },
