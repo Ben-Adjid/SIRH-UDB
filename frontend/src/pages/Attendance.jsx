@@ -580,7 +580,7 @@ const Attendance = () => {
                                     <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
                                         <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm">
                                             <CheckCircle size={18} className="text-emerald-600" />
-                                            Arrivée enregistrée à {todayAttendance.check_in_time.substring(11, 16)}
+                                            Arrivée enregistrée à {todayAttendance.check_in_time.length > 8 ? todayAttendance.check_in_time.substring(11, 16) : todayAttendance.check_in_time.substring(0, 5)}
                                         </div>
                                         <p className="text-xs text-emerald-600 mt-1">N'oubliez pas d'enregistrer votre départ à la fin de vos cours.</p>
                                     </div>
@@ -596,7 +596,7 @@ const Attendance = () => {
                                 <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200 text-center space-y-1">
                                     <p className="text-sm font-bold text-emerald-800">✅ Pointage terminé pour aujourd'hui</p>
                                     <p className="text-xs text-emerald-600 font-mono">
-                                        Entrée : {todayAttendance.check_in_time.substring(11, 16)} — Sortie : {todayAttendance.check_out_time.substring(11, 16)}
+                                        Entrée : {todayAttendance.check_in_time.length > 8 ? todayAttendance.check_in_time.substring(11, 16) : todayAttendance.check_in_time.substring(0, 5)} — Sortie : {todayAttendance.check_out_time.length > 8 ? todayAttendance.check_out_time.substring(11, 16) : todayAttendance.check_out_time.substring(0, 5)}
                                     </p>
                                 </div>
                             ) : (
@@ -660,7 +660,7 @@ const Attendance = () => {
                                                 ) : (
                                                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase bg-gray-100 text-gray-500">En attente</span>
                                                 )}
-                                                {s.check_in_time && !s.check_out_time && <span className="font-mono text-[11px] text-slate-500">Arrivée {s.check_in_time.substring(11, 16)}</span>}
+                                                {s.check_in_time && !s.check_out_time && <span className="font-mono text-[11px] text-slate-500">Arrivée {s.check_in_time.length > 8 ? s.check_in_time.substring(11, 16) : s.check_in_time.substring(0, 5)}</span>}
                                             </div>
                                         </div>
                                     </div>
@@ -682,7 +682,7 @@ const Attendance = () => {
                                  <div key={i} className="p-4 bg-gray-50/50 rounded-2xl border border-transparent hover:shadow-lg transition-all space-y-2">
                                      <div className="flex items-center justify-between gap-3">
                                          <div className="flex items-center gap-3"><Calendar size={16} className="text-indigo-600" /><div><p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{new Date(record.attendance_date).toLocaleDateString('fr-FR', { weekday: 'short' })}</p><p className="text-xs font-black text-gray-800">{new Date(record.attendance_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</p></div></div>
-                                         <div className="flex items-center gap-3"><StatusBadge status={record.status} />{record.check_in_time && <span className="font-mono text-xs text-gray-500">{record.check_in_time.substring(11, 16)}</span>}</div>
+                                         <div className="flex items-center gap-3"><StatusBadge status={record.status} />{record.check_in_time && <span className="font-mono text-xs text-gray-500">{record.check_in_time.length > 8 ? record.check_in_time.substring(11, 16) : record.check_in_time.substring(0, 5)}</span>}</div>
                                      </div>
                                      {record.notes && <p className="text-xs text-slate-500"><span className="font-bold text-slate-600">Motif :</span> {record.notes}</p>}
                                      {record.justification_status && <p className={`text-xs font-semibold ${record.justification_status === 'justified' ? 'text-emerald-600' : 'text-red-600'}`}>
