@@ -46,6 +46,7 @@ class SubjectController extends Controller
             $query = Subject::with('ufr:id,name,code')->withCount('schedules');
 
             if ($this->isTeacherOnly($user)) {
+                // Enseignant: voir seulement ses matières
                 $teacherId = Teacher::where('user_id', $user->id)->value('id');
                 $query->whereHas('schedules', function($s) use ($teacherId) {
                     $s->where('teacher_id', $teacherId ?? 0)
@@ -54,7 +55,8 @@ class SubjectController extends Controller
                         })
                         ->where('status', '!=', 'cancelled');
                 });
-            } elseif (!$user->hasRole('admin')) {
+            } elseif (!$user->hasAnyRole(['admin', 'hr_manager', 'secretary', 'accountant'])) {
+                // Chef UFR: voir matières de son UFR seulement
                 $ufrIds = $this->visibleUfrIds($user);
                 $query->where(function ($q) use ($ufrIds) {
                     $q->whereIn('ufr_id', $ufrIds)
@@ -63,6 +65,7 @@ class SubjectController extends Controller
                         });
                 });
             }
+            // Admin, RH, Secretary, Accountant: voir TOUTES les matières (pas de restriction)
 
             if ($search) {
                 $query->where(function($builder) use ($search) {
