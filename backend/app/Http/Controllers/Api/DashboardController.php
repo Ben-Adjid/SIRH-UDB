@@ -63,17 +63,20 @@ class DashboardController extends Controller {
                 ];
             }
 
-            $payrollByMonth = Payroll::selectRaw("CONCAT(year, '-', month) as period, SUM(net_salary) as total")
+            $payrollByMonthRaw = Payroll::selectRaw("CONCAT(year, '-', month) as period, SUM(net_salary) as total")
                 ->where('status', 'paid')
                 ->where('year', '>=', Carbon::today()->subMonths(5)->year)
                 ->groupBy('year', 'month')
-                ->pluck('total', 'period');
+                ->get();
+
+            $payrollByMonth = $payrollByMonthRaw->keyBy('period');
 
             $payrollTrend = [];
             for ($i = 5; $i >= 0; $i--) {
                 $date = Carbon::today()->subMonths($i);
                 $key = $date->year . '-' . $date->month;
-                $total = $payrollByMonth[$key] ?? 0;
+                $data = $payrollByMonth[$key] ?? (object)['total' => 0];
+                $total = isset($data->total) ? (float)$data->total : 0;
                 $payrollTrend[] = [
                     'month' => $date->translatedFormat('M'),
                     'amount' => (float)$total
