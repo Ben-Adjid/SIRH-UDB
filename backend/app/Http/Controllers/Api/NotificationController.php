@@ -18,11 +18,6 @@ class NotificationController extends Controller
     private const MAX_LIMIT = 100;
     private const DEFAULT_LIMIT = 20;
 
-    public function __construct()
-    {
-        $this->middleware('auth:sanctum');
-    }
-
     public function index(Request $request): JsonResponse
     {
         try {
@@ -81,8 +76,9 @@ class NotificationController extends Controller
                 ->first();
 
             $response = [
-                'success' => true,
-                'data' => $pagination->items(),
+                'notifications' => $pagination->items(),
+                'unread_count' => (int)($stats->unread ?? 0),
+                'total_count' => (int)($stats->total ?? 0),
                 'pagination' => [
                     'total' => $pagination->total(),
                     'per_page' => $pagination->perPage(),
@@ -91,11 +87,6 @@ class NotificationController extends Controller
                     'from' => $pagination->firstItem() ?? 0,
                     'to' => $pagination->lastItem() ?? 0,
                     'has_more' => $pagination->hasMorePages(),
-                ],
-                'stats' => [
-                    'total' => (int)($stats->total ?? 0),
-                    'unread' => (int)($stats->unread ?? 0),
-                    'read' => (int)($stats->read ?? 0),
                 ],
             ];
 
