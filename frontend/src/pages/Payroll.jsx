@@ -372,15 +372,15 @@ const Payroll = () => {
                                             <span className="text-xs text-slate-500">Brut</span>
                                             <span className="text-sm font-bold text-slate-900">{new Intl.NumberFormat('fr-FR').format(p.gross_salary || p.honorarium_amount || 0)} FCFA</span>
                                         </div>
-                                        {p.brs_amount > 0 && (
+                                        {(p.brs_amount || 0) > 0 && (
                                             <div className="flex items-center justify-between">
                                                 <span className="text-xs text-red-400 flex items-center gap-1"><TrendingDown size={12} /> BRS (5%)</span>
-                                                <span className="text-sm font-bold text-red-500">-{new Intl.NumberFormat('fr-FR').format(p.brs_amount)}</span>
+                                                <span className="text-sm font-bold text-red-500">-{new Intl.NumberFormat('fr-FR').format(p.brs_amount || 0)}</span>
                                             </div>
                                         )}
                                         <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                                             <span className="text-xs font-bold text-slate-600">Net</span>
-                                            <span className="text-lg font-black text-emerald-600">{new Intl.NumberFormat('fr-FR').format(p.net_salary)} FCFA</span>
+                                            <span className="text-lg font-black text-emerald-600">{new Intl.NumberFormat('fr-FR').format(p.net_salary || 0)} FCFA</span>
                                         </div>
                                     </div>
 
@@ -585,18 +585,18 @@ const Payroll = () => {
                                                     <p className="text-xs font-bold text-emerald-900 mb-3">📊 PRÉVISUALISATION DU CALCUL</p>
                                                     <div className="space-y-2 text-sm">
                                                         <div className="flex justify-between">
-                                                            <span className="text-slate-600">{calculationPreview.hours}h × taux horaire</span>
-                                                            <span className="font-bold text-slate-900">{new Intl.NumberFormat('fr-FR').format(calculationPreview.baseAmount)} FCFA</span>
+                                                            <span className="text-slate-600">{calculationPreview.hours || 0}h × taux horaire</span>
+                                                            <span className="font-bold text-slate-900">{new Intl.NumberFormat('fr-FR').format(calculationPreview.baseAmount || 0)} FCFA</span>
                                                         </div>
-                                                        {calculationPreview.brsAmount > 0 && (
+                                                        {(calculationPreview.brsAmount || 0) > 0 && (
                                                             <div className="flex justify-between text-red-600">
                                                                 <span>BRS (5%)</span>
-                                                                <span className="font-bold">- {new Intl.NumberFormat('fr-FR').format(calculationPreview.brsAmount)} FCFA</span>
+                                                                <span className="font-bold">- {new Intl.NumberFormat('fr-FR').format(calculationPreview.brsAmount || 0)} FCFA</span>
                                                             </div>
                                                         )}
                                                         <div className="border-t border-emerald-300 pt-2 flex justify-between font-bold text-lg">
                                                             <span className="text-emerald-900">NET À PAYER</span>
-                                                            <span className="text-emerald-600">{new Intl.NumberFormat('fr-FR').format(calculationPreview.netSalary)} FCFA</span>
+                                                            <span className="text-emerald-600">{new Intl.NumberFormat('fr-FR').format(calculationPreview.netSalary || 0)} FCFA</span>
                                                         </div>
                                                         <div className="flex justify-between text-xs text-slate-500 mt-2">
                                                             <span>Mode de paiement</span>

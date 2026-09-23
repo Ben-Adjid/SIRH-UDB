@@ -293,8 +293,8 @@ const Dashboard = () => {
             <table><thead><tr><th>Description</th><th class="r">Montant</th></tr></thead><tbody>
             ${(data.details||[]).map(d=>'<tr><td>'+esc(d.description)+'</td><td class="r" style="color:'+(d.type==='earning'?'#16a34a':'#dc2626')+'">'+(d.type==='deduction'?'-':'')+esc(Number(d.amount).toLocaleString('fr-FR',{minimumFractionDigits:2}))+' F</td></tr>').join('')}
             </tbody></table>
-            <div style="display:flex;justify-content:space-between;font-size:13px;margin-top:12px;"><span>Brut: ${esc(Number(data.gross_salary).toLocaleString('fr-FR',{minimumFractionDigits:2}))} F</span><span>Retenues: ${esc(Number(data.deductions).toLocaleString('fr-FR',{minimumFractionDigits:2}))} F</span></div>
-            <div class="net">Net à payer: ${esc(Number(data.net_salary).toLocaleString('fr-FR',{minimumFractionDigits:2}))} F</div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-top:12px;"><span>Brut: ${esc(Number(data.gross_salary || 0).toLocaleString('fr-FR',{minimumFractionDigits:2}))} F</span><span>Retenues: ${esc(Number(data.deductions || 0).toLocaleString('fr-FR',{minimumFractionDigits:2}))} F</span></div>
+            <div class="net">Net à payer: ${esc(Number(data.net_salary || 0).toLocaleString('fr-FR',{minimumFractionDigits:2}))} F</div>
             <div class="btn"><button onclick="window.print()">Imprimer / PDF</button> <button onclick="window.close()">Fermer</button></div>
             </body></html>`;
             const w = window.open('', '_blank');
