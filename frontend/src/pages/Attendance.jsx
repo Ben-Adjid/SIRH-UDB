@@ -263,20 +263,6 @@ const Attendance = () => {
         return () => clearInterval(t);
     }, [autoRefresh, isManagement, loadManagementData, page]);
 
-    // Subscribe to auto-refresh after mutations
-    useEffect(() => {
-        const unsubscribe = dataRefresh.subscribe('attendance', () => {
-            const c = new AbortController();
-            return Promise.all([
-                loadManagementData(c.signal, page),
-                fetchMyAttendance()
-            ]);
-        });
-        return unsubscribe;
-    }, [page, loadManagementData, fetchMyAttendance]);
-
-    useEffect(() => { const t = setTimeout(() => setDebouncedSearch(searchName), 400); return () => clearTimeout(t); }, [searchName]);
-
     const fetchMyAttendance = useCallback(async () => {
         try {
             await Promise.all([
@@ -304,6 +290,20 @@ const Attendance = () => {
             toast.error('Erreur chargement');
         }
     }, []);
+
+    // Subscribe to auto-refresh after mutations
+    useEffect(() => {
+        const unsubscribe = dataRefresh.subscribe('attendance', () => {
+            const c = new AbortController();
+            return Promise.all([
+                loadManagementData(c.signal, page),
+                fetchMyAttendance()
+            ]);
+        });
+        return unsubscribe;
+    }, [page, loadManagementData, fetchMyAttendance]);
+
+    useEffect(() => { const t = setTimeout(() => setDebouncedSearch(searchName), 400); return () => clearTimeout(t); }, [searchName]);
 
     useEffect(() => {
         if (todaySchedules && todaySchedules.length > 0) {
