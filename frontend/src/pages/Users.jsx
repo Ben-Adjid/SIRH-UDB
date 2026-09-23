@@ -320,7 +320,7 @@ const UsersPage = () => {
                 submitText={createLoading ? 'Creation...' : 'Creer le compte'}
                 disableSubmit={createLoading}
             >
-                <div className="space-y-5">
+                <div className="space-y-3">
                     <div className="form-group">
                         <label className="form-label">Nom complet</label>
                         <div className="relative">
@@ -351,23 +351,21 @@ const UsersPage = () => {
                     </div>
                     <div className="form-group">
                         <label className="form-label">Acces / Roles</label>
-                        <div className="grid grid-cols-1 gap-2">
+                        <div className="grid grid-cols-2 gap-2">
                             {ROLES.filter(r => isAdminUser || r.value !== 'admin').map(r => {
                                 const checked = createForm.roles.includes(r.value);
                                 return (
                                     <label key={r.value}
-                                        className={`flex items-start gap-3 rounded-2xl border p-3 cursor-pointer transition-all select-none ${checked ? 'border-indigo-300 bg-indigo-50' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
+                                        className={`flex items-start gap-2 rounded-lg border p-2.5 cursor-pointer transition-all select-none text-xs ${checked ? 'border-indigo-300 bg-indigo-50' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
                                         <input type="checkbox" checked={checked} onChange={() => toggleRole(r.value)}
-                                            className="mt-0.5 w-4 h-4 rounded accent-indigo-600" />
-                                        <div className="flex-1">
-                                            <p className="text-sm font-bold text-slate-800">{r.label}</p>
-                                            <p className="text-xs text-slate-400 mt-0.5">{r.desc}</p>
+                                            className="mt-0.5 w-3 h-3 rounded accent-indigo-600 flex-shrink-0" />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-bold text-slate-800 truncate">{r.label}</p>
                                         </div>
                                     </label>
                                 );
                             })}
                         </div>
-                        <p className="text-[10px] text-gray-400 mt-1.5 ml-1">Cochez une ou plusieurs capacites pour ce compte.</p>
                     </div>
                     {createForm.roles.includes('teacher') && (
                         <div className="form-group">
