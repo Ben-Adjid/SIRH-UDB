@@ -770,8 +770,8 @@ const Attendance = () => {
                             {configuredPin && (
                                 <p className="text-3xl font-black font-mono text-indigo-700 mt-2 tracking-widest">{configuredPin}</p>
                             )}
-                            <p className="text-sm font-semibold text-slate-700 mt-3">{selfAttendance?.check_in_time ? `Entree a ${selfAttendance.check_in_time.substring(11, 16)}` : 'Aucun pointage personnel'}</p>
-                            {selfAttendance?.check_out_time && <p className="text-xs text-slate-400 mt-1">Sortie a {selfAttendance.check_out_time.substring(11, 16)}</p>}
+                            <p className="text-sm font-semibold text-slate-700 mt-3">{selfAttendance?.check_in_time ? `Entree a ${selfAttendance.check_in_time.length > 8 ? selfAttendance.check_in_time.substring(11, 16) : selfAttendance.check_in_time.substring(0, 5)}` : 'Aucun pointage personnel'}</p>
+                            {selfAttendance?.check_out_time && <p className="text-xs text-slate-400 mt-1">Sortie a {selfAttendance.check_out_time.length > 8 ? selfAttendance.check_out_time.substring(11, 16) : selfAttendance.check_out_time.substring(0, 5)}</p>}
                         </div>
                         <div className="flex flex-wrap gap-2">
                             {!selfAttendance?.check_in_time && <><input type="password" inputMode="numeric" maxLength={6} placeholder="PIN" value={staffPin} onChange={e => setStaffPin(e.target.value.replace(/[^0-9]/g, ''))} className="w-24 px-3 py-2.5 rounded-xl border border-slate-200 text-center text-sm" /><button onClick={handleStaffCheckIn} className="px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-bold">Pointer mon arrivée</button></>}

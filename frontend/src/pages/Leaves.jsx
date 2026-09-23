@@ -12,19 +12,21 @@ const STATUS_CONFIG = {
     pending: { label: 'En attente', color: 'text-amber-600 bg-amber-50 border-amber-100' },
 };
 
-const emptyForm = { leave_type_id: '', start_date: '', end_date: '', reason: '' };
+const emptyForm = { teacher_id: '', leave_type_id: '', start_date: '', end_date: '', reason: '' };
 
 const Leaves = () => {
     const user = useAuthStore((state) => state.user);
     const canManage = hasAnyRole(user, ['admin', 'hr_manager', 'secretary']);
     const [leaves, setLeaves] = useState([]);
     const [types, setTypes] = useState([]);
+    const [teachers, setTeachers] = useState([]);
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [form, setForm] = useState(emptyForm);
     const [rejecting, setRejecting] = useState(null);
     const [rejectionReason, setRejectionReason] = useState('');
+    const [currentTeacherId, setCurrentTeacherId] = useState(null);
 
     const loadLeaves = async () => {
         setLoading(true);
@@ -43,7 +45,33 @@ const Leaves = () => {
         api.get('/leave-types').then((response) => setTypes(response.data || [])).catch(() => toast.error('Types de conges indisponibles'));
     }, []);
 
-    useEffect(() => { loadLeaves(); }, [search]);
+    useEffect(() => {
+        loadLeaves();
+        const loadData = async () => {
+            try {
+                // Load leave types
+                const typesRes = await api.get('/leave-types');
+                setTypes(Array.isArray(typesRes.data) ? typesRes.data : (typesRes.data?.data || []));
+
+                // Load teachers (for RH/admin to select)
+                const teachersRes = await api.get('/teachers', { params: { per_page: 200 } });
+                const teacherList = Array.isArray(teachersRes.data) ? teachersRes.data : (teachersRes.data?.data || []);
+                setTeachers(teacherList);
+
+                // If current user is a teacher, find their teacher_id
+                if (!canManage && user?.id) {
+                    const currentTeacher = teacherList.find(t => t.user_id === user.id);
+                    if (currentTeacher) {
+                        setCurrentTeacherId(currentTeacher.id);
+                        setForm(prev => ({ ...prev, teacher_id: currentTeacher.id }));
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        };
+        loadData();
+    }, [search]);
 
     const submitLeave = async (event) => {
         event.preventDefault();
@@ -115,7 +143,12 @@ const Leaves = () => {
             </div>
 
             <FormModal isOpen={showForm} onClose={() => setShowForm(false)} onSubmit={submitLeave} title="Demander un conge" submitText="Envoyer la demande">
-                <div className="space-y-4"><div><label className="form-label">Type de conge</label><select required className="input-field" value={form.leave_type_id} onChange={(event) => setForm({ ...form, leave_type_id: event.target.value })}><option value="">Selectionner</option>{types.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}</select></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label className="form-label">Date de debut</label><input required type="date" className="input-field" value={form.start_date} onChange={(event) => setForm({ ...form, start_date: event.target.value })} /></div><div><label className="form-label">Date de fin</label><input required type="date" className="input-field" value={form.end_date} onChange={(event) => setForm({ ...form, end_date: event.target.value })} /></div></div><div><label className="form-label">Motif</label><textarea required className="input-field" rows="3" value={form.reason} onChange={(event) => setForm({ ...form, reason: event.target.value })} /></div></div>
+                <div className="space-y-4">
+                    {canManage && <div><label className="form-label">Enseignant</label><select required className="input-field" value={form.teacher_id} onChange={(event) => setForm({ ...form, teacher_id: event.target.value })}><option value="">Selectionner</option>{teachers.map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.user?.name || 'Inconnu'}</option>)}</select></div>}
+                    <div><label className="form-label">Type de conge</label><select required className="input-field" value={form.leave_type_id} onChange={(event) => setForm({ ...form, leave_type_id: event.target.value })}><option value="">Selectionner</option>{types.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}</select></div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label className="form-label">Date de debut</label><input required type="date" className="input-field" value={form.start_date} onChange={(event) => setForm({ ...form, start_date: event.target.value })} /></div><div><label className="form-label">Date de fin</label><input required type="date" className="input-field" value={form.end_date} onChange={(event) => setForm({ ...form, end_date: event.target.value })} /></div></div>
+                    <div><label className="form-label">Motif</label><textarea required className="input-field" rows="3" value={form.reason} onChange={(event) => setForm({ ...form, reason: event.target.value })} /></div>
+                </div>
             </FormModal>
 
             <FormModal isOpen={Boolean(rejecting)} onClose={() => setRejecting(null)} onSubmit={(event) => { event.preventDefault(); updateStatus(rejecting, 'rejected'); }} title="Rejeter la demande" submitText="Confirmer le rejet"><label className="form-label">Motif du rejet</label><textarea required className="input-field" rows="3" value={rejectionReason} onChange={(event) => setRejectionReason(event.target.value)} /></FormModal>
