@@ -553,7 +553,7 @@ const Attendance = () => {
                                     <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
                                         <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm">
                                             <CheckCircle size={18} className="text-emerald-600" />
-                                            Arrivée enregistrée à {todayAttendance.check_in_time.substring(0, 5)}
+                                            Arrivée enregistrée à {todayAttendance.check_in_time.substring(11, 16)}
                                         </div>
                                         <p className="text-xs text-emerald-600 mt-1">N'oubliez pas d'enregistrer votre départ à la fin de vos cours.</p>
                                     </div>
@@ -569,7 +569,7 @@ const Attendance = () => {
                                 <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200 text-center space-y-1">
                                     <p className="text-sm font-bold text-emerald-800">✅ Pointage terminé pour aujourd'hui</p>
                                     <p className="text-xs text-emerald-600 font-mono">
-                                        Entrée : {todayAttendance.check_in_time.substring(0, 5)} — Sortie : {todayAttendance.check_out_time.substring(0, 5)}
+                                        Entrée : {todayAttendance.check_in_time.substring(11, 16)} — Sortie : {todayAttendance.check_out_time.substring(11, 16)}
                                     </p>
                                 </div>
                             ) : (
@@ -633,7 +633,7 @@ const Attendance = () => {
                                                 ) : (
                                                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase bg-gray-100 text-gray-500">En attente</span>
                                                 )}
-                                                {s.check_in_time && !s.check_out_time && <span className="font-mono text-[11px] text-slate-500">Arrivée {s.check_in_time.substring(0, 5)}</span>}
+                                                {s.check_in_time && !s.check_out_time && <span className="font-mono text-[11px] text-slate-500">Arrivée {s.check_in_time.substring(11, 16)}</span>}
                                             </div>
                                         </div>
                                     </div>
@@ -655,7 +655,7 @@ const Attendance = () => {
                                  <div key={i} className="p-4 bg-gray-50/50 rounded-2xl border border-transparent hover:shadow-lg transition-all space-y-2">
                                      <div className="flex items-center justify-between gap-3">
                                          <div className="flex items-center gap-3"><Calendar size={16} className="text-indigo-600" /><div><p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{new Date(record.attendance_date).toLocaleDateString('fr-FR', { weekday: 'short' })}</p><p className="text-xs font-black text-gray-800">{new Date(record.attendance_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</p></div></div>
-                                         <div className="flex items-center gap-3"><StatusBadge status={record.status} />{record.check_in_time && <span className="font-mono text-xs text-gray-500">{record.check_in_time.substring(0, 5)}</span>}</div>
+                                         <div className="flex items-center gap-3"><StatusBadge status={record.status} />{record.check_in_time && <span className="font-mono text-xs text-gray-500">{record.check_in_time.substring(11, 16)}</span>}</div>
                                      </div>
                                      {record.notes && <p className="text-xs text-slate-500"><span className="font-bold text-slate-600">Motif :</span> {record.notes}</p>}
                                      {record.justification_status && <p className={`text-xs font-semibold ${record.justification_status === 'justified' ? 'text-emerald-600' : 'text-red-600'}`}>
@@ -743,8 +743,8 @@ const Attendance = () => {
                             {configuredPin && (
                                 <p className="text-3xl font-black font-mono text-indigo-700 mt-2 tracking-widest">{configuredPin}</p>
                             )}
-                            <p className="text-sm font-semibold text-slate-700 mt-3">{selfAttendance?.check_in_time ? `Entree a ${selfAttendance.check_in_time.substring(0, 5)}` : 'Aucun pointage personnel'}</p>
-                            {selfAttendance?.check_out_time && <p className="text-xs text-slate-400 mt-1">Sortie a {selfAttendance.check_out_time.substring(0, 5)}</p>}
+                            <p className="text-sm font-semibold text-slate-700 mt-3">{selfAttendance?.check_in_time ? `Entree a ${selfAttendance.check_in_time.substring(11, 16)}` : 'Aucun pointage personnel'}</p>
+                            {selfAttendance?.check_out_time && <p className="text-xs text-slate-400 mt-1">Sortie a {selfAttendance.check_out_time.substring(11, 16)}</p>}
                         </div>
                         <div className="flex flex-wrap gap-2">
                             {!selfAttendance?.check_in_time && <><input type="password" inputMode="numeric" maxLength={6} placeholder="PIN" value={staffPin} onChange={e => setStaffPin(e.target.value.replace(/[^0-9]/g, ''))} className="w-24 px-3 py-2.5 rounded-xl border border-slate-200 text-center text-sm" /><button onClick={handleStaffCheckIn} className="px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-bold">Pointer mon arrivée</button></>}
@@ -851,11 +851,11 @@ const Attendance = () => {
                                         <div className="grid grid-cols-2 gap-2 mb-4">
                                             <div className="bg-slate-50 rounded-xl p-2.5 text-center">
                                                 <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Entree</p>
-                                                <span className="font-mono font-black text-sm text-emerald-600">{att.check_in_time?.substring(0, 5) || '--:--'}</span>
+                                                <span className="font-mono font-black text-sm text-emerald-600">{att.check_in_time?.substring(11, 16) || '--:--'}</span>
                                             </div>
                                             <div className="bg-slate-50 rounded-xl p-2.5 text-center">
                                                 <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Sortie</p>
-                                                <span className="font-mono font-black text-sm text-amber-600">{att.check_out_time?.substring(0, 5) || '--:--'}</span>
+                                                <span className="font-mono font-black text-sm text-amber-600">{att.check_out_time?.substring(11, 16) || '--:--'}</span>
                                             </div>
                                         </div>
 
