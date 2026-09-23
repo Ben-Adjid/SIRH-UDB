@@ -410,7 +410,7 @@ class PayrollController extends Controller {
         }
     }
 
-    public function export(Request $request) {
+    public function export(Request $request): \Symfony\Component\HttpFoundation\BinaryFileResponse|JsonResponse {
         try {
             if (!auth()->user()->hasAnyRole(['admin', 'accountant', 'hr_manager'])) {
                 return response()->json(['message' => 'Non autorisé'], 403);

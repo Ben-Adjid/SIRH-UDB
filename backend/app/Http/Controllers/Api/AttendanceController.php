@@ -1167,7 +1167,7 @@ class AttendanceController extends Controller {
         }
     }
 
-    public function export(Request $request) {
+    public function export(Request $request): \Symfony\Component\HttpFoundation\BinaryFileResponse|JsonResponse {
         try {
             $user = auth()->user();
 
