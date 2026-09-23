@@ -17,11 +17,6 @@ use App\Services\BrevoMailService;
 
 class AuthController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth:sanctum')->except(['register', 'login', 'forgotPassword', 'resetPassword', 'verifyEmail', 'sendVerificationEmail']);
-    }
-
     public static function generateTempPassword(): string
     {
         return 'UDB' . random_int(1000, 9999);
