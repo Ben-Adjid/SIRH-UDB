@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import useAuthStore from '../store/authStore';
 import { User, Mail, Phone, Save, ArrowLeft, Lock, Shield, Smartphone, CheckCircle, Send, Loader } from 'lucide-react';
 import toast from '../utils/toast';
@@ -19,10 +19,9 @@ const Profile = () => {
         attendance_pin: '',
     });
 
-    const [lastUser, setLastUser] = useState(user);
     const [currentAttendancePin, setCurrentAttendancePin] = useState(user?.attendance_pin ?? '');
-    if (user !== lastUser) {
-        setLastUser(user);
+
+    useEffect(() => {
         setCurrentAttendancePin(user?.attendance_pin ?? '');
         setFormData({
             name: user?.name ?? '',
@@ -30,7 +29,7 @@ const Profile = () => {
             phone: user?.phone ?? '',
             attendance_pin: '',
         });
-    }
+    }, [user?.id]);
 
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [passwordData, setPasswordData] = useState({
