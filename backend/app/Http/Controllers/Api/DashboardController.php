@@ -83,23 +83,35 @@ class DashboardController extends Controller {
             $monthNet = Payroll::where('year', now()->year)->where('month', now()->month)->sum('net_salary');
             $monthGross = Payroll::where('year', now()->year)->where('month', now()->month)->sum('gross_salary');
 
-            $activeUsers = User::where('status', 'active')->count();
-            $totalUsers = User::count();
-            $monthAbsences = Attendance::whereYear('attendance_date', now()->year)->whereMonth('attendance_date', now()->month)->whereIn('status', ['absent', 'late'])->count();
-            $monthTotalAttendance = Attendance::whereYear('attendance_date', now()->year)->whereMonth('attendance_date', now()->month)->count();
+            // Optimized counting with single queries
+            $userStats = User::selectRaw("COUNT(*) as total, SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active")
+                ->first();
+            $activeUsers = $userStats->active ?? 0;
+            $totalUsers = $userStats->total ?? 0;
+
+            $monthAttendanceStats = Attendance::whereYear('attendance_date', now()->year)
+                ->whereMonth('attendance_date', now()->month)
+                ->selectRaw("COUNT(*) as total, SUM(CASE WHEN status IN ('absent', 'late') THEN 1 ELSE 0 END) as absences")
+                ->first();
+            $monthAbsences = $monthAttendanceStats->absences ?? 0;
+            $monthTotalAttendance = $monthAttendanceStats->total ?? 0;
             $todayByStatus = Attendance::whereDate('attendance_date', $today)
                 ->selectRaw("status, COUNT(*) as count")
                 ->groupBy('status')
                 ->pluck('count', 'status');
 
+            // Optimized teacher counting
+            $teacherStats = Teacher::selectRaw("COUNT(*) as total, SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active, SUM(CASE WHEN status = 'inactive' THEN 1 ELSE 0 END) as inactive")
+                ->first();
+
             return response()->json([
                 'total_users' => $totalUsers,
                 'active_users' => $activeUsers,
                 'inactive_users' => $totalUsers - $activeUsers,
-                'total_teachers' => Teacher::count(),
-                'active_teachers' => Teacher::where('status', 'active')->count(),
+                'total_teachers' => $teacherStats->total ?? 0,
+                'active_teachers' => $teacherStats->active ?? 0,
                 'teachers_on_leave' => 0,
-                'teachers_inactive' => Teacher::where('status', 'inactive')->count(),
+                'teachers_inactive' => $teacherStats->inactive ?? 0,
                 'total_ufrs' => Ufr::count(),
                 'total_subjects' => Subject::count(),
                 'total_classrooms' => Classroom::count(),
