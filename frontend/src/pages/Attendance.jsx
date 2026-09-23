@@ -201,6 +201,15 @@ const Attendance = () => {
         setWeekData(res.data);
     }, [weeksBack]);
 
+    const loadSelfAttendance = useCallback(async () => {
+        try {
+            const res = await api.get('/attendance', { params: { self: 1 } });
+            setSelfAttendance(res.data.today || null);
+        } catch (err) {
+            console.error('Error loading self attendance:', err);
+        }
+    }, []);
+
     useEffect(() => {
         if (!user) return;
         const controller = new AbortController();
@@ -319,11 +328,17 @@ const Attendance = () => {
         try {
             const res = await api.post('/attendance/check-out');
             toast.success(res.data.message);
-            if (isManagement) setSelfAttendance(res.data.attendance);
-            else await fetchMyAttendance();
+            if (isManagement) {
+                await Promise.all([
+                    loadSelfAttendance(),
+                    loadManagementData(new AbortController().signal, page)
+                ]);
+            } else {
+                await fetchMyAttendance();
+            }
         }
         catch (error) { toast.error(error.response?.data?.message || 'Erreur'); }
-    }, [fetchMyAttendance, isManagement]);
+    }, [fetchMyAttendance, isManagement, loadManagementData, loadSelfAttendance, page]);
 
     const handleCheckInOnline = useCallback(async () => {
         if (!activeSchedule) { toast.error('Aucun cours sélectionné'); return; }
@@ -348,10 +363,13 @@ const Attendance = () => {
         try {
             const res = await api.post('/attendance/check-in', { pin: staffPin });
             toast.success(res.data.message);
-            setSelfAttendance(res.data.attendance);
             setStaffPin('');
+            await Promise.all([
+                loadSelfAttendance(),
+                loadManagementData(new AbortController().signal, page)
+            ]);
         } catch (error) { toast.error(error.response?.data?.message || 'Erreur de pointage'); }
-    }, [staffPin]);
+    }, [staffPin, loadManagementData, loadSelfAttendance, page]);
 
     const handleReportAbsence = useCallback(async (e) => {
         e.preventDefault();
