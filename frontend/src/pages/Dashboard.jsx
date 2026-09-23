@@ -293,9 +293,10 @@ const Dashboard = () => {
                 });
 
                 if (response.data && Object.keys(response.data).length > 0) {
-                    console.log('[Dashboard] Data loaded successfully:', Object.keys(response.data));
-                    setStats(response.data);
+                    console.log('[Dashboard] Data loaded successfully:', Object.keys(response.data), response.data);
+                    // Force immediate render
                     setLoading(false);
+                    setStats(response.data);
                 } else {
                     throw new Error('Empty response data');
                 }
