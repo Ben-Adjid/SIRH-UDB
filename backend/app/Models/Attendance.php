@@ -5,9 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Traits\InvalidatesDashboardCache;
 
 class Attendance extends Model {
-    use SoftDeletes;
+    use SoftDeletes, InvalidatesDashboardCache;
     protected $appends = ['validator'];
     protected $fillable = [
         'user_id', 'teacher_id', 'schedule_id', 'attendance_date', 'check_in_time', 'check_out_time',

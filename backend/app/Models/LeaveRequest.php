@@ -5,9 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Traits\InvalidatesDashboardCache;
 
 class LeaveRequest extends Model {
-    use SoftDeletes;
+    use SoftDeletes, InvalidatesDashboardCache;
     protected $table = 'leaves';
     protected $fillable = [
         'user_id', 'teacher_id', 'leave_type_id', 'start_date', 'end_date', 'duration_days',

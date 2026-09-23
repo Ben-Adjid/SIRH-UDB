@@ -6,9 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Traits\InvalidatesDashboardCache;
 
 class Payroll extends Model {
-    use SoftDeletes;
+    use SoftDeletes, InvalidatesDashboardCache;
     protected $fillable = [
         'teacher_id', 'year', 'month', 'base_salary', 'honorarium_amount',
         'brs_amount', 'gross_salary', 'deductions', 'net_salary',

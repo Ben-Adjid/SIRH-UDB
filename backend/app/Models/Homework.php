@@ -6,9 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Traits\InvalidatesDashboardCache;
 
 class Homework extends Model {
-    use SoftDeletes;
+    use SoftDeletes, InvalidatesDashboardCache;
     protected $table = 'homeworks';
     protected $fillable = [
         'teacher_id', 'subject_id', 'classroom_id', 'title', 'description',
