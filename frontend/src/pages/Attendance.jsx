@@ -295,13 +295,18 @@ const Attendance = () => {
     useEffect(() => {
         const unsubscribe = dataRefresh.subscribe('attendance', () => {
             const c = new AbortController();
-            return Promise.all([
-                loadManagementData(c.signal, page),
-                fetchMyAttendance()
-            ]);
+            const refreshPromises = [];
+            if (isManagement) {
+                refreshPromises.push(loadManagementData(c.signal, page));
+                refreshPromises.push(loadSelfAttendance());
+            }
+            if (isTeacher || hasDualRole) {
+                refreshPromises.push(fetchMyAttendance());
+            }
+            return Promise.all(refreshPromises);
         });
         return unsubscribe;
-    }, [page, loadManagementData, fetchMyAttendance]);
+    }, [page, loadManagementData, fetchMyAttendance, loadSelfAttendance, isManagement, isTeacher, hasDualRole]);
 
     useEffect(() => { const t = setTimeout(() => setDebouncedSearch(searchName), 400); return () => clearTimeout(t); }, [searchName]);
 
@@ -390,6 +395,8 @@ const Attendance = () => {
             toast.success(res.data.message);
             setStaffPin('');
             console.log('[DEBUG] Loading self attendance and management data...');
+            // Petit délai pour s'assurer que le backend a bien enregistré
+            await new Promise(r => setTimeout(r, 300));
             await Promise.all([
                 loadSelfAttendance(),
                 loadManagementData(new AbortController().signal, page)
