@@ -82,15 +82,17 @@ class AttendanceController extends Controller {
             }
 
             // Si le PIN est manquant ou crypté, attribuer un PIN clair par défaut
-            if (!$pin && $teacher) {
+            if (!$pin) {
                 $pin = str_pad(1000 + ($user->id % 9000), 4, '0', STR_PAD_LEFT);
-                try {
-                    $teacher->update(['pin_code' => $pin]);
-                } catch (\Throwable $e) {
-                    Log::warning('myPin: impossible de sauvegarder pin_code', [
-                        'teacher_id' => $teacher->id,
-                        'error' => $e->getMessage(),
-                    ]);
+                if ($teacher) {
+                    try {
+                        $teacher->update(['pin_code' => $pin]);
+                    } catch (\Throwable $e) {
+                        Log::warning('myPin: impossible de sauvegarder pin_code', [
+                            'teacher_id' => $teacher->id,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
                 }
                 try {
                     $user->update(['attendance_pin' => $pin]);
