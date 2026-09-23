@@ -45,21 +45,23 @@ class DashboardController extends Controller {
 
             $today = Carbon::today()->toDateString();
 
-            $attendanceByDate = Attendance::select('attendance_date')
+            $attendanceByDateRaw = Attendance::select('attendance_date')
                 ->selectRaw("COUNT(*) as total, SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as present, SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) as late")
                 ->whereDate('attendance_date', '>=', Carbon::today()->subDays(6)->toDateString())
                 ->groupBy('attendance_date')
-                ->pluck(null, 'attendance_date');
+                ->get();
+
+            $attendanceByDate = $attendanceByDateRaw->keyBy('attendance_date');
 
             $attendanceTrend = [];
             for ($i = 6; $i >= 0; $i--) {
                 $date = Carbon::today()->subDays($i);
-                $data = $attendanceByDate[$date->toDateString()] ?? (object)['total' => 0, 'present' => 0, 'late' => 0];
+                $data = isset($attendanceByDate[$date->toDateString()]) ? $attendanceByDate[$date->toDateString()] : (object)['total' => 0, 'present' => 0, 'late' => 0];
                 $attendanceTrend[] = [
                     'day' => $date->translatedFormat('D'),
-                    'total' => (int)$data->total,
-                    'present' => (int)$data->present,
-                    'late' => (int)$data->late,
+                    'total' => (int)($data->total ?? 0),
+                    'present' => (int)($data->present ?? 0),
+                    'late' => (int)($data->late ?? 0),
                 ];
             }
 
@@ -186,21 +188,23 @@ class DashboardController extends Controller {
             $today = Carbon::today()->toDateString();
             $startOfMonth = Carbon::now()->startOfMonth()->toDateString();
 
-            $absenceByDate = Attendance::select('attendance_date')
+            $absenceByDateRaw = Attendance::select('attendance_date')
                 ->selectRaw("SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as absent, SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) as late")
                 ->whereDate('attendance_date', '>=', Carbon::today()->subDays(6)->toDateString())
                 ->groupBy('attendance_date')
-                ->pluck(null, 'attendance_date');
+                ->get();
+
+            $absenceByDate = $absenceByDateRaw->keyBy('attendance_date');
 
             $absenceTrend = [];
             for ($i = 6; $i >= 0; $i--) {
                 $date = Carbon::today()->subDays($i);
-                $data = $absenceByDate[$date->toDateString()] ?? (object)['absent' => 0, 'late' => 0];
+                $data = isset($absenceByDate[$date->toDateString()]) ? $absenceByDate[$date->toDateString()] : (object)['absent' => 0, 'late' => 0];
                 $absenceTrend[] = [
                     'label' => $date->translatedFormat('D'),
-                    'absent' => (int)$data->absent,
-                    'late' => (int)$data->late,
-                    'total' => (int)($data->absent + $data->late),
+                    'absent' => (int)($data->absent ?? 0),
+                    'late' => (int)($data->late ?? 0),
+                    'total' => (int)(($data->absent ?? 0) + ($data->late ?? 0)),
                 ];
             }
 

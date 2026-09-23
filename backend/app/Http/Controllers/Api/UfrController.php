@@ -17,11 +17,6 @@ class UfrController extends Controller
     private const MAX_LIMIT = 100;
     private const DEFAULT_LIMIT = 25;
 
-    public function __construct()
-    {
-        $this->middleware('auth:sanctum');
-    }
-
     public function index(Request $request): JsonResponse
     {
         try {

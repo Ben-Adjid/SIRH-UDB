@@ -15,12 +15,6 @@ class TeachingTypeController extends Controller
     private const MAX_LIMIT = 100;
     private const DEFAULT_LIMIT = 20;
 
-    public function __construct()
-    {
-        $this->middleware('auth:sanctum');
-        $this->middleware('role:admin')->except(['index']);
-    }
-
     public function index(Request $request): JsonResponse
     {
         try {
