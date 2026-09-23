@@ -8,6 +8,24 @@ use App\Http\Controllers\Api\AuthController;
 // Health check - Simple status without sensitive info
 Route::get('/health', fn() => response()->json(['status' => 'ok']))->middleware('throttle:60,1');
 
+// Diagnostic routes (admin only)
+Route::middleware('auth:sanctum', 'role:admin')->group(function () {
+    Route::get('/diagnostic/database-counts', function () {
+        return response()->json([
+            'users' => \App\Models\User::count(),
+            'users_active' => \App\Models\User::where('status', 'active')->count(),
+            'teachers' => \App\Models\Teacher::count(),
+            'teachers_active' => \App\Models\Teacher::where('status', 'active')->count(),
+            'attendance' => \App\Models\Attendance::count(),
+            'leaves' => \App\Models\LeaveRequest::count(),
+            'schedules' => \App\Models\Schedule::count(),
+            'homeworks' => \App\Models\Homework::count(),
+            'payrolls' => \App\Models\Payroll::count(),
+            'database_status' => 'OK',
+        ]);
+    });
+});
+
 // Auth
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\DocumentController;
