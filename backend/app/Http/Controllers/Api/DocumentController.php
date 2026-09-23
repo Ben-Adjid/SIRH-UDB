@@ -17,16 +17,11 @@ use Illuminate\Support\Str;
 class DocumentController extends Controller
 {
     private const CACHE_TTL = 300;
-    private const MAX_FILE_SIZE = 5120; // 5MB
+    private const MAX_FILE_SIZE = 5120;
     private const ALLOWED_MIMES = 'pdf,doc,docx,jpeg,png,jpg';
     private const ALLOWED_TYPES = 'cv,contract,diploma,other';
     private const MAX_LIMIT = 100;
     private const DEFAULT_LIMIT = 25;
-
-    public function __construct()
-    {
-        $this->middleware('auth:sanctum');
-    }
 
     public function index(Request $request, Teacher $teacher): JsonResponse
     {
@@ -277,7 +272,7 @@ class DocumentController extends Controller
                 'action' => 'delete_document',
                 'model' => 'Document',
                 'model_id' => $documentId,
-                'ip_address' => request()->ip(),
+                'ip_address' => request()->getClientIp(),
             ]);
 
             $this->invalidateTeacherCache($teacherId);
