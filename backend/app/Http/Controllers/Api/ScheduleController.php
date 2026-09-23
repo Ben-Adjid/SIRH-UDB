@@ -12,6 +12,7 @@ use App\Models\Subject;
 use App\Services\ScheduleConflictService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 
 class ScheduleController extends Controller {
 
@@ -416,13 +417,14 @@ class ScheduleController extends Controller {
 
     public function updateExam(Request $request, Schedule $schedule): JsonResponse
     {
-        if (!auth()->user()->hasAnyRole(['admin', 'academic_manager'])) {
-            return response()->json(['message' => 'Non autorisé'], 403);
-        }
+        try {
+            if (!auth()->user()->hasAnyRole(['admin', 'academic_manager'])) {
+                return response()->json(['message' => 'Non autorisé'], 403);
+            }
 
-        if ($schedule->type !== 'exam') {
-            return response()->json(['message' => 'Examen introuvable'], 404);
-        }
+            if ($schedule->type !== 'exam') {
+                return response()->json(['message' => 'Examen introuvable'], 404);
+            }
         $schedule->load('teacher');
         if (!$this->canAccessSchedule($schedule, auth()->user())) {
             return response()->json(['message' => 'Vous ne pouvez modifier que les examens de votre UFR'], 403);
@@ -439,25 +441,59 @@ class ScheduleController extends Controller {
             'status' => 'sometimes|required|in:scheduled,cancelled,completed',
         ]);
 
-        $schedule->update($validated);
-        return response()->json(['message' => 'Examen modifié', 'exam' => $schedule->fresh()->load(['teacher.user', 'subject', 'classroom', 'academicYear'])]);
+            $schedule->update($validated);
+
+            Log::info('updateExam: Examen modifié', ['schedule_id' => $schedule->id]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Examen modifié',
+                'exam' => $schedule->fresh()->load(['teacher.user', 'subject', 'classroom', 'academicYear'])
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('updateExam error: ' . $e->getMessage(), [
+                'url' => request()->fullUrl(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la modification de l\'examen',
+            ], 500);
+        }
     }
 
     public function destroyExam(Schedule $schedule): JsonResponse
     {
-        if (!auth()->user()->hasAnyRole(['admin', 'academic_manager'])) {
-            return response()->json(['message' => 'Non autorisé'], 403);
-        }
+        try {
+            if (!auth()->user()->hasAnyRole(['admin', 'academic_manager'])) {
+                return response()->json(['message' => 'Non autorisé'], 403);
+            }
 
-        if ($schedule->type !== 'exam') {
-            return response()->json(['message' => 'Examen introuvable'], 404);
-        }
+            if ($schedule->type !== 'exam') {
+                return response()->json(['message' => 'Examen introuvable'], 404);
+            }
         $schedule->load('teacher');
         if (!$this->canAccessSchedule($schedule, auth()->user())) {
             return response()->json(['message' => 'Vous ne pouvez supprimer que les examens de votre UFR'], 403);
         }
 
-        $schedule->delete();
-        return response()->json(['message' => 'Examen supprimé']);
+            $schedule->delete();
+
+            Log::info('destroyExam: Examen supprimé', ['schedule_id' => $schedule->id]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Examen supprimé'
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('destroyExam error: ' . $e->getMessage(), [
+                'url' => request()->fullUrl(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la suppression de l\'examen',
+            ], 500);
+        }
     }
 }

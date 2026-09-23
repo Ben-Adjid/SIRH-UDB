@@ -351,19 +351,20 @@ class HomeworkController extends Controller {
 
     public function complete(Request $request, Homework $homework): JsonResponse
     {
-        $user = auth()->user();
-        if (!$user->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'secretary'])) {
-            return response()->json(['message' => 'Accès Interdit'], 403);
-        }
-        if (!$this->canAccessAcademicHomework($homework, $user)) {
-            return response()->json(['message' => 'Vous ne pouvez clôturer que les devoirs de votre UFR'], 403);
-        }
-        if ($homework->status !== 'approved') {
-            return response()->json(['message' => 'Seul un devoir approuvé peut être marqué comme effectué'], 422);
-        }
-        if (Carbon::parse($homework->scheduled_date)->isFuture()) {
-            return response()->json(['message' => 'Le devoir ne peut être marqué comme effectué qu’à partir de sa date prévue'], 422);
-        }
+        try {
+            $user = auth()->user();
+            if (!$user->hasAnyRole([‘admin’, ‘academic_manager’, ‘hr_manager’, ‘secretary’])) {
+                return response()->json([‘message’ => ‘Accès Interdit’], 403);
+            }
+            if (!$this->canAccessAcademicHomework($homework, $user)) {
+                return response()->json([‘message’ => ‘Vous ne pouvez clôturer que les devoirs de votre UFR’], 403);
+            }
+            if ($homework->status !== ‘approved’) {
+                return response()->json([‘message’ => ‘Seul un devoir approuvé peut être marqué comme effectué’], 422);
+            }
+            if (Carbon::parse($homework->scheduled_date)->isFuture()) {
+                return response()->json([‘message’ => ‘Le devoir ne peut être marqué comme effectué qu’à partir de sa date prévue’], 422);
+            }
 
         $homework->update(['status' => 'completed']);
         \App\Models\AuditLog::create([
@@ -375,34 +376,51 @@ class HomeworkController extends Controller {
             'ip_address' => $request->ip(),
         ]);
 
-        $homework->load('teacher.user');
-        if ($homework->teacher?->user) {
-            \App\Services\NotificationService::send(
-                $homework->teacher->user_id,
-                'Devoir effectué',
-                'Le devoir "' . $homework->title . '" a été marqué comme effectué par l’administration.',
-                'success',
-                '/homeworks'
-            );
-        }
+            $homework->load(‘teacher.user’);
+            if ($homework->teacher?->user) {
+                \App\Services\NotificationService::send(
+                    $homework->teacher->user_id,
+                    ‘Devoir effectué’,
+                    ‘Le devoir "’ . $homework->title . ‘" a été marqué comme effectué par l’administration.’,
+                    ‘success’,
+                    ‘/homeworks’
+                );
+            }
 
-        return response()->json(['message' => 'Devoir marqué comme effectué', 'homework' => $homework->fresh()->load(['teacher.user', 'subject', 'classroom'])]);
+            Log::info(‘complete: Devoir marqué comme effectué’, [‘homework_id’ => $homework->id]);
+
+            return response()->json([
+                ‘success’ => true,
+                ‘message’ => ‘Devoir marqué comme effectué’,
+                ‘homework’ => $homework->fresh()->load([‘teacher.user’, ‘subject’, ‘classroom’])
+            ]);
+        } catch (\Throwable $e) {
+            Log::error(‘complete error: ‘ . $e->getMessage(), [
+                ‘url’ => request()->fullUrl(),
+                ‘trace’ => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                ‘success’ => false,
+                ‘message’ => ‘Erreur lors de la clôture du devoir’,
+            ], 500);
+        }
     }
 
     public function cancel(Request $request, Homework $homework): JsonResponse
     {
-        $user = auth()->user();
-        if (!$user->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'secretary'])) {
-            return response()->json(['message' => 'Accès Interdit'], 403);
-        }
-        if (!$this->canAccessAcademicHomework($homework, $user)) {
-            return response()->json(['message' => 'Vous ne pouvez annuler que les devoirs de votre UFR'], 403);
-        }
-        if (in_array($homework->status, ['completed', 'cancelled'], true)) {
-            return response()->json(['message' => 'Ce devoir ne peut plus être annulé'], 422);
-        }
+        try {
+            $user = auth()->user();
+            if (!$user->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'secretary'])) {
+                return response()->json(['message' => 'Accès Interdit'], 403);
+            }
+            if (!$this->canAccessAcademicHomework($homework, $user)) {
+                return response()->json(['message' => 'Vous ne pouvez annuler que les devoirs de votre UFR'], 403);
+            }
+            if (in_array($homework->status, ['completed', 'cancelled'], true)) {
+                return response()->json(['message' => 'Ce devoir ne peut plus être annulé'], 422);
+            }
 
-        $validated = $request->validate(['reason' => 'nullable|string|max:500']);
+            $validated = $request->validate(['reason' => 'nullable|string|max:500']);
         $homework->update(['status' => 'cancelled']);
         \App\Models\AuditLog::create([
             'user_id' => $user->id,
@@ -413,38 +431,55 @@ class HomeworkController extends Controller {
             'ip_address' => $request->ip(),
         ]);
 
-        $homework->load('teacher.user');
-        if ($homework->teacher?->user) {
-            \App\Services\NotificationService::send(
-                $homework->teacher->user_id,
-                'Devoir annulé',
-                'Le devoir "' . $homework->title . '" a été annulé par l’administration.' . (!empty($validated['reason']) ? ' Motif : ' . $validated['reason'] : ''),
-                'danger',
-                '/homeworks'
-            );
-        }
+            $homework->load(‘teacher.user’);
+            if ($homework->teacher?->user) {
+                \App\Services\NotificationService::send(
+                    $homework->teacher->user_id,
+                    ‘Devoir annulé’,
+                    ‘Le devoir "’ . $homework->title . ‘" a été annulé par l’administration.’ . (!empty($validated[‘reason’]) ? ‘ Motif : ‘ . $validated[‘reason’] : ‘’),
+                    ‘danger’,
+                    ‘/homeworks’
+                );
+            }
 
-        return response()->json(['message' => 'Devoir annulé', 'homework' => $homework->fresh()->load(['teacher.user', 'subject', 'classroom'])]);
+            Log::info(‘cancel: Devoir annulé’, [‘homework_id’ => $homework->id]);
+
+            return response()->json([
+                ‘success’ => true,
+                ‘message’ => ‘Devoir annulé’,
+                ‘homework’ => $homework->fresh()->load([‘teacher.user’, ‘subject’, ‘classroom’])
+            ]);
+        } catch (\Throwable $e) {
+            Log::error(‘cancel error: ‘ . $e->getMessage(), [
+                ‘url’ => request()->fullUrl(),
+                ‘trace’ => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                ‘success’ => false,
+                ‘message’ => ‘Erreur lors de l\’annulation du devoir’,
+            ], 500);
+        }
     }
 
     public function reschedule(Request $request, Homework $homework): JsonResponse
     {
-        $user = auth()->user();
-        if (!$user->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'secretary'])) {
-            return response()->json(['message' => 'Accès Interdit'], 403);
-        }
-        if (!$this->canAccessAcademicHomework($homework, $user)) {
-            return response()->json(['message' => 'Vous ne pouvez reporter que les devoirs de votre UFR'], 403);
-        }
-        if (in_array($homework->status, ['completed', 'cancelled'], true)) {
-            return response()->json(['message' => 'Ce devoir ne peut plus être reporté'], 422);
-        }
+        try {
+            $user = auth()->user();
+            if (!$user->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'secretary'])) {
+                return response()->json(['message' => 'Accès Interdit'], 403);
+            }
+            if (!$this->canAccessAcademicHomework($homework, $user)) {
+                return response()->json(['message' => 'Vous ne pouvez reporter que les devoirs de votre UFR'], 403);
+            }
+            if (in_array($homework->status, ['completed', 'cancelled'], true)) {
+                return response()->json(['message' => 'Ce devoir ne peut plus être reporté'], 422);
+            }
 
-        $validated = $request->validate([
-            'scheduled_date' => 'required|date',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
-        ]);
+            $validated = $request->validate([
+                'scheduled_date' => 'required|date',
+                'start_time' => 'required|date_format:H:i',
+                'end_time' => 'required|date_format:H:i|after:start_time',
+            ]);
         $validated['duration_minutes'] = Carbon::createFromFormat('H:i', $validated['start_time'])
             ->diffInMinutes(Carbon::createFromFormat('H:i', $validated['end_time']));
         $homework->update($validated);
@@ -458,18 +493,34 @@ class HomeworkController extends Controller {
             'ip_address' => $request->ip(),
         ]);
 
-        $homework->load('teacher.user');
-        if ($homework->teacher?->user) {
-            \App\Services\NotificationService::send(
-                $homework->teacher->user_id,
-                'Devoir reporté',
-                'Le devoir "' . $homework->title . '" a été reporté au ' . $validated['scheduled_date'] . ' de ' . $validated['start_time'] . ' à ' . $validated['end_time'] . '.',
-                'warning',
-                '/homeworks'
-            );
-        }
+            $homework->load('teacher.user');
+            if ($homework->teacher?->user) {
+                \App\Services\NotificationService::send(
+                    $homework->teacher->user_id,
+                    'Devoir reporté',
+                    'Le devoir "' . $homework->title . '" a été reporté au ' . $validated['scheduled_date'] . ' de ' . $validated['start_time'] . ' à ' . $validated['end_time'] . '.',
+                    'warning',
+                    '/homeworks'
+                );
+            }
 
-        return response()->json(['message' => 'Devoir reporté', 'homework' => $homework->fresh()->load(['teacher.user', 'subject', 'classroom'])]);
+            Log::info('reschedule: Devoir reporté', ['homework_id' => $homework->id]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Devoir reporté',
+                'homework' => $homework->fresh()->load(['teacher.user', 'subject', 'classroom'])
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('reschedule error: ' . $e->getMessage(), [
+                'url' => request()->fullUrl(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors du report du devoir',
+            ], 500);
+        }
     }
 
     public function recordGrades(Request $request, Homework $homework): JsonResponse {

@@ -95,13 +95,37 @@ class PayrollController extends Controller {
 
     public function attendanceSummary(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'teacher_id' => 'required|exists:teachers,id',
-            'month' => 'required|integer|min:1|max:12',
-            'year' => 'required|integer|min:2020|max:' . (date('Y') + 1),
-        ]);
-        $summary = $this->attendanceHours(Teacher::findOrFail($validated['teacher_id']), $validated['year'], $validated['month']);
-        return response()->json($summary);
+        try {
+            $validated = $request->validate([
+                'teacher_id' => 'required|exists:teachers,id',
+                'month' => 'required|integer|min:1|max:12',
+                'year' => 'required|integer|min:2020|max:' . (date('Y') + 1),
+            ]);
+
+            $summary = $this->attendanceHours(Teacher::findOrFail($validated['teacher_id']), $validated['year'], $validated['month']);
+
+            Log::info('attendanceSummary: Résumé de présence récupéré', ['teacher_id' => $validated['teacher_id']]);
+
+            return response()->json([
+                'success' => true,
+                'summary' => $summary
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Données invalides',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Throwable $e) {
+            Log::error('attendanceSummary error: ' . $e->getMessage(), [
+                'url' => request()->fullUrl(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors du chargement du résumé de présence',
+            ], 500);
+        }
     }
 
     public function calculate(CalculatePayrollRequest $request): JsonResponse {

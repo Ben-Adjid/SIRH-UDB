@@ -125,22 +125,36 @@ class AttendanceController extends Controller {
 
     public function generateTemporaryPin(): JsonResponse
     {
-        $user = auth()->user();
-        $teacher = Teacher::where('user_id', $user->id)->first();
+        try {
+            $user = auth()->user();
+            $teacher = Teacher::where('user_id', $user->id)->first();
 
-        if (!$user->hasRole('teacher')) {
-            return response()->json(['message' => 'Non-enseignant'], 403);
+            if (!$user->hasRole('teacher')) {
+                return response()->json(['message' => 'Non-enseignant'], 403);
+            }
+
+            // Générer un PIN temporaire (valide 5 minutes)
+            $tempPin = str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
+            cache()->put("teacher_temp_pin_{$teacher->id}", $tempPin, now()->addMinutes(5));
+
+            Log::info('generateTemporaryPin: PIN temporaire généré', ['teacher_id' => $teacher->id]);
+
+            return response()->json([
+                'success' => true,
+                'pin' => $tempPin,
+                'expires_in_seconds' => 300,
+                'message' => 'PIN temporaire généré (valide 5 minutes)'
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('generateTemporaryPin error: ' . $e->getMessage(), [
+                'url' => request()->fullUrl(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la génération du PIN temporaire',
+            ], 500);
         }
-
-        // Générer un PIN temporaire (valide 5 minutes)
-        $tempPin = str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
-        cache()->put("teacher_temp_pin_{$teacher->id}", $tempPin, now()->addMinutes(5));
-
-        return response()->json([
-            'pin' => $tempPin,
-            'expires_in_seconds' => 300,
-            'message' => 'PIN temporaire généré (valide 5 minutes)'
-        ]);
     }
 
     private function visibleUfrIds(User $user): array
@@ -178,26 +192,55 @@ class AttendanceController extends Controller {
     }
 
     public function getActiveCode(Request $request): JsonResponse {
-        return response()->json([
-            'code' => null,
-            'is_open' => true,
-            'expires_at' => null,
-            'remaining_seconds' => null,
-            'message' => 'Système de PIN individuel — plus de code temporaire',
-        ]);
+        try {
+            Log::info('getActiveCode: Vérification du statut des codes');
+
+            return response()->json([
+                'success' => true,
+                'code' => null,
+                'is_open' => true,
+                'expires_at' => null,
+                'remaining_seconds' => null,
+                'message' => 'Système de PIN individuel — plus de code temporaire',
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('getActiveCode error: ' . $e->getMessage(), [
+                'url' => request()->fullUrl(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la récupération du code',
+            ], 500);
+        }
     }
 
     public function generateCode(Request $request): JsonResponse {
-        return response()->json([
-            'message' => 'Système de codes temporaires désactivé. Les enseignants utilisent désormais leur PIN personnel.',
-            'code' => null,
-            'expires_at' => null,
-        ]);
+        try {
+            Log::info('generateCode: Système de codes désactivé');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Système de codes temporaires désactivé. Les enseignants utilisent désormais leur PIN personnel.',
+                'code' => null,
+                'expires_at' => null,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('generateCode error: ' . $e->getMessage(), [
+                'url' => request()->fullUrl(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la génération du code',
+            ], 500);
+        }
     }
 
     public function checkIn(Request $request): JsonResponse {
-        $user = auth()->user();
-        $teacher = null;
+        try {
+            $user = auth()->user();
+            $teacher = null;
 
         if (!$user->hasRole('teacher')) {
             $attendance = Attendance::where('user_id', $user->id)
@@ -412,28 +455,40 @@ class AttendanceController extends Controller {
             $attendance->load('schedule.subject', 'schedule.classroom');
 
             return response()->json([
+                'success' => true,
                 'message' => $message,
                 'attendance' => $attendance,
                 'status' => $status,
                 'schedule' => $schedule->load('subject', 'classroom'),
             ]);
         });
+        } catch (\Throwable $e) {
+            Log::error('checkIn error: ' . $e->getMessage(), [
+                'url' => request()->fullUrl(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors du pointage',
+            ], 500);
+        }
     }
 
     public function checkOut(Request $request): JsonResponse {
-        $user = auth()->user();
-        $teacher = Teacher::where('user_id', $user->id)->first();
+        try {
+            $user = auth()->user();
+            $teacher = Teacher::where('user_id', $user->id)->first();
 
-        $attendance = Attendance::where('user_id', $user->id)
-            ->where('attendance_date', Carbon::today())
-            ->whereNotNull('check_in_time')
-            ->whereNull('check_out_time')
-            ->latest('check_in_time')
-            ->first();
+            $attendance = Attendance::where('user_id', $user->id)
+                ->where('attendance_date', Carbon::today())
+                ->whereNotNull('check_in_time')
+                ->whereNull('check_out_time')
+                ->latest('check_in_time')
+                ->first();
 
-        if (!$attendance) {
-            return response()->json(['message' => 'Aucun pointage d\'entrée actif trouvé'], 422);
-        }
+            if (!$attendance) {
+                return response()->json(['message' => 'Aucun pointage d\'entrée actif trouvé'], 422);
+            }
 
         $checkOutTime = now();
         $attendanceDate = $attendance->attendance_date instanceof Carbon
@@ -493,17 +548,29 @@ class AttendanceController extends Controller {
             $message .= ' (volume restant : ' . round($remaining, 1) . 'h)';
         }
 
-        return response()->json([
-            'message' => $message,
-            'attendance' => $attendance,
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'attendance' => $attendance,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('checkOut error: ' . $e->getMessage(), [
+                'url' => request()->fullUrl(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors du pointage de sortie',
+            ], 500);
+        }
     }
 
     public function reportAbsence(Request $request): JsonResponse {
-        $user = auth()->user();
-        $teacher = Teacher::where('user_id', $user->id)->first();
+        try {
+            $user = auth()->user();
+            $teacher = Teacher::where('user_id', $user->id)->first();
 
-        if (!$user->hasRole('teacher')) {
+            if (!$user->hasRole('teacher')) {
             if (!$user->hasAnyRole(['admin', 'hr_manager', 'secretary', 'accountant', 'academic_manager'])) {
                 return response()->json(['message' => 'Signalement non autorisé pour ce profil'], 403);
             }
@@ -582,17 +649,29 @@ class AttendanceController extends Controller {
             );
         }
 
-        return response()->json([
-            'message' => 'Signalement enregistré',
-            'attendance' => $attendance,
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Signalement enregistré',
+                'attendance' => $attendance,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('reportAbsence error: ' . $e->getMessage(), [
+                'url' => request()->fullUrl(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors du signalement d\'absence',
+            ], 500);
+        }
     }
 
     public function declareAvailability(Request $request): JsonResponse {
-        $user = auth()->user();
-        $teacher = Teacher::where('user_id', $user->id)->first();
+        try {
+            $user = auth()->user();
+            $teacher = Teacher::where('user_id', $user->id)->first();
 
-        if (!$user->hasRole('teacher')) {
+            if (!$user->hasRole('teacher')) {
             return response()->json(['message' => 'Seuls les enseignants peuvent déclarer leur disponibilité'], 403);
         }
 
@@ -628,18 +707,32 @@ class AttendanceController extends Controller {
             ]
         );
 
-        return response()->json(['message' => 'Disponibilité enregistrée']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Disponibilité enregistrée'
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('declareAvailability error: ' . $e->getMessage(), [
+                'url' => request()->fullUrl(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de l\'enregistrement de la disponibilité',
+            ], 500);
+        }
     }
 
     public function recordAbsence(Request $request): JsonResponse {
-        $validated = $request->validate([
-            'teacher_id' => 'required|exists:teachers,id',
-            'attendance_date' => 'required|date|before_or_equal:today',
-            'status' => 'required|in:absent,late,half_day',
-            'reason' => 'nullable|string|max:500',
-        ]);
+        try {
+            $validated = $request->validate([
+                'teacher_id' => 'required|exists:teachers,id',
+                'attendance_date' => 'required|date|before_or_equal:today',
+                'status' => 'required|in:absent,late,half_day',
+                'reason' => 'nullable|string|max:500',
+            ]);
 
-        $teacher = Teacher::with('user')->find($validated['teacher_id']);
+            $teacher = Teacher::with('user')->find($validated['teacher_id']);
         $user = auth()->user();
         if (!$user->hasRole('admin') && $user->hasRole('academic_manager')
             && (!$teacher || !$this->canAccessTeacher($teacher, $user))) {
@@ -688,17 +781,29 @@ class AttendanceController extends Controller {
             );
         }
 
-        return response()->json([
-            'message' => 'Absence enregistrée',
-            'attendance' => $attendance,
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Absence enregistrée',
+                'attendance' => $attendance,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('recordAbsence error: ' . $e->getMessage(), [
+                'url' => request()->fullUrl(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de l\'enregistrement de l\'absence',
+            ], 500);
+        }
     }
 
     public function validateAbsence(Request $request, Attendance $attendance): JsonResponse {
-        $user = auth()->user();
+        try {
+            $user = auth()->user();
 
-        $attendance->loadMissing('teacher');
-        if (!$user->hasRole('admin') && $user->hasRole('academic_manager')
+            $attendance->loadMissing('teacher');
+            if (!$user->hasRole('admin') && $user->hasRole('academic_manager')
             && (!$attendance->teacher || !$this->canAccessTeacher($attendance->teacher, $user))) {
             return response()->json(['message' => 'Vous ne pouvez traiter que les absences de votre UFR'], 403);
         }
@@ -769,19 +874,31 @@ class AttendanceController extends Controller {
             );
         }
 
-        $attendance->load(['teacher.user', 'user', 'justifiedBy']);
+            $attendance->load(['teacher.user', 'user', 'justifiedBy']);
 
-        return response()->json([
-            'message' => $validated['justified'] ? 'Signalement justifié' : 'Signalement non justifié',
-            'attendance' => $attendance,
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => $validated['justified'] ? 'Signalement justifié' : 'Signalement non justifié',
+                'attendance' => $attendance,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('validateAbsence error: ' . $e->getMessage(), [
+                'url' => request()->fullUrl(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la validation de l\'absence',
+            ], 500);
+        }
     }
 
     public function index(Request $request): JsonResponse {
-        $user = auth()->user();
-        $teacher = Teacher::where('user_id', $user->id)->first();
+        try {
+            $user = auth()->user();
+            $teacher = Teacher::where('user_id', $user->id)->first();
 
-        if ($request->boolean('self')) {
+            if ($request->boolean('self')) {
             $history = Attendance::with('justifiedBy')->where('user_id', $user->id)
                 ->orderBy('attendance_date', 'desc')->limit(28)->get();
             $today = Attendance::with('justifiedBy')
@@ -912,15 +1029,26 @@ class AttendanceController extends Controller {
 
         $this->restrictToVisibleUfr($query, $user);
 
-        return response()->json($query->paginate($request->input('per_page', 25)));
+            return response()->json($query->paginate($request->input('per_page', 25)));
+        } catch (\Throwable $e) {
+            Log::error('index error: ' . $e->getMessage(), [
+                'url' => request()->fullUrl(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors du chargement des pointages',
+            ], 500);
+        }
     }
 
     public function stats(Request $request): JsonResponse {
-        $user = auth()->user();
-        $date = $request->input('date', Carbon::today()->toDateString());
-        $period = $request->input('period', 'day');
+        try {
+            $user = auth()->user();
+            $date = $request->input('date', Carbon::today()->toDateString());
+            $period = $request->input('period', 'day');
 
-        $query = Attendance::query();
+            $query = Attendance::query();
 
         $this->restrictToVisibleUfr($query, $user);
 
@@ -959,27 +1087,39 @@ class AttendanceController extends Controller {
             }
         }
 
-        return response()->json([
-            'total' => $total,
-            'present' => $present,
-            'late' => $late,
-            'absent' => $absent,
-            'justified' => $justified,
-            'total_hours' => (float) $totalHours,
-            'attendance_rate' => $rate,
-            'period' => $period,
-            'date' => $date,
-            'trend' => $trend,
-        ]);
+            return response()->json([
+                'success' => true,
+                'total' => $total,
+                'present' => $present,
+                'late' => $late,
+                'absent' => $absent,
+                'justified' => $justified,
+                'total_hours' => (float) $totalHours,
+                'attendance_rate' => $rate,
+                'period' => $period,
+                'date' => $date,
+                'trend' => $trend,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('stats error: ' . $e->getMessage(), [
+                'url' => request()->fullUrl(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors du calcul des statistiques',
+            ], 500);
+        }
     }
 
     public function weekly(Request $request): JsonResponse {
-        $user = auth()->user();
-        $teacher = Teacher::where('user_id', $user->id)->first();
+        try {
+            $user = auth()->user();
+            $teacher = Teacher::where('user_id', $user->id)->first();
 
-        $weeksBack = (int) $request->input('weeks', 0);
-        $startOfWeek = Carbon::now()->subWeeks($weeksBack)->startOfWeek();
-        $endOfWeek = $startOfWeek->copy()->endOfWeek();
+            $weeksBack = (int) $request->input('weeks', 0);
+            $startOfWeek = Carbon::now()->subWeeks($weeksBack)->startOfWeek();
+            $endOfWeek = $startOfWeek->copy()->endOfWeek();
 
         $attendances = Attendance::where('user_id', $user->id)
             ->whereBetween('attendance_date', [$startOfWeek, $endOfWeek])
@@ -1009,19 +1149,31 @@ class AttendanceController extends Controller {
             ];
         }
 
-        return response()->json([
-            'week_start' => $startOfWeek->toDateString(),
-            'week_end' => $endOfWeek->toDateString(),
-            'days' => $days,
-        ]);
+            return response()->json([
+                'success' => true,
+                'week_start' => $startOfWeek->toDateString(),
+                'week_end' => $endOfWeek->toDateString(),
+                'days' => $days,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('weekly error: ' . $e->getMessage(), [
+                'url' => request()->fullUrl(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors du chargement de la semaine',
+            ], 500);
+        }
     }
 
     public function export(Request $request) {
-        $user = auth()->user();
+        try {
+            $user = auth()->user();
 
-        $query = Attendance::with('teacher.user', 'teacher.ufr', 'user');
+            $query = Attendance::with('teacher.user', 'teacher.ufr', 'user');
 
-        if ($request->filled('date')) {
+            if ($request->filled('date')) {
             $query->where('attendance_date', $request->date);
         } elseif ($request->filled('month') && $request->filled('year')) {
             $query->whereMonth('attendance_date', $request->month)
@@ -1094,18 +1246,29 @@ class AttendanceController extends Controller {
             fclose($file);
         };
 
-        return response()->stream($callback, 200, $headers);
+            return response()->stream($callback, 200, $headers);
+        } catch (\Throwable $e) {
+            Log::error('export error: ' . $e->getMessage(), [
+                'url' => request()->fullUrl(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de l\'export',
+            ], 500);
+        }
     }
 
     public function update(Request $request, Attendance $attendance): JsonResponse {
-        $validated = $request->validate([
-            'status' => 'sometimes|in:present,absent,late,half_day',
-            'notes' => 'nullable|string',
-            'check_in_time' => 'sometimes|date_format:H:i:s',
-            'check_out_time' => 'sometimes|date_format:H:i:s|after:check_in_time',
-        ]);
+        try {
+            $validated = $request->validate([
+                'status' => 'sometimes|in:present,absent,late,half_day',
+                'notes' => 'nullable|string',
+                'check_in_time' => 'sometimes|date_format:H:i:s',
+                'check_out_time' => 'sometimes|date_format:H:i:s|after:check_in_time',
+            ]);
 
-        if (isset($validated['check_in_time']) || isset($validated['check_out_time'])) {
+            if (isset($validated['check_in_time']) || isset($validated['check_out_time'])) {
             $inTime = $validated['check_in_time'] ?? $attendance->check_in_time;
             $outTime = $validated['check_out_time'] ?? $attendance->check_out_time;
             if ($inTime && $outTime) {
@@ -1123,16 +1286,33 @@ class AttendanceController extends Controller {
             $validated['justification_notes'] = null;
         }
 
-        $attendance->update($validated);
+            $attendance->update($validated);
 
-        return response()->json(['message' => 'Pointage mis à jour', 'attendance' => $attendance->fresh()]);
+            Log::info('update: Pointage mis à jour', ['attendance_id' => $attendance->id]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pointage mis à jour',
+                'attendance' => $attendance->fresh()
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('update error: ' . $e->getMessage(), [
+                'url' => request()->fullUrl(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la mise à jour du pointage',
+            ], 500);
+        }
     }
 
     public function report(Request $request): JsonResponse {
-        $user = auth()->user();
-        $query = Attendance::with('teacher.user', 'teacher.ufr', 'user')
-            ->selectRaw("teacher_id, user_id, COUNT(*) as total, SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as presents, SUM(CASE WHEN status IN ('absent','late') THEN 1 ELSE 0 END) as absences")
-            ->groupBy('teacher_id', 'user_id');
+        try {
+            $user = auth()->user();
+            $query = Attendance::with('teacher.user', 'teacher.ufr', 'user')
+                ->selectRaw("teacher_id, user_id, COUNT(*) as total, SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as presents, SUM(CASE WHEN status IN ('absent','late') THEN 1 ELSE 0 END) as absences")
+                ->groupBy('teacher_id', 'user_id');
 
         if ($request->filled('month') && $request->filled('year')) {
             $query->whereMonth('attendance_date', $request->month)
@@ -1152,36 +1332,67 @@ class AttendanceController extends Controller {
             });
         }
 
-        $this->restrictToVisibleUfr($query, $user);
+            $this->restrictToVisibleUfr($query, $user);
 
-        return response()->json($query->get());
+            Log::info('report: Rapport généré pour ' . $user->id);
+
+            return response()->json([
+                'success' => true,
+                'data' => $query->get()
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('report error: ' . $e->getMessage(), [
+                'url' => request()->fullUrl(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la génération du rapport',
+            ], 500);
+        }
     }
 
     public function getAvailabilities(Request $request): JsonResponse {
-        $user = auth()->user();
-        if (!$user->hasAnyRole(['admin', 'hr_manager', 'secretary', 'academic_manager'])) {
-            return response()->json(['message' => 'Non autorisé'], 403);
-        }
+        try {
+            $user = auth()->user();
+            if (!$user->hasAnyRole(['admin', 'hr_manager', 'secretary', 'academic_manager'])) {
+                return response()->json(['message' => 'Non autorisé'], 403);
+            }
 
-        $attendances = Attendance::whereHas('teacher')
-            ->with('teacher.user')
-            ->where('notes', 'LIKE', '[%')
-            ->get()
-            ->filter(function ($attendance) {
-                $decoded = json_decode($attendance->notes, true);
-                return is_array($decoded);
-            });
+            $attendances = Attendance::whereHas('teacher')
+                ->with('teacher.user')
+                ->where('notes', 'LIKE', '[%')
+                ->get()
+                ->filter(function ($attendance) {
+                    $decoded = json_decode($attendance->notes, true);
+                    return is_array($decoded);
+                });
 
         if (!$user->hasRole('admin') && $user->hasRole('academic_manager')) {
             $ufrIds = $this->visibleUfrIds($user);
             $attendances = $attendances->filter(fn($a) => in_array($a->teacher?->ufr_id, $ufrIds));
         }
 
-        if ($request->filled('date')) {
-            $attendances = $attendances->where('attendance_date', $request->date);
-        }
+            if ($request->filled('date')) {
+                $attendances = $attendances->where('attendance_date', $request->date);
+            }
 
-        return response()->json($attendances->values());
+            Log::info('getAvailabilities: Disponibilités récupérées');
+
+            return response()->json([
+                'success' => true,
+                'data' => $attendances->values()
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('getAvailabilities error: ' . $e->getMessage(), [
+                'url' => request()->fullUrl(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la récupération des disponibilités',
+            ], 500);
+        }
     }
 
     private function getDayName(Carbon $date): string
