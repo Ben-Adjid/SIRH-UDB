@@ -148,7 +148,11 @@ const Leaves = () => {
             return;
         }
         try {
-            await api.patch(`/leaves/${leave.id}/status`, { status, rejection_reason: rejectionReason.trim() || null });
+            const payload = { status };
+            if (status === 'rejected') {
+                payload.rejection_reason = rejectionReason.trim();
+            }
+            await api.patch(`/leaves/${leave.id}/status`, payload);
             toast.success(status === 'approved' ? 'Demande approuvee' : 'Demande rejetee');
             loadLeaves();
         } catch (error) {
