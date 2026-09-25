@@ -379,7 +379,7 @@ class HomeworkController extends Controller {
             $homework->load('teacher.user');
             if ($homework->teacher?->user) {
                 \App\Services\NotificationService::send(
-                    $homework->teacher->user_id,
+                    $homework->teacher->user->id,
                     'Devoir effectué',
                     'Le devoir "' . $homework->title . '" a été marqué comme effectué par l\'administration.',
                     'success',
