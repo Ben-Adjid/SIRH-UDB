@@ -237,10 +237,10 @@ class UserController extends Controller
             if ($user->hasRole('teacher')) {
                 $existingTeacher = Teacher::where('user_id', $user->id)->first();
                 if (!$existingTeacher) {
-                    $ufrId = $validated['ufr_id'] ?? Ufr::query()->value('id');
-                    if (!$ufrId) {
-                        Log::warning('[User] No UFR available for teacher', ['user_id' => $user->id]);
-                        return response()->json(['success' => false, 'message' => 'Aucun UFR disponible pour créer la fiche enseignant'], 422);
+                    $ufrId = $validated['ufr_id'] ?? Ufr::query()->orderBy('id')->value('id');
+                    if (!$ufrId || !Ufr::where('id', $ufrId)->exists()) {
+                        Log::warning('[User] No valid UFR available for teacher', ['user_id' => $user->id, 'attempted_ufr' => $ufrId]);
+                        return response()->json(['success' => false, 'message' => 'Aucun UFR disponible ou invalide pour créer la fiche enseignant'], 422);
                     }
 
                     $pin = str_pad(1000 + ($user->id % 9000), 4, '0', STR_PAD_LEFT);

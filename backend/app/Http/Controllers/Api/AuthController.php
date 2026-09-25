@@ -308,7 +308,12 @@ class AuthController extends Controller
                 'must_change_password' => false,
             ]);
 
-            $user->tokens()->where('id', '!=', $request->user()->currentAccessToken()->id)->delete();
+            $currentToken = $request->user()->currentAccessToken();
+            if ($currentToken) {
+                $user->tokens()->where('id', '!=', $currentToken->id)->delete();
+            } else {
+                $user->tokens()->delete();
+            }
 
             AuditLog::create([
                 'user_id' => $user->id,

@@ -135,8 +135,8 @@ class AttendanceController extends Controller {
             $user = auth()->user();
             $teacher = Teacher::where('user_id', $user->id)->first();
 
-            if (!$user->hasRole('teacher')) {
-                return response()->json(['message' => 'Non-enseignant'], 403);
+            if (!$user->hasRole('teacher') || !$teacher) {
+                return response()->json(['message' => 'Non-enseignant ou enregistrement manquant'], 403);
             }
 
             // Générer un PIN temporaire (valide 5 minutes)

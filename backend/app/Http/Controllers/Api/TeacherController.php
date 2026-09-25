@@ -274,7 +274,7 @@ class TeacherController extends Controller {
         } catch (\Exception $e) {
             \Log::error('TeacherController.update: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Erreur lors de la mise a jour',
+                'message' => 'Erreur lors de la mise à jour',
             ], 500);
         }
     }
@@ -300,7 +300,7 @@ class TeacherController extends Controller {
             ]);
         } catch (\Exception $e) {
             \Log::error('TeacherController.archive: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la mise a jour'], 500);
+            return response()->json(['message' => 'Erreur lors de la mise à jour'], 500);
         }
     }
 
