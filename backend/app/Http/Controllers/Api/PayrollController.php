@@ -482,8 +482,8 @@ class PayrollController extends Controller {
                 $query->where('teacher_id', $request->teacher_id);
             }
 
-            if ($request->filled('year')) $query->where('year', $request->year);
-            if ($request->filled('month')) $query->where('month', $request->month);
+            if ($request->filled('year')) $query->where('year', (int)$request->year);
+            if ($request->filled('month')) $query->where('month', (int)$request->month);
             if ($request->filled('status')) $query->where('status', $request->status);
 
             return response()->json($query->orderBy('year', 'desc')->orderBy('month', 'desc')->paginate($request->input('per_page', 20)));
