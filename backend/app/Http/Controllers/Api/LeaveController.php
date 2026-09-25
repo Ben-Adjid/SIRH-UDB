@@ -118,10 +118,12 @@ class LeaveController extends Controller {
                 ]);
 
                 if ($leave->user) {
+                    $startDateStr = $leave->start_date ? (is_string($leave->start_date) ? $leave->start_date : $leave->start_date->format('Y-m-d')) : 'N/A';
+                    $endDateStr = $leave->end_date ? (is_string($leave->end_date) ? $leave->end_date : $leave->end_date->format('Y-m-d')) : 'N/A';
                     NotificationService::send(
                         $leave->user_id,
                         $validated['status'] === 'approved' ? 'Congé Approuvé' : 'Congé Rejeté',
-                        "Votre demande de congé du " . $leave->start_date . " au " . $leave->end_date . " a été " . ($validated['status'] === 'approved' ? 'approuvée' : 'rejetée') . ".",
+                        "Votre demande de congé du " . $startDateStr . " au " . $endDateStr . " a été " . ($validated['status'] === 'approved' ? 'approuvée' : 'rejetée') . ".",
                         $validated['status'] === 'approved' ? 'success' : 'danger',
                         '/leaves'
                     );

@@ -546,12 +546,12 @@ class DashboardController extends Controller {
             $isScoped = !$user->hasRole('admin') && $user->hasRole('academic_manager');
             $visibleUfrIds = $this->academicVisibleUfrIds($user);
             $scheduleScope = function ($query) use ($isScoped, $visibleUfrIds) {
-                if ($isScoped) {
+                if ($isScoped && !empty($visibleUfrIds)) {
                     $query->whereHas('teacher', fn($teacher) => $teacher->whereIn('ufr_id', $visibleUfrIds));
                 }
             };
             $homeworkScope = function ($query) use ($isScoped, $visibleUfrIds) {
-                if ($isScoped) {
+                if ($isScoped && !empty($visibleUfrIds)) {
                     $query->whereHas('teacher', fn($teacher) => $teacher->whereIn('ufr_id', $visibleUfrIds));
                 }
             };
@@ -566,7 +566,7 @@ class DashboardController extends Controller {
             $submittedHomeworks = (clone $homeworks)->where('status', 'completed')->count();
 
             $ufrQuery = Ufr::with('teachers');
-            if ($isScoped) $ufrQuery->whereIn('id', $visibleUfrIds);
+            if ($isScoped && !empty($visibleUfrIds)) $ufrQuery->whereIn('id', $visibleUfrIds);
             $teachersPerUfr = $ufrQuery->get()->map(function ($d) {
                 return [
                     'name' => $d->name,
@@ -577,7 +577,7 @@ class DashboardController extends Controller {
 
             $subjectQuery = Subject::withCount(['schedules' => $scheduleScope])
                 ->orderBy('schedules_count', 'desc')->take(10);
-            if ($isScoped) {
+            if ($isScoped && !empty($visibleUfrIds)) {
                 $subjectQuery->whereHas('schedules.teacher', fn($teacher) => $teacher->whereIn('ufr_id', $visibleUfrIds));
             }
             $subjectDistribution = $subjectQuery->get();
@@ -587,7 +587,7 @@ class DashboardController extends Controller {
                 ->take(8);
             $scheduleScope($recentSchedules);
 
-            $totalSubjects = $isScoped
+            $totalSubjects = ($isScoped && !empty($visibleUfrIds))
                 ? Subject::where(fn($q) => $q->whereIn('ufr_id', $visibleUfrIds)
                     ->orWhereHas('schedules.teacher', fn($teacher) => $teacher->whereIn('ufr_id', $visibleUfrIds)))->count()
                 : Subject::count();

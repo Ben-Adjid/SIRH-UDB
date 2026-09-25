@@ -436,7 +436,7 @@ class HomeworkController extends Controller {
             $homework->load('teacher.user');
             if ($homework->teacher?->user) {
                 \App\Services\NotificationService::send(
-                    $homework->teacher->user_id,
+                    $homework->teacher->user->id,
                     'Devoir annulé',
                     'Le devoir "' . $homework->title . '" a été annulé par l\'administration.' . (!empty($validated['reason']) ? ' Motif : ' . $validated['reason'] : ''),
                     'danger',
@@ -498,7 +498,7 @@ class HomeworkController extends Controller {
             $homework->load('teacher.user');
             if ($homework->teacher?->user) {
                 \App\Services\NotificationService::send(
-                    $homework->teacher->user_id,
+                    $homework->teacher->user->id,
                     'Devoir reporté',
                     'Le devoir "' . $homework->title . '" a été reporté au ' . $validated['scheduled_date'] . ' de ' . $validated['start_time'] . ' à ' . $validated['end_time'] . '.',
                     'warning',

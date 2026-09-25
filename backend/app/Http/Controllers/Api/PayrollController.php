@@ -31,7 +31,8 @@ class PayrollController extends Controller {
         $monthStart = Carbon::create($year, $month, 1)->startOfDay();
         $monthEnd = $monthStart->copy()->endOfMonth()->endOfDay();
 
-        $leaves = LeaveRequest::where('teacher_id', $teacher->id)
+        $leaves = LeaveRequest::with('leaveType')
+            ->where('teacher_id', $teacher->id)
             ->where('status', 'approved')
             ->whereNotNull('approved_at')
             ->where(function ($q) use ($monthStart, $monthEnd) {
