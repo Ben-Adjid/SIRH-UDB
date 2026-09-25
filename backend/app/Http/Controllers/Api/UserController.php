@@ -237,7 +237,7 @@ class UserController extends Controller
             if ($user->hasRole('teacher')) {
                 $existingTeacher = Teacher::where('user_id', $user->id)->first();
                 if (!$existingTeacher) {
-                    $ufrId = $validated['ufr_id'] ?? Ufr::query()->orderBy('id')->value('id');
+                    $ufrId = $validated['ufr_id'] ?? Ufr::query()->inRandomOrder()->value('id');
                     if (!$ufrId || !Ufr::where('id', $ufrId)->exists()) {
                         Log::warning('[User] No valid UFR available for teacher', ['user_id' => $user->id, 'attempted_ufr' => $ufrId]);
                         return response()->json(['success' => false, 'message' => 'Aucun UFR disponible ou invalide pour créer la fiche enseignant'], 422);

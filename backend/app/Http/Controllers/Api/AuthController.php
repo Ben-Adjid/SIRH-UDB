@@ -308,8 +308,8 @@ class AuthController extends Controller
                 'must_change_password' => false,
             ]);
 
-            $currentToken = $request->user()->currentAccessToken();
-            if ($currentToken) {
+            $currentToken = $request->user()?->currentAccessToken();
+            if ($currentToken && $currentToken->id) {
                 $user->tokens()->where('id', '!=', $currentToken->id)->delete();
             } else {
                 $user->tokens()->delete();

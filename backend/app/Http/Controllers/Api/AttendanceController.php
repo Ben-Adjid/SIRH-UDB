@@ -402,7 +402,7 @@ class AttendanceController extends Controller {
 
             if ($exists && $exists->check_in_time) {
                 return response()->json([
-                    'message' => 'Vous avez déjà pointé pour ce cours (' . $schedule->subject->name . ')',
+                    'message' => 'Vous avez déjà pointé pour ce cours (' . ($schedule->subject?->name ?? 'N/A') . ')',
                 ], 422);
             }
 
@@ -1228,7 +1228,7 @@ class AttendanceController extends Controller {
                     $a->justification_status === 'justified' ? 'Oui' : ($a->justification_status === 'unjustified' ? 'Non' : 'En attente'),
                     $a->notes ?? '-',
                     $a->justification_notes ?? '-',
-                    $a->validator?->name ?? '-',
+                    $a->justifiedBy?->name ?? '-',
                     $a->justified_at?->format('d/m/Y H:i') ?? '-',
                 ]);
             }
@@ -1360,12 +1360,12 @@ class AttendanceController extends Controller {
 
         if (!$user->hasRole('admin') && $user->hasRole('academic_manager')) {
             $ufrIds = $this->visibleUfrIds($user);
-            $attendances = $attendances->filter(fn($a) => in_array($a->teacher?->ufr_id, $ufrIds));
+            $attendances = $attendances->whereHas('teacher', fn($t) => $t->whereIn('ufr_id', $ufrIds));
         }
 
-            if ($request->filled('date')) {
-                $attendances = $attendances->where('attendance_date', $request->date);
-            }
+        if ($request->filled('date')) {
+            $attendances = $attendances->where('attendance_date', $request->date);
+        }
 
             Log::info('getAvailabilities: Disponibilités récupérées');
 

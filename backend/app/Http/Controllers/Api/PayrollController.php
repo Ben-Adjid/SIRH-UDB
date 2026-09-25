@@ -529,6 +529,8 @@ class PayrollController extends Controller {
 
                         if ($hoursWorked <= 0) continue;
 
+                        if (!$teacher->hourly_rate || (float)$teacher->hourly_rate <= 0) continue;
+
                         $baseAmount = $hoursWorked * $teacher->hourly_rate;
                         $brsAmount = 0;
                         if ($baseAmount >= self::BRS_THRESHOLD) {

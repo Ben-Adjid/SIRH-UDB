@@ -299,7 +299,7 @@ class ScheduleController extends Controller {
                 \App\Services\NotificationService::send(
                     $teacher->user->id,
                     'Cours supprimé',
-                    'Votre cours du ' . $schedule->day_of_week . ' (' . ($schedule->subject->name ?? 'N/A') . ') a été supprimé de l\'emploi du temps.',
+                    'Votre cours du ' . $schedule->day_of_week . ' (' . ($schedule->subject?->name ?? 'N/A') . ') a été supprimé de l\'emploi du temps.',
                     'danger',
                     '/schedules'
                 );
