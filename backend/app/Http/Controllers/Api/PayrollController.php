@@ -537,7 +537,7 @@ class PayrollController extends Controller {
 
                         $grossSalary = $baseAmount;
                         $netSalary = $baseAmount - $brsAmount;
-                        $paymentMethod = $grossSalary >= self::CHECK_THRESHOLD ? 'check' : 'cash';
+                        $paymentMethod = $netSalary >= self::CHECK_THRESHOLD ? 'check' : 'cash';
 
                         Payroll::where([
                             'teacher_id' => $teacher->id,
@@ -571,7 +571,8 @@ class PayrollController extends Controller {
 
                         $calculatedCount++;
                     } catch (\Exception $e) {
-                        $errors[] = "Erreur pour {$teacher->user->name}: " . $e->getMessage();
+                        $teacherName = $teacher->user?->name ?? "Enseignant {$teacher->id}";
+                        $errors[] = "Erreur pour {$teacherName}: " . $e->getMessage();
                     }
                 }
 
@@ -600,6 +601,12 @@ class PayrollController extends Controller {
     public function downloadPDF($id): \Symfony\Component\HttpFoundation\Response
     {
         try {
+            $user = auth()->user();
+
+            if (!$user->hasAnyRole(['admin', 'accountant', 'hr_manager', 'secretary'])) {
+                return response()->json(['message' => 'Non autorisé'], 403);
+            }
+
             $payroll = Payroll::with(['teacher.user', 'details'])->findOrFail($id);
 
             $teacher = $payroll->teacher;
@@ -615,7 +622,7 @@ class PayrollController extends Controller {
 
             $data = [
                 'payroll' => $payroll,
-                'teacher_name' => $teacher->user->name,
+                'teacher_name' => $teacher->user?->name ?? 'Enseignant',
                 'employee_id' => $teacher->employee_id,
                 'month' => $payroll->month,
                 'year' => $payroll->year,
