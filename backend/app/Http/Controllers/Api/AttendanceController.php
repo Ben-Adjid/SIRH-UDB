@@ -312,7 +312,7 @@ class AttendanceController extends Controller {
 
         if (!$schedule) {
             return response()->json([
-                ‘message’ => ‘Vous n\’avez pas de cours en ce moment. Le pointage est uniquement autorisé pendant les heures de cours.’,
+                ‘message’ => "Vous n’avez pas de cours en ce moment. Le pointage est uniquement autorisé pendant les heures de cours.",
                 ‘error’ => ‘no_schedule’,
             ], 422);
         }
