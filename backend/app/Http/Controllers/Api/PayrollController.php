@@ -355,9 +355,10 @@ class PayrollController extends Controller {
 
             AuditLog::create(['user_id' => auth()->id(), 'action' => 'validate_payroll', 'model' => 'Payroll', 'model_id' => $payroll->id, 'ip_address' => request()->ip()]);
 
-            if ($payroll->teacher) {
+            $payroll->loadMissing('teacher.user');
+            if ($payroll->teacher?->user) {
                 NotificationService::send(
-                    $payroll->teacher->user_id,
+                    $payroll->teacher->user->id,
                     'Honoraire validé',
                     'Votre honoraire pour ' . $payroll->month . '/' . $payroll->year . ' a été validé.',
                     'info', '/payroll'
@@ -383,10 +384,10 @@ class PayrollController extends Controller {
 
             $payroll->update(['status' => 'paid']);
 
-            $payroll->load('teacher');
-            if ($payroll->teacher) {
+            $payroll->load('teacher.user');
+            if ($payroll->teacher?->user) {
                 NotificationService::send(
-                    $payroll->teacher->user_id,
+                    $payroll->teacher->user->id,
                     'Honoraire payé',
                     'Votre honoraire de ' . number_format((float) $payroll->net_salary, 0, ',', ' ') . ' FCFA pour ' . $payroll->month . '/' . $payroll->year . ' a été payé par ' . ($payroll->payment_method === 'check' ? 'chèque' : 'espèces') . '.',
                     'success',
