@@ -45,19 +45,22 @@ class PayrollController extends Controller {
         $totalDays = 0;
         $leaveDetails = [];
         foreach ($leaves as $leave) {
+            if (!$leave->start_date || !$leave->end_date) {
+                continue;
+            }
             $start = Carbon::parse($leave->start_date)->max($monthStart);
             $end = Carbon::parse($leave->end_date)->min($monthEnd);
-            $days = $start->diffInDays($end) + 1;
+            $days = max(0, $start->diffInDays($end) + 1);
             $totalDays += $days;
             $leaveDetails[] = [
-                'type' => $leave->leaveType->name ?? 'Congé',
+                'type' => $leave->leaveType?->name ?? 'Congé',
                 'days' => $days,
                 'start' => $start->format('Y-m-d'),
                 'end' => $end->format('Y-m-d'),
             ];
         }
 
-        return ['total_days' => $totalDays, 'details' => $leaveDetails];
+        return ['total_days' => (int)$totalDays, 'details' => $leaveDetails];
     }
 
     private function attendanceHours(Teacher $teacher, int $year, int $month): array
@@ -73,20 +76,30 @@ class PayrollController extends Controller {
         $hours = 0.0;
         $incomplete = 0;
         foreach ($attendances as $attendance) {
-            if (!$attendance->check_out_time) $incomplete++;
+            if (!$attendance->check_out_time) {
+                $incomplete++;
+            }
+
             if ($attendance->schedule?->start_time && $attendance->schedule?->end_time) {
-                $dayHours = Carbon::parse($attendance->schedule->start_time)
-                    ->diffInMinutes(Carbon::parse($attendance->schedule->end_time)) / 60;
+                try {
+                    $dayHours = Carbon::parse($attendance->schedule->start_time)
+                        ->diffInMinutes(Carbon::parse($attendance->schedule->end_time)) / 60;
 
-                if ($attendance->status === 'late' && $attendance->check_in_time) {
-                    $lateMinutes = Carbon::parse($attendance->check_in_time)
-                        ->diffInMinutes(Carbon::parse($attendance->schedule->start_time));
-                    $deductedMinutes = min($lateMinutes, self::GRACE_PERIOD_MINUTES);
-                    $dayHours -= ($deductedMinutes / 60);
+                    if ($attendance->status === 'late' && $attendance->check_in_time) {
+                        $lateMinutes = Carbon::parse($attendance->check_in_time)
+                            ->diffInMinutes(Carbon::parse($attendance->schedule->start_time));
+                        $deductedMinutes = min(abs($lateMinutes), self::GRACE_PERIOD_MINUTES);
+                        $dayHours -= ($deductedMinutes / 60);
+                    }
+
+                    $hours += max(0, $dayHours);
+                } catch (\Exception $e) {
+                    Log::warning('attendanceHours: Failed to parse schedule times', [
+                        'attendance_id' => $attendance->id,
+                        'error' => $e->getMessage(),
+                    ]);
                 }
-
-                $hours += max(0, $dayHours);
-            } elseif ($attendance->hours_worked !== null) {
+            } elseif ($attendance->hours_worked !== null && $attendance->hours_worked > 0) {
                 $hours += (float) $attendance->hours_worked;
             }
         }
@@ -103,13 +116,20 @@ class PayrollController extends Controller {
                 'year' => 'required|integer|min:2020|max:' . (date('Y') + 1),
             ]);
 
-            $summary = $this->attendanceHours(Teacher::findOrFail($validated['teacher_id']), $validated['year'], $validated['month']);
+            $teacher = Teacher::findOrFail($validated['teacher_id']);
+            $summary = $this->attendanceHours($teacher, (int)$validated['year'], (int)$validated['month']);
 
-            Log::info('attendanceSummary: Résumé de présence récupéré', ['teacher_id' => $validated['teacher_id']]);
+            Log::info('attendanceSummary: Résumé de présence récupéré', [
+                'teacher_id' => $validated['teacher_id'],
+                'month' => $validated['month'],
+                'year' => $validated['year'],
+            ]);
 
             return response()->json([
                 'success' => true,
-                'summary' => $summary
+                'summary' => $summary,
+                'hours' => $summary['hours'],
+                'incomplete' => $summary['incomplete']
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
@@ -135,7 +155,7 @@ class PayrollController extends Controller {
 
             $teacher = Teacher::findOrFail($validated['teacher_id']);
 
-            if ((float) $teacher->hourly_rate <= 0) {
+            if (!$teacher->hourly_rate || (float) $teacher->hourly_rate <= 0) {
                 return response()->json(['message' => 'L\'enseignant n\'a pas de taux horaire configuré'], 422);
             }
 
@@ -152,7 +172,7 @@ class PayrollController extends Controller {
             $deductedLeaveHours = $deductedLeaveDays * self::HOURS_PER_DAY;
             $hoursWorked = max(0, $hoursWorked - $deductedLeaveHours);
 
-            $baseAmount = $hoursWorked * $teacher->hourly_rate;
+            $baseAmount = round($hoursWorked * (float)$teacher->hourly_rate, 2);
 
             $brsAmount = 0;
             if ($baseAmount >= self::BRS_THRESHOLD) {
@@ -309,10 +329,9 @@ class PayrollController extends Controller {
             $totalEarnings = $details->where('type', 'earning')->sum('amount');
             $totalDeductions = $details->where('type', 'deduction')->sum('amount');
 
-            $honorariumAmount = $payroll->honorarium_amount;
             $brsAmount = 0;
-            if ($honorariumAmount >= self::BRS_THRESHOLD) {
-                $brsAmount = round($honorariumAmount * self::BRS_RATE, 2);
+            if ($totalEarnings >= self::BRS_THRESHOLD) {
+                $brsAmount = round($totalEarnings * self::BRS_RATE, 2);
             }
 
             $grossSalary = $totalEarnings;
@@ -344,6 +363,10 @@ class PayrollController extends Controller {
                 return response()->json(['message' => 'Non autorisé'], 403);
             }
 
+            if (!$payroll->teacher) {
+                return response()->json(['message' => 'Enseignant non trouvé'], 404);
+            }
+
             if ($payroll->status === 'validated' || $payroll->status === 'paid') {
                 return response()->json(['message' => 'Paie déjà validée'], 422);
             }
@@ -353,7 +376,14 @@ class PayrollController extends Controller {
 
             $payroll->update(['status' => 'validated', 'validated_by' => auth()->id(), 'validated_at' => now()]);
 
-            AuditLog::create(['user_id' => auth()->id(), 'action' => 'validate_payroll', 'model' => 'Payroll', 'model_id' => $payroll->id, 'ip_address' => request()->ip()]);
+            AuditLog::create([
+                'user_id' => auth()->id(),
+                'action' => 'validate_payroll',
+                'model' => 'Payroll',
+                'model_id' => $payroll->id,
+                'ip_address' => request()->ip(),
+                'new_values' => ['status' => 'validated', 'validated_at' => $payroll->validated_at]
+            ]);
 
             $payroll->loadMissing('teacher.user');
             if ($payroll->teacher?->user) {
@@ -365,7 +395,7 @@ class PayrollController extends Controller {
                 );
             }
 
-            return response()->json(['message' => 'Validé', 'payroll' => $payroll]);
+            return response()->json(['message' => 'Validé', 'payroll' => $payroll->fresh()->load(['teacher.user', 'teacher.ufr', 'details', 'validator'])]);
         } catch (\Exception $e) {
             Log::error('PayrollValidate error', ['error' => $e->getMessage()]);
             return response()->json(['message' => 'Erreur lors de la validation'], 500);
@@ -378,6 +408,10 @@ class PayrollController extends Controller {
                 return response()->json(['message' => 'Non autorisé'], 403);
             }
 
+            if (!$payroll->teacher) {
+                return response()->json(['message' => 'Enseignant non trouvé'], 404);
+            }
+
             if ($payroll->status !== 'validated') {
                 return response()->json(['message' => 'Seules les paies validées peuvent être payées'], 422);
             }
@@ -386,24 +420,32 @@ class PayrollController extends Controller {
 
             $payroll->load('teacher.user');
             if ($payroll->teacher?->user) {
+                $netSalaryFormatted = number_format((float) ($payroll->net_salary ?? 0), 0, ',', ' ');
                 NotificationService::send(
                     $payroll->teacher->user->id,
                     'Honoraire payé',
-                    'Votre honoraire de ' . number_format((float) $payroll->net_salary, 0, ',', ' ') . ' FCFA pour ' . $payroll->month . '/' . $payroll->year . ' a été payé par ' . ($payroll->payment_method === 'check' ? 'chèque' : 'espèces') . '.',
+                    'Votre honoraire de ' . $netSalaryFormatted . ' FCFA pour ' . $payroll->month . '/' . $payroll->year . ' a été payé par ' . ($payroll->payment_method === 'check' ? 'chèque' : 'espèces') . '.',
                     'success',
                     '/payroll'
                 );
             }
 
-            AuditLog::create(['user_id' => auth()->id(), 'action' => 'mark_payroll_paid', 'model' => 'Payroll', 'model_id' => $payroll->id, 'ip_address' => request()->ip()]);
+            AuditLog::create([
+                'user_id' => auth()->id(),
+                'action' => 'mark_payroll_paid',
+                'model' => 'Payroll',
+                'model_id' => $payroll->id,
+                'ip_address' => request()->ip(),
+                'new_values' => ['status' => 'paid']
+            ]);
 
             return response()->json([
                 'message' => 'Marquée comme payée',
-                'payroll' => $payroll,
+                'payroll' => $payroll->fresh()->load(['teacher.user', 'teacher.ufr', 'details']),
                 'payment_info' => [
                     'method' => $payroll->payment_method,
                     'label' => $payroll->payment_method === 'check' ? 'Chèque' : 'Espèces',
-                    'amount' => $payroll->net_salary,
+                    'amount' => $payroll->net_salary ?? 0,
                 ]
             ]);
         } catch (\Exception $e) {
@@ -421,15 +463,19 @@ class PayrollController extends Controller {
             $query = Payroll::with('teacher.user');
 
             if ($request->filled('month') && $request->filled('year')) {
-                $query->where('month', $request->month)->where('year', $request->year);
+                $query->where('month', (int)$request->month)->where('year', (int)$request->year);
             }
 
             $payrolls = $query->orderBy('year', 'desc')->orderBy('month', 'desc')->get();
 
+            if ($payrolls->isEmpty()) {
+                return response()->json(['message' => 'Aucune donnée à exporter'], 204);
+            }
+
             $filename = 'export_honoraires_' . now()->format('Y-m-d_H-i-s') . '.csv';
             $headers = [
-                'Content-type' => 'text/csv',
-                'Content-Disposition' => "attachment; filename=$filename",
+                'Content-type' => 'text/csv; charset=utf-8',
+                'Content-Disposition' => "attachment; filename=\"$filename\"",
                 'Pragma' => 'no-cache',
                 'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
                 'Expires' => '0',
@@ -445,6 +491,7 @@ class PayrollController extends Controller {
                 foreach ($payrolls as $p) {
                     $d = $p->calculation_details ?? [];
                     $method = $p->payment_method === 'check' ? 'Chèque' : 'Espèces';
+                    $honorariumAmount = $p->honorarium_amount ?? $p->gross_salary ?? 0;
                     fputcsv($file, [
                         $p->id,
                         $p->teacher?->user?->name ?? 'Inconnu',
@@ -452,9 +499,9 @@ class PayrollController extends Controller {
                         $p->month . '/' . $p->year,
                         $d['hourly_rate'] ?? '-',
                         $d['hours_worked'] ?? '-',
-                        $p->honorarium_amount,
+                        $honorariumAmount,
                         $p->brs_amount ?? 0,
-                        $p->net_salary,
+                        $p->net_salary ?? 0,
                         $method,
                         $p->status,
                     ]);
@@ -477,39 +524,34 @@ class PayrollController extends Controller {
             $page = max(1, (int)$request->input('page', 1));
             $perPage = (int)$request->input('per_page', 20);
 
-            $sql = "SELECT * FROM payrolls WHERE year = ? AND month = ?";
-            $params = [$year, $month];
+            $query = Payroll::with('teacher.user', 'teacher.ufr')
+                ->where('year', $year)
+                ->where('month', $month);
 
             if ($user->hasRole('teacher')) {
                 $teacher = Teacher::where('user_id', $user->id)->first();
                 if (!$teacher) return response()->json(['message' => 'Non autorisé'], 403);
-                $sql .= " AND teacher_id = ?";
-                $params[] = $teacher->id;
+                $query->where('teacher_id', $teacher->id);
             } elseif ($request->filled('teacher_id')) {
-                $sql .= " AND teacher_id = ?";
-                $params[] = (int)$request->teacher_id;
+                $query->where('teacher_id', (int)$request->teacher_id);
             }
 
             if ($request->filled('status')) {
-                $sql .= " AND status = ?";
-                $params[] = $request->status;
+                $query->where('status', $request->status);
             }
 
-            $sql .= " ORDER BY year DESC, month DESC";
+            $query->orderBy('year', 'desc')->orderBy('month', 'desc');
 
-            $total = DB::selectOne("SELECT COUNT(*) as cnt FROM (" . str_replace("ORDER BY year DESC, month DESC", "", $sql) . ") t", $params)->cnt ?? 0;
-            $offset = ($page - 1) * $perPage;
-
-            $data = DB::select($sql . " LIMIT ? OFFSET ?", array_merge($params, [$perPage, $offset]));
+            $paginated = $query->paginate($perPage, ['*'], 'page', $page);
 
             return response()->json([
-                'current_page' => $page,
-                'data' => $data,
-                'from' => $total > 0 ? $offset + 1 : null,
-                'last_page' => (int)ceil($total / $perPage),
-                'per_page' => $perPage,
-                'to' => min($offset + $perPage, $total),
-                'total' => $total
+                'current_page' => $paginated->currentPage(),
+                'data' => $paginated->items(),
+                'from' => $paginated->firstItem(),
+                'last_page' => $paginated->lastPage(),
+                'per_page' => $paginated->perPage(),
+                'to' => $paginated->lastItem(),
+                'total' => $paginated->total()
             ]);
         } catch (\Exception $e) {
             Log::error('PayrollIndex error', ['error' => $e->getMessage()]);
@@ -520,9 +562,20 @@ class PayrollController extends Controller {
     public function show(Payroll $payroll): JsonResponse {
         try {
             $user = auth()->user();
-            if (!$payroll->teacher || ($user->id !== $payroll->teacher->user_id && !$user->hasAnyRole(['admin', 'accountant', 'hr_manager', 'secretary']))) {
+
+            if (!$payroll->teacher) {
+                return response()->json(['message' => 'Enseignant non trouvé'], 404);
+            }
+
+            if ($user->hasRole('teacher')) {
+                $teacher = Teacher::where('user_id', $user->id)->first();
+                if (!$teacher || $teacher->id !== $payroll->teacher_id) {
+                    return response()->json(['message' => 'Non autorisé'], 403);
+                }
+            } elseif (!$user->hasAnyRole(['admin', 'accountant', 'hr_manager', 'secretary'])) {
                 return response()->json(['message' => 'Non autorisé'], 403);
             }
+
             return response()->json($payroll->load(['teacher.user', 'teacher.ufr', 'details', 'validator']));
         } catch (\Exception $e) {
             Log::error('PayrollShow error', ['error' => $e->getMessage()]);
@@ -557,14 +610,14 @@ class PayrollController extends Controller {
 
                         if (!$teacher->hourly_rate || (float)$teacher->hourly_rate <= 0) continue;
 
-                        $baseAmount = $hoursWorked * $teacher->hourly_rate;
+                        $baseAmount = round($hoursWorked * (float)$teacher->hourly_rate, 2);
                         $brsAmount = 0;
                         if ($baseAmount >= self::BRS_THRESHOLD) {
                             $brsAmount = round($baseAmount * self::BRS_RATE, 2);
                         }
 
                         $grossSalary = $baseAmount;
-                        $netSalary = $baseAmount - $brsAmount;
+                        $netSalary = max(0, $baseAmount - $brsAmount);
                         $paymentMethod = $netSalary >= self::CHECK_THRESHOLD ? 'check' : 'cash';
 
                         Payroll::where([
@@ -590,8 +643,9 @@ class PayrollController extends Controller {
                                 'hours_attendance' => $attendanceSummary['hours'],
                                 'hours_deducted_leaves' => $deductedLeaveHours,
                                 'hours_worked' => $hoursWorked,
-                                'hourly_rate' => $teacher->hourly_rate,
+                                'hourly_rate' => (float)$teacher->hourly_rate,
                                 'brs_applied' => $brsAmount > 0,
+                                'brs_amount' => $brsAmount,
                                 'payment_method' => $paymentMethod,
                                 'approved_leaves' => $approvedLeaves,
                             ]
@@ -600,6 +654,10 @@ class PayrollController extends Controller {
                         $calculatedCount++;
                     } catch (\Exception $e) {
                         $teacherName = $teacher->user?->name ?? "Enseignant {$teacher->id}";
+                        Log::warning("PayrollCalculateMonth: Erreur pour {$teacherName}", [
+                            'teacher_id' => $teacher->id,
+                            'error' => $e->getMessage(),
+                        ]);
                         $errors[] = "Erreur pour {$teacherName}: " . $e->getMessage();
                     }
                 }
@@ -609,6 +667,7 @@ class PayrollController extends Controller {
                     'action' => 'calculate_month_payroll',
                     'model' => 'Payroll',
                     'ip_address' => request()->ip(),
+                    'new_values' => ['calculated_count' => $calculatedCount, 'month' => $validated['month'], 'year' => $validated['year']],
                 ]);
 
                 return $calculatedCount;
@@ -642,22 +701,30 @@ class PayrollController extends Controller {
                 return response()->json(['message' => 'Enseignant non trouvé'], 404);
             }
 
+            if (!$teacher->user) {
+                return response()->json(['message' => 'Données d\'utilisateur incomplètes'], 404);
+            }
+
             $logoPath = public_path('spa/logo.jpg');
             $logoBase64 = '';
             if (file_exists($logoPath)) {
-                $logoBase64 = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoPath));
+                try {
+                    $logoBase64 = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($logoPath));
+                } catch (\Exception $e) {
+                    Log::warning('PDF logo loading failed', ['error' => $e->getMessage()]);
+                }
             }
 
             $data = [
                 'payroll' => $payroll,
-                'teacher_name' => $teacher->user?->name ?? 'Enseignant',
-                'employee_id' => $teacher->employee_id,
+                'teacher_name' => $teacher->user->name ?? 'Enseignant',
+                'employee_id' => $teacher->employee_id ?? 'N/A',
                 'month' => $payroll->month,
                 'year' => $payroll->year,
-                'gross_salary' => $payroll->gross_salary,
-                'deductions' => $payroll->deductions,
-                'net_salary' => $payroll->net_salary,
-                'details' => $payroll->details,
+                'gross_salary' => $payroll->gross_salary ?? 0,
+                'deductions' => $payroll->deductions ?? 0,
+                'net_salary' => $payroll->net_salary ?? 0,
+                'details' => $payroll->details ?? [],
                 'generated_at' => now()->format('d/m/Y H:i'),
                 'logo' => $logoBase64,
             ];
@@ -671,7 +738,10 @@ class PayrollController extends Controller {
 
             return $pdf->download("bulletin_paie_{$payroll->month}_{$payroll->year}.pdf");
         } catch (\Exception $e) {
-            Log::error('PDF generation error', ['error' => $e->getMessage()]);
+            Log::error('PDF generation error', [
+                'payroll_id' => $id ?? 'unknown',
+                'error' => $e->getMessage(),
+            ]);
             return response()->json(['message' => 'Erreur lors de la génération du PDF'], 500);
         }
     }

@@ -8,6 +8,24 @@ use App\Http\Controllers\Api\AuthController;
 // Health check - Simple status without sensitive info
 Route::get('/health', fn() => response()->json(['status' => 'ok']))->middleware('throttle:60,1');
 
+// DEBUG - Check payroll data directly (PUBLIC - NO AUTH)
+Route::get('/test/payroll-check', function (Illuminate\Http\Request $request) {
+    $month = (int)$request->input('month', 8);
+    $year = (int)$request->input('year', 2026);
+
+    $count = DB::selectOne("SELECT COUNT(*) as cnt FROM payrolls WHERE year = ? AND month = ?", [$year, $month])->cnt ?? 0;
+    $data = DB::select("SELECT id, teacher_id, year, month, status, net_salary FROM payrolls WHERE year = ? AND month = ? LIMIT 10", [$year, $month]);
+
+    return response()->json([
+        'test' => 'payroll_check',
+        'query_month' => $month,
+        'query_year' => $year,
+        'total_found' => $count,
+        'sample_data' => $data,
+        'status' => $count > 0 ? 'DATA EXISTS' : 'NO DATA FOUND'
+    ]);
+});
+
 // Diagnostic routes (admin only)
 Route::middleware('auth:sanctum', 'role:admin')->group(function () {
     Route::get('/diagnostic/database-counts', function () {
@@ -26,6 +44,24 @@ Route::middleware('auth:sanctum', 'role:admin')->group(function () {
     });
 
     // Test endpoint - Add attendance data for payroll testing
+    // DEBUG - Get payroll data with raw SQL (bypass all ORM issues)
+    Route::get('/debug/payroll-raw', function (Illuminate\Http\Request $request) {
+        $month = (int)$request->input('month', 8);
+        $year = (int)$request->input('year', 2026);
+
+        $payrolls = DB::select("
+            SELECT * FROM payrolls WHERE year = ? AND month = ? LIMIT 20
+        ", [$year, $month]);
+
+        return response()->json([
+            'debug' => true,
+            'query_month' => $month,
+            'query_year' => $year,
+            'total_found' => count($payrolls),
+            'data' => $payrolls
+        ]);
+    });
+
     Route::post('/test/add-attendance', function () {
         if (config('app.env') === 'production') {
             return response()->json(['error' => 'Not available in production'], 403);

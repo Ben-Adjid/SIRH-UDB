@@ -42,7 +42,7 @@ const Payroll = () => {
         setLoading(true);
         try {
             let endpoint = '/payroll';
-            const monthNum = Math.max(1, parseInt(selectedMonth.split('-')[1], 10) - 1);
+            const monthNum = parseInt(selectedMonth.split('-')[1], 10);
             const params = { page: pageNum, per_page: perPage, month: monthNum, year: parseInt(selectedMonth.split('-')[0], 10) };
             if (isTeacher && currentTeacherId) params.teacher_id = currentTeacherId;
             const response = await api.get(endpoint, { params });
@@ -89,17 +89,18 @@ const Payroll = () => {
         const selectedTeacher = teachers.find(t => t.id == teacherId);
         if (!selectedTeacher) return;
 
-        const hoursWorked = attData?.hours || 0;
-        const baseAmount = hoursWorked * (selectedTeacher.hourly_rate || 0);
-        const brsAmount = baseAmount >= 25000 ? baseAmount * 0.05 : 0;
+        const hoursWorked = Math.max(0, attData?.hours || attData?.summary?.hours || 0);
+        const hourlyRate = parseFloat(selectedTeacher.hourly_rate) || 0;
+        const baseAmount = Math.round(hoursWorked * hourlyRate * 100) / 100;
+        const brsAmount = baseAmount >= 25000 ? Math.round(baseAmount * 0.05 * 100) / 100 : 0;
         const netSalary = baseAmount - brsAmount;
         const paymentMethod = netSalary >= 100000 ? 'Chèque' : 'Espèces';
 
         setCalculationPreview({
             hours: hoursWorked,
-            baseAmount,
-            brsAmount,
-            netSalary: Math.max(0, netSalary),
+            baseAmount: Math.round(baseAmount * 100) / 100,
+            brsAmount: Math.round(brsAmount * 100) / 100,
+            netSalary: Math.max(0, Math.round(netSalary * 100) / 100),
             paymentMethod
         });
     }, [teachers]);
@@ -108,19 +109,28 @@ const Payroll = () => {
         if (!teacherId) return;
         setLoadingAttendance(true);
         try {
+            const monthNum = parseInt(month, 10);
+            const yearNum = parseInt(year, 10);
+
+            if (isNaN(monthNum) || monthNum < 1 || monthNum > 12 || isNaN(yearNum)) {
+                toast.error('Période invalide');
+                setLoadingAttendance(false);
+                return;
+            }
+
             const [attendResp, leaveResp] = await Promise.all([
-                api.get('/payroll/attendance-hours', { params: { teacher_id: teacherId, month: parseInt(month), year: parseInt(year) } }),
-                api.get('/leaves', { params: { teacher_id: teacherId, month: parseInt(month), year: parseInt(year), status: 'approved' } })
+                api.get('/payroll/attendance-hours', { params: { teacher_id: teacherId, month: monthNum, year: yearNum } }),
+                api.get('/leaves', { params: { teacher_id: teacherId, month: monthNum, year: yearNum, status: 'approved' } })
             ]);
-            setAttendanceData(attendResp.data);
+            setAttendanceData(attendResp.data?.summary || attendResp.data);
             setLeaveData(leaveResp.data?.data || []);
-            calculatePreview(teacherId, parseInt(month), parseInt(year), attendResp.data);
+            calculatePreview(teacherId, monthNum, yearNum, attendResp.data?.summary || attendResp.data);
         } catch (error) {
             if (error.response?.status === 401) {
                 toast.error('Session expirée, veuillez vous reconnecter');
             } else if (error.response?.status === 404) {
                 toast.error('Données non trouvées pour ce mois');
-                setAttendanceData({ hours: 0 });
+                setAttendanceData({ hours: 0, summary: { hours: 0 } });
             } else {
                 toast.error('Erreur lors du chargement des données');
             }
@@ -575,11 +585,15 @@ const Payroll = () => {
                                                 <div className="grid grid-cols-3 gap-4">
                                                     <div>
                                                         <p className="text-xs text-slate-500 font-semibold">Heures pointées</p>
-                                                        <p className="text-2xl font-bold text-slate-900">{attendanceData.hours}h</p>
+                                                        <p className="text-2xl font-bold text-slate-900">{(attendanceData.hours || attendanceData.summary?.hours || 0)}h</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs text-slate-500 font-semibold">Pointages incomplets</p>
+                                                        <p className="text-lg font-bold text-slate-600">{(attendanceData.incomplete || attendanceData.summary?.incomplete || 0)}</p>
                                                     </div>
                                                     {leaveData.length > 0 && (
                                                         <div>
-                                                            <p className="text-xs text-slate-500 font-semibold">Absences approuvées</p>
+                                                            <p className="text-xs text-slate-500 font-semibold">Congés approuvés</p>
                                                             <p className="text-lg font-bold text-amber-600">{leaveData.length} jour(s)</p>
                                                         </div>
                                                     )}
