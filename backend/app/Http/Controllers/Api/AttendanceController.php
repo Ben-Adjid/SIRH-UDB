@@ -22,6 +22,27 @@ class AttendanceController extends Controller {
     const LATE_THRESHOLD_MINUTES = 15;
     const CHECK_IN_EARLY_MINUTES = 15;
 
+    private function getOrCreateTeacher(User $user): ?Teacher
+    {
+        $teacher = Teacher::where('user_id', $user->id)->first();
+        if (!$teacher) {
+            $ufr = Ufr::first();
+            if (!$ufr) {
+                return null;
+            }
+            $teacher = Teacher::create([
+                'user_id' => $user->id,
+                'ufr_id' => $ufr->id,
+                'employee_id' => 'ENS-' . str_pad($user->id, 5, '0', STR_PAD_LEFT),
+                'hire_date' => now(),
+                'status' => 'active',
+                'volume_hours' => 0,
+                'hourly_rate' => 0,
+            ]);
+        }
+        return $teacher;
+    }
+
     public function myPin(): JsonResponse
     {
         try {
@@ -29,30 +50,15 @@ class AttendanceController extends Controller {
             $teacher = null;
 
             if ($user->hasRole('teacher')) {
-                $teacher = Teacher::where('user_id', $user->id)->first();
+                $teacher = $this->getOrCreateTeacher($user);
                 if (!$teacher) {
-                    // Don't auto-create teacher - they should be properly created with UFR assignment
-                    $ufr = Ufr::first();
-                    if (!$ufr) {
-                        return response()->json([
-                            'message' => 'Aucune UFR disponible. Contactez l\'administration.',
-                            'configured' => false,
-                            'pin' => null,
-                            'temporary' => false,
-                        ], 400);
-                    }
-                    $teacher = Teacher::create([
-                        'user_id' => $user->id,
-                        'ufr_id' => $ufr->id,
-                        'employee_id' => 'ENS-' . str_pad($user->id, 5, '0', STR_PAD_LEFT),
-                        'hire_date' => now(),
-                        'status' => 'active',
-                        'volume_hours' => 0,
-                        'hourly_rate' => 0,
-                    ]);
+                    return response()->json([
+                        'message' => 'Aucune UFR disponible. Contactez l\'administration.',
+                        'configured' => false,
+                        'pin' => null,
+                        'temporary' => false,
+                    ], 400);
                 }
-            } else {
-                $teacher = Teacher::where('user_id', $user->id)->first();
             }
 
             // Retourner le PIN temporaire s'il existe
@@ -266,21 +272,9 @@ class AttendanceController extends Controller {
             return response()->json(['message' => 'Pointage d’entrée enregistré', 'attendance' => $attendance]);
         }
 
-        $teacher = Teacher::where('user_id', $user->id)->first();
+        $teacher = $this->getOrCreateTeacher($user);
         if (!$teacher) {
-            $ufr = Ufr::first();
-            if (!$ufr) {
-                return response()->json(['message' => 'Aucune UFR disponible. Contactez l\'administration.'], 400);
-            }
-            $teacher = Teacher::create([
-                'user_id' => $user->id,
-                'ufr_id' => $ufr->id,
-                'employee_id' => 'ENS-' . str_pad($user->id, 5, '0', STR_PAD_LEFT),
-                'hire_date' => now(),
-                'status' => 'active',
-                'volume_hours' => 0,
-                'hourly_rate' => 0,
-            ]);
+            return response()->json(['message' => 'Aucune UFR disponible. Contactez l\'administration.'], 400);
         }
 
         $validated = $request->validate([
@@ -923,21 +917,9 @@ class AttendanceController extends Controller {
         // Si l'utilisateur est enseignant et ne demande pas explicitement la vue registre/gestion
         $isManagementRequest = $request->boolean('management') || $request->filled('ufr_id') || ($request->filled('date') && $user->hasAnyRole(['admin', 'hr_manager', 'secretary', 'accountant', 'academic_manager']));
         if ($user->hasRole('teacher') && !$isManagementRequest) {
-            $teacher = Teacher::where('user_id', $user->id)->first();
+            $teacher = $this->getOrCreateTeacher($user);
             if (!$teacher) {
-                $ufr = Ufr::first();
-                if (!$ufr) {
-                    return response()->json(['message' => 'Aucune UFR disponible. Contactez l\'administration.'], 400);
-                }
-                $teacher = Teacher::create([
-                    'user_id' => $user->id,
-                    'ufr_id' => $ufr->id,
-                    'employee_id' => 'ENS-' . str_pad($user->id, 5, '0', STR_PAD_LEFT),
-                    'hire_date' => now(),
-                    'status' => 'active',
-                    'volume_hours' => 0,
-                    'hourly_rate' => 0,
-                ]);
+                return response()->json(['message' => 'Aucune UFR disponible. Contactez l\'administration.'], 400);
             }
 
             $week = $request->input('week');
