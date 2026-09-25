@@ -262,7 +262,7 @@ class TeacherController extends Controller {
                 ]);
 
                 return response()->json([
-                    'message' => 'Enseignant mis a jour',
+                    'message' => 'Enseignant mis à jour',
                     'teacher' => $teacher->load('user', 'ufr')
                 ]);
             });
@@ -295,7 +295,7 @@ class TeacherController extends Controller {
             ]);
 
             return response()->json([
-                'message' => $newStatus === 'active' ? 'Enseignant active' : 'Enseignant desactive',
+                'message' => $newStatus === 'active' ? 'Enseignant activé' : 'Enseignant désactivé',
                 'teacher' => $teacher->fresh()->load('user', 'ufr')
             ]);
         } catch (\Exception $e) {

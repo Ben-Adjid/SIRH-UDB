@@ -141,7 +141,7 @@ class ScheduleController extends Controller {
             $validated = $request->validated();
 
             if (auth()->user()->hasRole('teacher')) {
-                $ownTeacher = Teacher::where('user_id', auth()->id())->first();
+                $ownTeacher = Teacher::where('user_id', auth()->user()->id)->first();
                 if (!$ownTeacher || (int) $validated['teacher_id'] !== (int) $ownTeacher->id) {
                     return response()->json(['message' => 'Un enseignant ne peut programmer que son propre emploi du temps'], 403);
                 }
@@ -181,7 +181,7 @@ class ScheduleController extends Controller {
             $schedule = Schedule::create($validated);
 
             \App\Models\AuditLog::create([
-                'user_id' => auth()->id(),
+                'user_id' => auth()->user()->id,
                 'action' => 'create_schedule',
                 'model' => 'Schedule',
                 'model_id' => $schedule->id,
@@ -257,7 +257,7 @@ class ScheduleController extends Controller {
             $schedule->update($validated);
 
             \App\Models\AuditLog::create([
-                'user_id' => auth()->id(),
+                'user_id' => auth()->user()->id,
                 'action' => 'update_schedule',
                 'model' => 'Schedule',
                 'model_id' => $schedule->id,
@@ -306,7 +306,7 @@ class ScheduleController extends Controller {
             }
 
             \App\Models\AuditLog::create([
-                'user_id' => auth()->id(),
+                'user_id' => auth()->user()->id,
                 'action' => 'delete_schedule',
                 'model' => 'Schedule',
                 'model_id' => $schedule->id,
