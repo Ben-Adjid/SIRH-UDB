@@ -472,23 +472,45 @@ class PayrollController extends Controller {
     public function index(Request $request): JsonResponse {
         try {
             $user = auth()->user();
-            $query = Payroll::query();
+            $month = (int)$request->input('month', date('m'));
+            $year = (int)$request->input('year', date('Y'));
+            $page = max(1, (int)$request->input('page', 1));
+            $perPage = (int)$request->input('per_page', 20);
+
+            $sql = "SELECT * FROM payrolls WHERE year = ? AND month = ?";
+            $params = [$year, $month];
 
             if ($user->hasRole('teacher')) {
                 $teacher = Teacher::where('user_id', $user->id)->first();
                 if (!$teacher) return response()->json(['message' => 'Non autorisé'], 403);
-                $query->where('teacher_id', $teacher->id);
+                $sql .= " AND teacher_id = ?";
+                $params[] = $teacher->id;
             } elseif ($request->filled('teacher_id')) {
-                $query->where('teacher_id', $request->teacher_id);
+                $sql .= " AND teacher_id = ?";
+                $params[] = (int)$request->teacher_id;
             }
 
-            if ($request->filled('year')) $query->where('year', (int)$request->year);
-            if ($request->filled('month')) $query->where('month', (int)$request->month);
-            if ($request->filled('status')) $query->where('status', $request->status);
+            if ($request->filled('status')) {
+                $sql .= " AND status = ?";
+                $params[] = $request->status;
+            }
 
-            $payrolls = $query->orderBy('year', 'desc')->orderBy('month', 'desc')->paginate($request->input('per_page', 20));
-            $payrolls->load(['teacher.user', 'teacher.ufr', 'details']);
-            return response()->json($payrolls);
+            $sql .= " ORDER BY year DESC, month DESC";
+
+            $total = DB::selectOne("SELECT COUNT(*) as cnt FROM (" . str_replace("ORDER BY year DESC, month DESC", "", $sql) . ") t", $params)->cnt ?? 0;
+            $offset = ($page - 1) * $perPage;
+
+            $data = DB::select($sql . " LIMIT ? OFFSET ?", array_merge($params, [$perPage, $offset]));
+
+            return response()->json([
+                'current_page' => $page,
+                'data' => $data,
+                'from' => $total > 0 ? $offset + 1 : null,
+                'last_page' => (int)ceil($total / $perPage),
+                'per_page' => $perPage,
+                'to' => min($offset + $perPage, $total),
+                'total' => $total
+            ]);
         } catch (\Exception $e) {
             Log::error('PayrollIndex error', ['error' => $e->getMessage()]);
             return response()->json(['message' => 'Erreur lors du chargement'], 500);
