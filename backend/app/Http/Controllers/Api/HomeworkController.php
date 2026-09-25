@@ -75,7 +75,7 @@ class HomeworkController extends Controller {
                 if ($teacher) {
                     $query->where('teacher_id', $teacher->id);
                 } else {
-                    return response()->json([]);
+                    return response()->json(['success' => true, 'data' => [], 'pagination' => ['total' => 0, 'per_page' => 25, 'current_page' => 1, 'last_page' => 1, 'has_more' => false]]);
                 }
             }
 
@@ -194,7 +194,8 @@ class HomeworkController extends Controller {
 
             return response()->json(['message' => 'Devoir créé', 'homework' => $homework], 201);
         } catch (ValidationException $e) {
-            throw $e;
+            Log::warning('HomeworkStore validation error', ['errors' => $e->errors()]);
+            return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         } catch (\Exception $e) {
             Log::error('HomeworkStore error', ['error' => $e->getMessage()]);
             return response()->json(['message' => 'Erreur lors de la création'], 500);
@@ -257,7 +258,8 @@ class HomeworkController extends Controller {
 
             return response()->json(['message' => 'Devoir mis à jour', 'homework' => $homework]);
         } catch (ValidationException $e) {
-            throw $e;
+            Log::warning('HomeworkUpdate validation error', ['errors' => $e->errors()]);
+            return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         } catch (\Exception $e) {
             Log::error('HomeworkUpdate error', ['error' => $e->getMessage()]);
             return response()->json(['message' => 'Erreur lors de la mise à jour'], 500);
@@ -366,15 +368,15 @@ class HomeworkController extends Controller {
                 return response()->json(['message' => 'Le devoir ne peut être marqué comme effectué qu\'à partir de sa date prévue'], 422);
             }
 
-        $homework->update(['status' => 'completed']);
-        \App\Models\AuditLog::create([
-            'user_id' => $user->id,
-            'action' => 'complete_homework',
-            'model' => 'Homework',
-            'model_id' => $homework->id,
-            'new_values' => ['status' => 'completed'],
-            'ip_address' => $request->ip(),
-        ]);
+            $homework->update(['status' => 'completed']);
+            \App\Models\AuditLog::create([
+                'user_id' => $user->id,
+                'action' => 'complete_homework',
+                'model' => 'Homework',
+                'model_id' => $homework->id,
+                'new_values' => ['status' => 'completed'],
+                'ip_address' => $request->ip(),
+            ]);
 
             $homework->load('teacher.user');
             if ($homework->teacher?->user) {
@@ -570,7 +572,8 @@ class HomeworkController extends Controller {
 
             return response()->json(['message' => 'Notes enregistrées']);
         } catch (ValidationException $e) {
-            throw $e;
+            Log::warning('RecordGrades validation error', ['errors' => $e->errors()]);
+            return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         } catch (\Exception $e) {
             Log::error('RecordGrades error', ['error' => $e->getMessage()]);
             return response()->json(['message' => 'Erreur lors de l\'enregistrement des notes'], 500);
