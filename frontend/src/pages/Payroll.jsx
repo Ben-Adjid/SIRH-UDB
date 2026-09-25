@@ -42,7 +42,8 @@ const Payroll = () => {
         setLoading(true);
         try {
             let endpoint = '/payroll';
-            const params = { page: pageNum, per_page: perPage, month: selectedMonth.split('-')[1], year: selectedMonth.split('-')[0] };
+            const monthNum = Math.max(1, parseInt(selectedMonth.split('-')[1], 10) - 1);
+            const params = { page: pageNum, per_page: perPage, month: monthNum, year: parseInt(selectedMonth.split('-')[0], 10) };
             if (isTeacher && currentTeacherId) params.teacher_id = currentTeacherId;
             const response = await api.get(endpoint, { params });
             const data = response.data;
