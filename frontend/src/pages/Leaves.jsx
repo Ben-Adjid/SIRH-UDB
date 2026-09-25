@@ -7,6 +7,12 @@ import FormModal from '../components/FormModal';
 import useAuthStore from '../store/authStore';
 import { hasAnyRole } from '../utils/roles';
 
+const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+};
+
 const STATUS_CONFIG = {
     approved: { label: 'Approuve', color: 'text-emerald-600 bg-emerald-50 border-emerald-100' },
     rejected: { label: 'Rejete', color: 'text-red-600 bg-red-50 border-red-100' },
@@ -182,7 +188,7 @@ const Leaves = () => {
                                     <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase border ${status.color}`}>{status.label}</span>
                                 </div>
                                 <p className="font-semibold text-sm text-slate-700">{leave.leaveType?.name || 'Conge'}</p>
-                                <p className="text-xs text-slate-500 flex items-center gap-2 mt-2"><Calendar size={12} /> {leave.start_date} au {leave.end_date} ({leave.duration_days} jour(s))</p>
+                                <p className="text-xs text-slate-500 flex items-center gap-2 mt-2"><Calendar size={12} /> {formatDate(leave.start_date)} au {formatDate(leave.end_date)} ({leave.duration_days} jour(s))</p>
                                 {leave.reason && <p className="text-xs text-slate-400 mt-3 italic">{leave.reason}</p>}
                                 {leave.status === 'pending' && canManage && <div className="flex gap-2 mt-4 pt-3 border-t border-slate-100"><button onClick={() => updateStatus(leave, 'approved')} className="flex-1 flex items-center justify-center gap-1 rounded-xl py-2 text-xs font-bold text-emerald-600 bg-emerald-50"><Check size={13} /> Approuver</button><button onClick={() => { setRejecting(leave); setRejectionReason(''); }} className="flex-1 flex items-center justify-center gap-1 rounded-xl py-2 text-xs font-bold text-red-600 bg-red-50"><X size={13} /> Rejeter</button></div>}
                                 {leave.status === 'rejected' && leave.rejection_reason && <p className="text-xs text-red-500 mt-3">Motif: {leave.rejection_reason}</p>}
