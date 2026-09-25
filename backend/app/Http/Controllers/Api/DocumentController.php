@@ -345,7 +345,10 @@ class DocumentController extends Controller
     private function authorizeDocumentAccess(Document $document): void
     {
         $user = auth()->user();
-        if ($user->id !== $document->teacher->user_id && !$user->hasAnyRole(['admin', 'hr_manager', 'secretary', 'accountant'])) {
+        if (!$user) {
+            abort(401, 'Unauthenticated');
+        }
+        if (!$document->teacher || ($user->id !== $document->teacher->user_id && !$user->hasAnyRole(['admin', 'hr_manager', 'secretary', 'accountant']))) {
             Log::warning('[Document] Unauthorized document access', [
                 'document_id' => $document->id,
                 'user_id' => $user->id,

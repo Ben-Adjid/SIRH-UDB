@@ -73,6 +73,11 @@ class TeachingTypeController extends Controller
     public function store(Request $request): JsonResponse
     {
         try {
+            $user = auth()->user();
+            if (!$user->hasAnyRole(['admin', 'academic_manager'])) {
+                return response()->json(['success' => false, 'message' => 'Non autorisé'], 403);
+            }
+
             $validated = $request->validate([
                 'name' => 'required|string|max:255|unique:teaching_types,name',
                 'code' => 'required|string|max:10|unique:teaching_types,code',
@@ -110,6 +115,11 @@ class TeachingTypeController extends Controller
     public function update(Request $request, TeachingType $teachingType): JsonResponse
     {
         try {
+            $user = auth()->user();
+            if (!$user->hasAnyRole(['admin', 'academic_manager'])) {
+                return response()->json(['success' => false, 'message' => 'Non autorisé'], 403);
+            }
+
             $validated = $request->validate([
                 'name' => 'sometimes|string|max:255|unique:teaching_types,name,' . $teachingType->id,
                 'code' => 'sometimes|string|max:10|unique:teaching_types,code,' . $teachingType->id,
@@ -147,6 +157,11 @@ class TeachingTypeController extends Controller
     public function destroy(TeachingType $teachingType): JsonResponse
     {
         try {
+            $user = auth()->user();
+            if (!$user->hasAnyRole(['admin', 'academic_manager'])) {
+                return response()->json(['success' => false, 'message' => 'Non autorisé'], 403);
+            }
+
             $inUse = $teachingType->schedules()->exists();
             if ($inUse) {
                 Log::warning('[TeachingType] Cannot delete - in use', [

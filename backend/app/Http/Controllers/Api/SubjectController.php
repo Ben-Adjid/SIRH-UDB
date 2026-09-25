@@ -35,6 +35,9 @@ class SubjectController extends Controller
             $level = $request->input('level', null);
 
             $user = auth()->user();
+            if (!$user) {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
             $cacheKey = "subjects:user:{$user->id}:search:{$search}:level:{$level}:page:{$page}:limit:{$limit}";
 
             $cached = Cache::get($cacheKey);

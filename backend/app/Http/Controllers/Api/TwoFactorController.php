@@ -72,7 +72,7 @@ class TwoFactorController extends Controller
         } catch (\Throwable $e) {
             Log::error('[2FA] getSecret error', [
                 'error' => $e->getMessage(),
-                'user_id' => auth()->id(),
+                'user_id' => isset($user) ? $user->id : auth()->id(),
             ]);
             return response()->json(['success' => false, 'message' => 'Erreur serveur'], 500);
         }
@@ -140,7 +140,7 @@ class TwoFactorController extends Controller
         } catch (\Throwable $e) {
             Log::error('[2FA] Enable error', [
                 'error' => $e->getMessage(),
-                'user_id' => auth()->id(),
+                'user_id' => isset($user) ? $user->id : auth()->id(),
             ]);
             return response()->json(['success' => false, 'message' => 'Erreur serveur'], 500);
         }
@@ -200,7 +200,7 @@ class TwoFactorController extends Controller
         } catch (\Throwable $e) {
             Log::error('[2FA] Disable error', [
                 'error' => $e->getMessage(),
-                'user_id' => auth()->id(),
+                'user_id' => isset($user) ? $user->id : auth()->id(),
             ]);
             return response()->json(['success' => false, 'message' => 'Erreur serveur'], 500);
         }
@@ -517,7 +517,7 @@ class TwoFactorController extends Controller
         } catch (\Throwable $e) {
             Log::error('[2FA] sendPhoneVerification error', [
                 'error' => $e->getMessage(),
-                'user_id' => auth()->id(),
+                'user_id' => isset($user) ? $user->id : auth()->id(),
             ]);
             return response()->json(['success' => false, 'message' => 'Erreur serveur'], 500);
         }
@@ -585,7 +585,7 @@ class TwoFactorController extends Controller
         } catch (\Throwable $e) {
             Log::error('[2FA] verifyPhone error', [
                 'error' => $e->getMessage(),
-                'user_id' => auth()->id(),
+                'user_id' => isset($user) ? $user->id : auth()->id(),
             ]);
             return response()->json(['success' => false, 'message' => 'Erreur serveur'], 500);
         }

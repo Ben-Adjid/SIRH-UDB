@@ -35,7 +35,11 @@ class DashboardController extends Controller {
 
     public function adminStats(): JsonResponse {
         try {
-            $cacheKey = 'dashboard:admin:' . auth()->id();
+            $user = auth()->user();
+            if (!$user) {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
+            $cacheKey = 'dashboard:admin:' . $user->id;
 
             $cached = Cache::get($cacheKey);
             if ($cached) {
@@ -292,6 +296,9 @@ class DashboardController extends Controller {
             }
 
             $user = auth()->user();
+            if (!$user) {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
             $teacher = Teacher::where('user_id', $user->id)->with('user:id,name,email')->first();
 
             if (!$teacher) {
@@ -376,8 +383,8 @@ class DashboardController extends Controller {
 
             if ($todaysCourses) {
                 $nextCourse = [
-                    'subject_name' => $todaysCourses->subject->name ?? '—',
-                    'classroom_name' => $todaysCourses->classroom->name ?? '—',
+                    'subject_name' => $todaysCourses->subject?->name ?? '—',
+                    'classroom_name' => $todaysCourses->classroom?->name ?? '—',
                     'start_time' => $todaysCourses->start_time,
                     'end_time' => $todaysCourses->end_time,
                     'day_of_week' => $todaysCourses->day_of_week,
@@ -533,6 +540,9 @@ class DashboardController extends Controller {
             }
 
             $user = auth()->user();
+            if (!$user) {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
             $isScoped = !$user->hasRole('admin') && $user->hasRole('academic_manager');
             $visibleUfrIds = $this->academicVisibleUfrIds($user);
             $scheduleScope = function ($query) use ($isScoped, $visibleUfrIds) {

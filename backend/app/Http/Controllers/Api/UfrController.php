@@ -31,6 +31,9 @@ class UfrController extends Controller
             $search = $request->input('search', null);
 
             $user = auth()->user();
+            if (!$user) {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
             $isAdmin = $user->hasRole('admin');
             $isManager = $user->hasRole('academic_manager') && !$isAdmin;
 
