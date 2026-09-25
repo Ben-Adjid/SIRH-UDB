@@ -308,56 +308,10 @@ class AttendanceController extends Controller {
         $schedule = $this->getCurrentScheduleForTeacher($teacher, $now);
 
         if (!$schedule) {
-            $exists = Attendance::where('user_id', $user->id)
-                ->where('attendance_date', $today)
-                ->whereNull('schedule_id')
-                ->whereNotNull('check_in_time')
-                ->whereNull('check_out_time')
-                ->first();
-
-            if ($exists) {
-                return response()->json(['message' => 'Vous avez déjà pointé votre arrivée aujourd’hui'], 422);
-            }
-
-            $attendance = Attendance::create([
-                'user_id' => $user->id,
-                'teacher_id' => $teacher->id,
-                'schedule_id' => null,
-                'attendance_date' => $today,
-                'check_in_time' => $now->toTimeString(),
-                'status' => 'present',
-                'notes' => 'Pointage présence générale enseignant',
-            ]);
-
-            AuditLog::create([
-                'user_id' => $user->id,
-                'action' => 'check_in',
-                'model' => 'Attendance',
-                'model_id' => $attendance->id,
-                'new_values' => [
-                    'status' => 'present',
-                    'check_in_time' => $now->format('H:i:s'),
-                    'schedule_id' => null,
-                    'via_pin' => true,
-                ],
-                'ip_address' => $request->ip(),
-            ]);
-
-            $message = 'Pointage arrivée enregistré à ' . $now->format('H:i') . ' (Présence générale)';
-            NotificationService::send(
-                $user->id,
-                'Pointage enregistré',
-                $message,
-                'success',
-                '/attendance'
-            );
-
             return response()->json([
-                'message' => $message,
-                'attendance' => $attendance,
-                'status' => 'present',
-                'schedule' => null,
-            ]);
+                ‘message’ => ‘Vous n\’avez pas de cours en ce moment. Le pointage est uniquement autorisé pendant les heures de cours.’,
+                ‘error’ => ‘no_schedule’,
+            ], 422);
         }
 
         $scheduleStart = Carbon::parse($schedule->start_time);
