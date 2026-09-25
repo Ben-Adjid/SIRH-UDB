@@ -472,7 +472,7 @@ class PayrollController extends Controller {
     public function index(Request $request): JsonResponse {
         try {
             $user = auth()->user();
-            $query = Payroll::with(['teacher.user', 'teacher.ufr', 'details']);
+            $query = Payroll::query();
 
             if ($user->hasRole('teacher')) {
                 $teacher = Teacher::where('user_id', $user->id)->first();
@@ -486,7 +486,9 @@ class PayrollController extends Controller {
             if ($request->filled('month')) $query->where('month', (int)$request->month);
             if ($request->filled('status')) $query->where('status', $request->status);
 
-            return response()->json($query->orderBy('year', 'desc')->orderBy('month', 'desc')->paginate($request->input('per_page', 20)));
+            $payrolls = $query->orderBy('year', 'desc')->orderBy('month', 'desc')->paginate($request->input('per_page', 20));
+            $payrolls->load(['teacher.user', 'teacher.ufr', 'details']);
+            return response()->json($payrolls);
         } catch (\Exception $e) {
             Log::error('PayrollIndex error', ['error' => $e->getMessage()]);
             return response()->json(['message' => 'Erreur lors du chargement'], 500);
