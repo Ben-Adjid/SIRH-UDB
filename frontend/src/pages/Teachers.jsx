@@ -186,7 +186,7 @@ const Teachers = () => {
                     await api.patch(`/teachers/${teacher.id}/archive`);
                     toast.success(isActivating ? 'Compte reactive' : 'Compte desactive');
                     setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-                    fetchTeachers(page);
+                    await fetchTeachers(page);
                 } catch {
                     toast.error('Erreur lors de la mise a jour du statut');
                     setConfirmConfig(prev => ({ ...prev, isOpen: false }));
@@ -206,7 +206,7 @@ const Teachers = () => {
                     const res = await api.delete(`/teachers/${teacher.id}`);
                     toast.success(res.data?.message || 'Enseignant et donnees liees supprimes');
                     setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-                    fetchTeachers(page);
+                    await fetchTeachers(page);
                 } catch (err) {
                     toast.error(err.response?.data?.message || 'Erreur lors de la suppression');
                     setConfirmConfig(prev => ({ ...prev, isOpen: false }));

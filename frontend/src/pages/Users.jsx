@@ -86,7 +86,7 @@ const UsersPage = () => {
         try {
             await api.patch(`/auth/users/${id}/toggle-status`);
             toast.success('Statut mis a jour');
-            fetchUsers(page);
+            await fetchUsers(page);
         } catch {
             toast.error('Action impossible');
         }
@@ -104,7 +104,7 @@ const UsersPage = () => {
                     await api.delete(`/auth/users/${id}`);
                     toast.success('Utilisateur supprime');
                     setConfirmConfig({ ...confirmConfig, isOpen: false });
-                    fetchUsers(page);
+                    await fetchUsers(page);
                 } catch {
                     toast.error('Erreur de suppression');
                     setConfirmConfig({ ...confirmConfig, isOpen: false });

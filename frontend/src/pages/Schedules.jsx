@@ -217,7 +217,7 @@ const Schedules = () => {
                     await api.delete(`/exams/${exam.id}`);
                     toast.success('Examen supprimé');
                     setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-                    fetchData();
+                    await fetchData();
                 } catch (err) {
                     toast.error(err.response?.data?.message || 'Erreur de suppression');
                     setConfirmConfig(prev => ({ ...prev, isOpen: false }));
