@@ -54,7 +54,7 @@ class ClassroomController extends Controller
             }
 
             $pagination = $query->orderBy('name')
-               ->paginate($limit, ['id', 'name', 'code', 'capacity', 'location', 'type', 'created_at'], 'page', $page);
+                ->paginate($limit, ['id', 'name', 'code', 'capacity', 'location', 'type', 'created_at'], 'page', $page);
 
             $response = [
                 'success' => true,

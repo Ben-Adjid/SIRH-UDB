@@ -106,6 +106,7 @@ class NotificationController extends Controller
             Log::error('[Notification] Index error', [
                 'error' => $e->getMessage(),
                 'line' => $e->getLine(),
+                'user_id' => auth()->id(),
             ]);
             return response()->json(['success' => false, 'message' => 'Erreur serveur'], 500);
         }

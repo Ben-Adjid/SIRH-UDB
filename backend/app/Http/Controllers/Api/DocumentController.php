@@ -332,6 +332,9 @@ class DocumentController extends Controller
     private function authorizeTeacherAccess(Teacher $teacher): void
     {
         $user = auth()->user();
+        if (!$user) {
+            abort(401, 'Unauthenticated');
+        }
         if ($user->id !== $teacher->user_id && !$user->hasAnyRole(['admin', 'hr_manager', 'secretary', 'accountant'])) {
             Log::warning('[Document] Unauthorized teacher access', [
                 'teacher_id' => $teacher->id,

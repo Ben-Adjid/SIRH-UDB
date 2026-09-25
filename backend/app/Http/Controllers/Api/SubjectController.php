@@ -194,7 +194,7 @@ class SubjectController extends Controller
                     return response()->json(['success' => false, 'message' => 'Vous ne pouvez créer des matières que pour votre UFR'], 403);
                 }
 
-                $validated['ufr_id'] = $validated['ufr_id'] ?? $ufrIds[0];
+                $validated['ufr_id'] = $validated['ufr_id'] ?? (isset($ufrIds[0]) ? $ufrIds[0] : null);
             }
 
             $subject = Subject::create($validated);
