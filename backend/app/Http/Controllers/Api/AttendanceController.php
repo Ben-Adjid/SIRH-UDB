@@ -47,6 +47,9 @@ class AttendanceController extends Controller {
     {
         try {
             $user = auth()->user();
+            if (!$user) {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
             $teacher = null;
 
             if ($user->hasRole('teacher')) {
