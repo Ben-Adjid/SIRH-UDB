@@ -59,7 +59,17 @@ class ScheduleController extends Controller {
             if ($user->hasRole('teacher')) {
                 $teacher = Teacher::where('user_id', $user->id)->first();
                 if (!$teacher) {
-                    return response()->json([]); 
+                    return response()->json([
+                        'success' => true,
+                        'data' => [],
+                        'pagination' => [
+                            'total' => 0,
+                            'per_page' => 25,
+                            'current_page' => 1,
+                            'last_page' => 1,
+                            'has_more' => false,
+                        ]
+                    ]);
                 }
                 $query->where('teacher_id', $teacher->id);
             } else {

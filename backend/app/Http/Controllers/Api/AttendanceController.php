@@ -379,7 +379,7 @@ class AttendanceController extends Controller {
             $attendance = Attendance::create([
                 'user_id' => $user->id,
                 'teacher_id' => $teacher->id,
-                'schedule_id' => null,
+                'schedule_id' => $schedule->id,
                 'attendance_date' => $today,
                 'check_in_time' => $now->toTimeString(),
                 'status' => 'present',
