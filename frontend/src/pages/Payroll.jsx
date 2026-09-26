@@ -303,60 +303,67 @@ const Payroll = () => {
         const details = p.calculation_details || {};
         const hours = Number(details.hours_worked || 0);
         const rate = Number(details.hourly_rate || 0);
-        const amount = (v) => new Intl.NumberFormat('fr-FR').format(Number(v || 0));
 
         return (
-            <div key={p.id} className="relative bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+            <div key={p.id} className="relative bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
                 <div className={`absolute inset-y-0 left-0 w-1 ${status.bar}`} />
-                <div className="flex flex-wrap sm:flex-nowrap items-center gap-x-4 gap-y-3 py-3 pl-4 pr-3">
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${AVATAR_GRADIENTS[avatarIdx]} text-white font-bold text-sm`}>
-                            {p.teacher?.user?.name?.charAt(0)?.toUpperCase()}
-                        </div>
-                        <div className="min-w-0">
-                            <h3 className="font-bold text-slate-900 text-sm truncate">{p.teacher?.user?.name}</h3>
-                            <div className="flex items-center gap-2 mt-0.5">
-                                <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ring-1 ${status.badge}`}>
-                                    <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
-                                    {status.label}
-                                </span>
-                                <span className="text-[11px] text-slate-400 truncate">{hours > 0 ? `${hours} h × ${amount(rate)}` : p.teacher?.employee_id}</span>
+                <div className="p-4 pl-5">
+                    <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${AVATAR_GRADIENTS[avatarIdx]} text-white font-bold text-sm`}>
+                                {p.teacher?.user?.name?.charAt(0)?.toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                                <h3 className="font-bold text-slate-900 text-sm truncate">{p.teacher?.user?.name}</h3>
+                                <p className="text-[11px] font-mono text-slate-400">{p.teacher?.employee_id || 'Enseignant'}</p>
                             </div>
                         </div>
+                        <span className={`inline-flex shrink-0 items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ring-1 ${status.badge}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+                            {status.label}
+                        </span>
                     </div>
 
-                    <div className="flex items-center gap-4 shrink-0 text-right">
-                        <div>
-                            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Brut</p>
-                            <p className="text-sm font-semibold text-slate-700 tabular-nums">{amount(p.gross_salary || p.honorarium_amount)}</p>
+                    <dl className="mt-4 space-y-1.5 text-sm">
+                        <div className="flex justify-between">
+                            <dt className="text-slate-500">{hours > 0 ? `${hours} h × ${new Intl.NumberFormat('fr-FR').format(rate)} FCFA` : 'Brut'}</dt>
+                            <dd className="font-semibold text-slate-900 tabular-nums">{formatFcfa(p.gross_salary || p.honorarium_amount)}</dd>
                         </div>
+                        {Number(p.brs_amount || 0) > 0 && (
+                            <div className="flex justify-between">
+                                <dt className="text-slate-500 flex items-center gap-1"><TrendingDown size={13} className="text-red-400" /> BRS 5 %</dt>
+                                <dd className="font-semibold text-red-500 tabular-nums">− {formatFcfa(p.brs_amount)}</dd>
+                            </div>
+                        )}
+                    </dl>
+
+                    <div className="mt-3 pt-3 border-t border-slate-100 flex items-end justify-between">
                         <div>
-                            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">BRS</p>
-                            <p className="text-sm font-semibold text-red-500 tabular-nums">{Number(p.brs_amount || 0) > 0 ? `− ${amount(p.brs_amount)}` : '—'}</p>
+                            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Net à payer</p>
+                            <p className="text-lg font-black text-slate-900 tabular-nums">{formatFcfa(p.net_salary)}</p>
                         </div>
-                        <div>
-                            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Net · {p.payment_method === 'check' ? 'Chèque' : 'Espèces'}</p>
-                            <p className="text-base font-black text-slate-900 tabular-nums">{amount(p.net_salary)} <span className="text-[10px] font-bold text-slate-400">FCFA</span></p>
-                        </div>
+                        <span className="text-[11px] font-semibold text-slate-500 bg-slate-50 px-2 py-1 rounded-md">
+                            {p.payment_method === 'check' ? 'Chèque' : 'Espèces'}
+                        </span>
                     </div>
 
                     {(isAccountant || isTeacher) && (
-                        <div className="flex items-center gap-1.5 shrink-0">
+                        <div className="mt-3 flex items-center gap-2">
                             {isAccountant && p.status === 'calculated' && (
-                                <button onClick={() => setShowConfirm({ isOpen: true, action: 'validate', payroll: p })} title="Valider"
-                                    className="inline-flex items-center gap-1 px-2.5 py-2 rounded-lg text-xs font-bold bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white transition-colors">
+                                <button onClick={() => setShowConfirm({ isOpen: true, action: 'validate', payroll: p })}
+                                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white transition-colors">
                                     <CheckCircle size={14} /> Valider
                                 </button>
                             )}
                             {isAccountant && p.status === 'validated' && (
-                                <button onClick={() => setShowConfirm({ isOpen: true, action: 'pay', payroll: p })} title="Marquer payée"
-                                    className="inline-flex items-center gap-1 px-2.5 py-2 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white transition-colors">
-                                    <DollarSign size={14} /> Payer
+                                <button onClick={() => setShowConfirm({ isOpen: true, action: 'pay', payroll: p })}
+                                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white transition-colors">
+                                    <DollarSign size={14} /> Marquer payée
                                 </button>
                             )}
-                            <button onClick={() => handleDownloadPDF(p)} title="Bulletin PDF" aria-label="Bulletin PDF"
-                                className="inline-flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 bg-slate-50 hover:bg-slate-200 transition-colors">
-                                <FileText size={16} />
+                            <button onClick={() => handleDownloadPDF(p)}
+                                className={`${p.status === 'paid' ? 'flex-1' : ''} inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-slate-600 bg-slate-50 hover:bg-slate-200 transition-colors`}>
+                                <FileText size={14} /> Bulletin PDF
                             </button>
                         </div>
                     )}
@@ -497,7 +504,7 @@ const Payroll = () => {
                                 )}
                             </div>
                         ) : (
-                            <div className="flex flex-col gap-2.5">
+                            <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4">
                                 {payrolls.map(renderPayrollCard)}
                             </div>
                         )}
@@ -518,7 +525,7 @@ const Payroll = () => {
                                 <p className="text-sm font-bold text-slate-600">Aucune paie pour {previousMonthLabel} {previousMonth.year}</p>
                             </div>
                         ) : (
-                            <div className="flex flex-col gap-2.5">
+                            <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4">
                                 {previousPayrolls.map(renderPayrollCard)}
                             </div>
                         )}
