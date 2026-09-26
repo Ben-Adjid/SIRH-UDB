@@ -544,7 +544,17 @@ class PayrollController extends Controller {
                 $query->where('status', $request->status);
             }
 
-            $query->orderBy('year', 'desc')->orderBy('month', 'desc');
+            $byStatus = (clone $query)->toBase()
+                ->selectRaw('status, COUNT(*) as count, COALESCE(SUM(net_salary), 0) as net')
+                ->groupBy('status')
+                ->get()
+                ->keyBy('status');
+            $summary = ['total_net' => round((float) $byStatus->sum('net'), 2)];
+            foreach (['draft', 'calculated', 'validated', 'paid'] as $status) {
+                $summary[$status] = (int) ($byStatus[$status]->count ?? 0);
+            }
+
+            $query->orderBy('id');
 
             $paginated = $query->paginate($perPage, ['*'], 'page', $page);
 
@@ -555,7 +565,8 @@ class PayrollController extends Controller {
                 'last_page' => $paginated->lastPage(),
                 'per_page' => $paginated->perPage(),
                 'to' => $paginated->lastItem(),
-                'total' => $paginated->total()
+                'total' => $paginated->total(),
+                'summary' => $summary,
             ]);
         } catch (\Exception $e) {
             Log::error('PayrollIndex error', ['error' => $e->getMessage()]);

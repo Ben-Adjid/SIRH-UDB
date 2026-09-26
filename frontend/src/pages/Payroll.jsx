@@ -14,8 +14,10 @@ const Payroll = () => {
     const [payrolls, setPayrolls] = useState([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
-    const perPage = 15;
+    const perPage = 6;
     const [pagination, setPagination] = useState({ current_page: 1, last_page: 1, total: 0 });
+    const [previousPage, setPreviousPage] = useState(1);
+    const [previousPagination, setPreviousPagination] = useState({ current_page: 1, last_page: 1, total: 0 });
     const [selectedMonth, setSelectedMonth] = useState(() => {
         const now = new Date();
         return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -23,7 +25,9 @@ const Payroll = () => {
     const [previousPayrolls, setPreviousPayrolls] = useState([]);
     const [loadingPrevious, setLoadingPrevious] = useState(true);
     const [isCalculating, setIsCalculating] = useState(false);
-    const [stats, setStats] = useState({ total: 0, calculated: 0, validated: 0, paid: 0, totalAmount: 0 });
+    const EMPTY_STATS = { total: 0, calculated: 0, validated: 0, paid: 0, totalNet: 0 };
+    const [stats, setStats] = useState(EMPTY_STATS);
+    const [previousStats, setPreviousStats] = useState(EMPTY_STATS);
     const [showConfirm, setShowConfirm] = useState({ isOpen: false, action: null, payroll: null });
     const [showCalculateModal, setShowCalculateModal] = useState(false);
     const [calculationProgress, setCalculationProgress] = useState('');
@@ -41,60 +45,68 @@ const Payroll = () => {
     const isTeacher = userRoles.includes('teacher') && !isAccountant;
     const currentTeacherId = user?.teacher?.id;
 
+    const loadMonth = useCallback(async (monthNum, yearNum, pageNum) => {
+        const params = { page: pageNum, per_page: perPage, month: monthNum, year: yearNum };
+        if (isTeacher && currentTeacherId) params.teacher_id = currentTeacherId;
+        const { data } = await api.get('/payroll', { params });
+        const summary = data.summary || {};
+        return {
+            items: data.data || [],
+            pagination: { current_page: data.current_page || 1, last_page: data.last_page || 1, total: data.total || 0 },
+            stats: {
+                total: data.total || 0,
+                calculated: (summary.calculated || 0) + (summary.draft || 0),
+                validated: summary.validated || 0,
+                paid: summary.paid || 0,
+                totalNet: Number(summary.total_net || 0),
+            },
+        };
+    }, [isTeacher, currentTeacherId]);
+
+    const [selectedYear, selectedMonthNum] = selectedMonth.split('-').map(Number);
+    const previousMonth = selectedMonthNum === 1
+        ? { year: selectedYear - 1, month: 12 }
+        : { year: selectedYear, month: selectedMonthNum - 1 };
+
     const fetchPayrolls = useCallback(async (pageNum = 1) => {
         setLoading(true);
         try {
-            let endpoint = '/payroll';
-            const monthNum = parseInt(selectedMonth.split('-')[1], 10);
-            const params = { page: pageNum, per_page: perPage, month: monthNum, year: parseInt(selectedMonth.split('-')[0], 10) };
-            if (isTeacher && currentTeacherId) params.teacher_id = currentTeacherId;
-            const response = await api.get(endpoint, { params });
-            const data = response.data;
-            setPayrolls(data.data || []);
-            setPagination({ current_page: data.current_page, last_page: data.last_page, total: data.total });
-
-            const calculated = data.data?.filter(p => p.status === 'calculated').length || 0;
-            const validated = data.data?.filter(p => p.status === 'validated').length || 0;
-            const paid = data.data?.filter(p => p.status === 'paid').length || 0;
-            const totalAmount = data.data?.reduce((sum, p) => sum + Number(p.net_salary || 0), 0) || 0;
-            setStats({ total: data.total || 0, calculated, validated, paid, totalAmount });
+            const result = await loadMonth(selectedMonthNum, selectedYear, pageNum);
+            setPayrolls(result.items);
+            setPagination(result.pagination);
+            setStats(result.stats);
         } catch {
             toast.error('Erreur chargement paies');
         } finally {
             setLoading(false);
         }
-    }, [isTeacher, currentTeacherId, selectedMonth]);
+    }, [loadMonth, selectedMonthNum, selectedYear]);
 
-    const previousMonth = (() => {
-        const [y, m] = selectedMonth.split('-').map(Number);
-        return m === 1 ? { year: y - 1, month: 12 } : { year: y, month: m - 1 };
-    })();
-
-    const fetchPreviousPayrolls = useCallback(async () => {
+    const fetchPreviousPayrolls = useCallback(async (pageNum = 1) => {
         setLoadingPrevious(true);
         try {
-            const params = { page: 1, per_page: 100, month: previousMonth.month, year: previousMonth.year };
-            if (isTeacher && currentTeacherId) params.teacher_id = currentTeacherId;
-            const response = await api.get('/payroll', { params });
-            setPreviousPayrolls(response.data.data || []);
+            const result = await loadMonth(previousMonth.month, previousMonth.year, pageNum);
+            setPreviousPayrolls(result.items);
+            setPreviousPagination(result.pagination);
+            setPreviousStats(result.stats);
         } catch {
             setPreviousPayrolls([]);
         } finally {
             setLoadingPrevious(false);
         }
-    }, [isTeacher, currentTeacherId, previousMonth.month, previousMonth.year]);
+    }, [loadMonth, previousMonth.month, previousMonth.year]);
 
     const refreshAll = useCallback(async () => {
-        await Promise.all([fetchPayrolls(page), fetchPreviousPayrolls()]);
-    }, [page, fetchPayrolls, fetchPreviousPayrolls]);
+        await Promise.all([fetchPayrolls(page), fetchPreviousPayrolls(previousPage)]);
+    }, [page, previousPage, fetchPayrolls, fetchPreviousPayrolls]);
 
     useEffect(() => {
         fetchPayrolls(page);
-    }, [page, selectedMonth, fetchPayrolls]);
+    }, [page, fetchPayrolls]);
 
     useEffect(() => {
-        fetchPreviousPayrolls();
-    }, [fetchPreviousPayrolls]);
+        fetchPreviousPayrolls(previousPage);
+    }, [previousPage, fetchPreviousPayrolls]);
 
     useEffect(() => {
         if (isAccountant && showIndividualCalculateModal) {
@@ -187,8 +199,7 @@ const Payroll = () => {
                 setAttendanceData(null);
                 setCalculationPreview(null);
                 toast.success('Paie calculée');
-                fetchPayrolls(1);
-                fetchPreviousPayrolls();
+                refreshAll();
             }, 1500);
         } catch (error) {
             setCalculationProgress('❌ Erreur lors du calcul');
@@ -196,7 +207,7 @@ const Payroll = () => {
         } finally {
             setIsCalculating(false);
         }
-    }, [individualForm, selectedMonth, fetchPayrolls, fetchPreviousPayrolls]);
+    }, [individualForm, selectedMonth, refreshAll]);
 
     const handleCalculateMonth = useCallback(async () => {
         if (!selectedMonth) return;
@@ -211,8 +222,7 @@ const Payroll = () => {
                 setShowCalculateModal(false);
                 setCalculationProgress('');
                 toast.success(`${response.data.calculated} paies calculées automatiquement`);
-                fetchPayrolls(1);
-                fetchPreviousPayrolls();
+                refreshAll();
             }, 1500);
         } catch (error) {
             setCalculationProgress('❌ Erreur lors du calcul');
@@ -220,7 +230,7 @@ const Payroll = () => {
         } finally {
             setIsCalculating(false);
         }
-    }, [selectedMonth, fetchPayrolls, fetchPreviousPayrolls]);
+    }, [selectedMonth, refreshAll]);
 
     const handleValidate = useCallback(async (id) => {
         try {
@@ -400,22 +410,13 @@ const Payroll = () => {
     const today = new Date();
     const actualMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
     const isActualMonth = selectedMonth === actualMonth;
-    const [year, month] = selectedMonth.split('-').map(Number);
-    const monthLabel = MONTH_NAMES[month] || '';
+    const year = selectedYear;
+    const monthLabel = MONTH_NAMES[selectedMonthNum] || '';
     const previousMonthLabel = MONTH_NAMES[previousMonth.month] || '';
-    const currentStats = {
-        total: stats.total,
-        calculated: stats.calculated,
-        validated: stats.validated,
-        paid: stats.paid,
-        totalNet: stats.totalAmount,
-    };
-    const previousStats = {
-        total: previousPayrolls.length,
-        calculated: previousPayrolls.filter(p => p.status === 'calculated' || p.status === 'draft').length,
-        validated: previousPayrolls.filter(p => p.status === 'validated').length,
-        paid: previousPayrolls.filter(p => p.status === 'paid').length,
-        totalNet: previousPayrolls.reduce((sum, p) => sum + Number(p.net_salary || 0), 0),
+    const changePeriod = (value) => {
+        setSelectedMonth(value);
+        setPage(1);
+        setPreviousPage(1);
     };
 
     return (
@@ -469,13 +470,13 @@ const Payroll = () => {
                     {isAccountant && (
                         <div className="flex items-center gap-2">
                             {!isActualMonth && (
-                                <button onClick={() => { setSelectedMonth(actualMonth); setPage(1); }}
+                                <button onClick={() => changePeriod(actualMonth)}
                                     className="px-3 py-2 rounded-xl text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors">
                                     Revenir au mois actuel
                                 </button>
                             )}
                             <label htmlFor="payroll-period" className="text-xs font-semibold text-slate-500">Période</label>
-                            <input id="payroll-period" type="month" value={selectedMonth} onChange={(e) => { if (e.target.value) { setSelectedMonth(e.target.value); setPage(1); } }}
+                            <input id="payroll-period" type="month" value={selectedMonth} onChange={(e) => { if (e.target.value) changePeriod(e.target.value); }}
                                 className="px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
                         </div>
                     )}
@@ -484,7 +485,7 @@ const Payroll = () => {
                 {/* Current month (left) and previous month (right) */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                     <section className="space-y-4">
-                        {renderMonthHeader({ tone: 'current', caption: isActualMonth ? 'Mois en cours' : 'Mois affiché', name: monthLabel, yearValue: year, s: currentStats })}
+                        {renderMonthHeader({ tone: 'current', caption: isActualMonth ? 'Mois en cours' : 'Mois affiché', name: monthLabel, yearValue: year, s: stats })}
 
                         {loading ? (
                             <div className="flex justify-center py-12">
@@ -528,6 +529,8 @@ const Payroll = () => {
                                 {previousPayrolls.map(renderPayrollCard)}
                             </div>
                         )}
+
+                        <Pagination page={previousPagination.current_page} totalPages={previousPagination.last_page} onPageChange={setPreviousPage} totalItems={previousPagination.total} perPage={perPage} />
                     </section>
                 </div>
 
