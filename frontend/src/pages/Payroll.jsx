@@ -16,7 +16,12 @@ const Payroll = () => {
     const [page, setPage] = useState(1);
     const perPage = 15;
     const [pagination, setPagination] = useState({ current_page: 1, last_page: 1, total: 0 });
-    const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().substring(0, 7));
+    const [selectedMonth, setSelectedMonth] = useState(() => {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    });
+    const [previousPayrolls, setPreviousPayrolls] = useState([]);
+    const [loadingPrevious, setLoadingPrevious] = useState(true);
     const [isCalculating, setIsCalculating] = useState(false);
     const [stats, setStats] = useState({ total: 0, calculated: 0, validated: 0, paid: 0, totalAmount: 0 });
     const [showConfirm, setShowConfirm] = useState({ isOpen: false, action: null, payroll: null });
@@ -51,7 +56,7 @@ const Payroll = () => {
             const calculated = data.data?.filter(p => p.status === 'calculated').length || 0;
             const validated = data.data?.filter(p => p.status === 'validated').length || 0;
             const paid = data.data?.filter(p => p.status === 'paid').length || 0;
-            const totalAmount = data.data?.reduce((sum, p) => sum + (p.net_salary || 0), 0) || 0;
+            const totalAmount = data.data?.reduce((sum, p) => sum + Number(p.net_salary || 0), 0) || 0;
             setStats({ total: data.total || 0, calculated, validated, paid, totalAmount });
         } catch {
             toast.error('Erreur chargement paies');
@@ -60,9 +65,36 @@ const Payroll = () => {
         }
     }, [isTeacher, currentTeacherId, selectedMonth]);
 
+    const previousMonth = (() => {
+        const [y, m] = selectedMonth.split('-').map(Number);
+        return m === 1 ? { year: y - 1, month: 12 } : { year: y, month: m - 1 };
+    })();
+
+    const fetchPreviousPayrolls = useCallback(async () => {
+        setLoadingPrevious(true);
+        try {
+            const params = { page: 1, per_page: 100, month: previousMonth.month, year: previousMonth.year };
+            if (isTeacher && currentTeacherId) params.teacher_id = currentTeacherId;
+            const response = await api.get('/payroll', { params });
+            setPreviousPayrolls(response.data.data || []);
+        } catch {
+            setPreviousPayrolls([]);
+        } finally {
+            setLoadingPrevious(false);
+        }
+    }, [isTeacher, currentTeacherId, previousMonth.month, previousMonth.year]);
+
+    const refreshAll = useCallback(async () => {
+        await Promise.all([fetchPayrolls(page), fetchPreviousPayrolls()]);
+    }, [page, fetchPayrolls, fetchPreviousPayrolls]);
+
     useEffect(() => {
         fetchPayrolls(page);
     }, [page, selectedMonth, fetchPayrolls]);
+
+    useEffect(() => {
+        fetchPreviousPayrolls();
+    }, [fetchPreviousPayrolls]);
 
     useEffect(() => {
         if (isAccountant && showIndividualCalculateModal) {
@@ -79,9 +111,9 @@ const Payroll = () => {
     }, [isAccountant, showIndividualCalculateModal]);
 
     useEffect(() => {
-        const unsubscribe = dataRefresh.subscribe('payroll', () => fetchPayrolls(page));
+        const unsubscribe = dataRefresh.subscribe('payroll', refreshAll);
         return unsubscribe;
-    }, [page, fetchPayrolls]);
+    }, [refreshAll]);
 
     const calculatePreview = useCallback((attData) => {
         const hoursWorked = Math.max(0, (attData?.hours || 0) - (attData?.leave_hours || 0));
@@ -156,6 +188,7 @@ const Payroll = () => {
                 setCalculationPreview(null);
                 toast.success('Paie calculée');
                 fetchPayrolls(1);
+                fetchPreviousPayrolls();
             }, 1500);
         } catch (error) {
             setCalculationProgress('❌ Erreur lors du calcul');
@@ -163,7 +196,7 @@ const Payroll = () => {
         } finally {
             setIsCalculating(false);
         }
-    }, [individualForm, selectedMonth, fetchPayrolls]);
+    }, [individualForm, selectedMonth, fetchPayrolls, fetchPreviousPayrolls]);
 
     const handleCalculateMonth = useCallback(async () => {
         if (!selectedMonth) return;
@@ -179,6 +212,7 @@ const Payroll = () => {
                 setCalculationProgress('');
                 toast.success(`${response.data.calculated} paies calculées automatiquement`);
                 fetchPayrolls(1);
+                fetchPreviousPayrolls();
             }, 1500);
         } catch (error) {
             setCalculationProgress('❌ Erreur lors du calcul');
@@ -186,27 +220,27 @@ const Payroll = () => {
         } finally {
             setIsCalculating(false);
         }
-    }, [selectedMonth, fetchPayrolls]);
+    }, [selectedMonth, fetchPayrolls, fetchPreviousPayrolls]);
 
     const handleValidate = useCallback(async (id) => {
         try {
             await api.post(`/payroll/${id}/validate`);
             toast.success('Paie validée');
-            await fetchPayrolls(page);
+            await refreshAll();
         } catch (error) {
             toast.error(error?.response?.data?.message || 'Erreur lors de la validation');
         }
-    }, [page, fetchPayrolls]);
+    }, [refreshAll]);
 
     const handleMarkAsPaid = useCallback(async (id) => {
         try {
             await api.post(`/payroll/${id}/mark-as-paid`);
             toast.success('Paie marquée comme payée');
-            await fetchPayrolls(page);
+            await refreshAll();
         } catch (error) {
             toast.error(error?.response?.data?.message || 'Erreur lors du marquage comme payée');
         }
-    }, [page, fetchPayrolls]);
+    }, [refreshAll]);
 
     const handleDownloadPDF = useCallback(async (payroll) => {
         try {
@@ -244,8 +278,85 @@ const Payroll = () => {
 
     const AVATAR_GRADIENTS = ['from-indigo-500 to-violet-600', 'from-emerald-500 to-teal-600', 'from-blue-500 to-indigo-600', 'from-amber-500 to-orange-600'];
 
+    const renderPayrollCard = (p) => {
+        const avatarIdx = p.id % AVATAR_GRADIENTS.length;
+        const isPaid = p.status === 'paid';
+        const isValidated = p.status === 'validated';
+
+        return (
+            <div key={p.id} className="group relative bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-lg hover:border-emerald-200 transition-all duration-300">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 to-teal-500 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-2xl" />
+                <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                        <div className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${AVATAR_GRADIENTS[avatarIdx]} text-white font-bold text-sm shadow-md`}>
+                            {p.teacher?.user?.name?.charAt(0)?.toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                            <h3 className="font-bold text-slate-900 text-sm truncate">{p.teacher?.user?.name}</h3>
+                            <p className="text-[10px] font-mono font-semibold text-slate-400">{p.teacher?.employee_id || 'ENSEIGNANT'}</p>
+                        </div>
+                    </div>
+                    <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border ${
+                        isPaid ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                        isValidated ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                        'bg-amber-50 text-amber-600 border-amber-100'
+                    }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${isPaid ? 'bg-emerald-500' : isValidated ? 'bg-blue-500' : 'bg-amber-500 animate-pulse'}`}></span>
+                        {isPaid ? 'Payée' : isValidated ? 'Validée' : 'Calculée'}
+                    </span>
+                </div>
+
+                <div className="space-y-2 mb-4">
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs text-slate-500">Brut</span>
+                        <span className="text-sm font-bold text-slate-900">{new Intl.NumberFormat('fr-FR').format(p.gross_salary || p.honorarium_amount || 0)} FCFA</span>
+                    </div>
+                    {(p.brs_amount || 0) > 0 && (
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs text-red-400 flex items-center gap-1"><TrendingDown size={12} /> BRS (5%)</span>
+                            <span className="text-sm font-bold text-red-500">-{new Intl.NumberFormat('fr-FR').format(p.brs_amount || 0)}</span>
+                        </div>
+                    )}
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                        <span className="text-xs font-bold text-slate-600">Net</span>
+                        <span className="text-lg font-black text-emerald-600">{new Intl.NumberFormat('fr-FR').format(p.net_salary || 0)} FCFA</span>
+                    </div>
+                </div>
+
+                {(isAccountant || isTeacher) && (
+                    <div className="flex items-center gap-1.5 pt-3 border-t border-slate-100">
+                        {isAccountant && p.status === 'calculated' && (
+                            <>
+                                <button onClick={() => setShowConfirm({ isOpen: true, action: 'validate', payroll: p })}
+                                    className="px-3 py-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-500 hover:text-white transition-all duration-200" title="Valider">
+                                    <CheckCircle size={12} />
+                                </button>
+                            </>
+                        )}
+                        {isAccountant && p.status === 'validated' && (
+                            <button onClick={() => setShowConfirm({ isOpen: true, action: 'pay', payroll: p })}
+                                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-bold bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all duration-200">
+                                <DollarSign size={12} /> Marquer payée
+                            </button>
+                        )}
+                        <button onClick={() => handleDownloadPDF(p)}
+                            className="px-3 py-2 text-slate-300 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all duration-200" title="PDF">
+                            <Download size={14} />
+                        </button>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
     const [year, month] = selectedMonth.split('-').map(Number);
     const monthLabel = MONTH_NAMES[month] || '';
+    const previousMonthLabel = MONTH_NAMES[previousMonth.month] || '';
+    const previousStats = {
+        paid: previousPayrolls.filter(p => p.status === 'paid').length,
+        pending: previousPayrolls.filter(p => p.status !== 'paid').length,
+        totalNet: previousPayrolls.reduce((sum, p) => sum + Number(p.net_salary || 0), 0),
+    };
 
     return (
         <div className="min-h-screen">
@@ -347,80 +458,44 @@ const Payroll = () => {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                        {payrolls.map((p) => {
-                            const avatarIdx = p.id % AVATAR_GRADIENTS.length;
-                            const isPaid = p.status === 'paid';
-                            const isValidated = p.status === 'validated';
-
-                            return (
-                                <div key={p.id} className="group relative bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-lg hover:border-emerald-200 transition-all duration-300">
-                                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 to-teal-500 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-2xl" />
-                                    <div className="flex items-start justify-between mb-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${AVATAR_GRADIENTS[avatarIdx]} text-white font-bold text-sm shadow-md`}>
-                                                {p.teacher?.user?.name?.charAt(0)?.toUpperCase()}
-                                            </div>
-                                            <div className="min-w-0">
-                                                <h3 className="font-bold text-slate-900 text-sm truncate">{p.teacher?.user?.name}</h3>
-                                                <p className="text-[10px] font-mono font-semibold text-slate-400">{p.teacher?.employee_id || 'ENSEIGNANT'}</p>
-                                            </div>
-                                        </div>
-                                        <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border ${
-                                            isPaid ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                                            isValidated ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                                            'bg-amber-50 text-amber-600 border-amber-100'
-                                        }`}>
-                                            <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${isPaid ? 'bg-emerald-500' : isValidated ? 'bg-blue-500' : 'bg-amber-500 animate-pulse'}`}></span>
-                                            {isPaid ? 'Payée' : isValidated ? 'Validée' : 'Calculée'}
-                                        </span>
-                                    </div>
-
-                                    <div className="space-y-2 mb-4">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-xs text-slate-500">Brut</span>
-                                            <span className="text-sm font-bold text-slate-900">{new Intl.NumberFormat('fr-FR').format(p.gross_salary || p.honorarium_amount || 0)} FCFA</span>
-                                        </div>
-                                        {(p.brs_amount || 0) > 0 && (
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-xs text-red-400 flex items-center gap-1"><TrendingDown size={12} /> BRS (5%)</span>
-                                                <span className="text-sm font-bold text-red-500">-{new Intl.NumberFormat('fr-FR').format(p.brs_amount || 0)}</span>
-                                            </div>
-                                        )}
-                                        <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                                            <span className="text-xs font-bold text-slate-600">Net</span>
-                                            <span className="text-lg font-black text-emerald-600">{new Intl.NumberFormat('fr-FR').format(p.net_salary || 0)} FCFA</span>
-                                        </div>
-                                    </div>
-
-                                    {(isAccountant || isTeacher) && (
-                                        <div className="flex items-center gap-1.5 pt-3 border-t border-slate-100">
-                                            {isAccountant && p.status === 'calculated' && (
-                                                <>
-                                                    <button onClick={() => setShowConfirm({ isOpen: true, action: 'validate', payroll: p })}
-                                                        className="px-3 py-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-500 hover:text-white transition-all duration-200" title="Valider">
-                                                        <CheckCircle size={12} />
-                                                    </button>
-                                                </>
-                                            )}
-                                            {isAccountant && p.status === 'validated' && (
-                                                <button onClick={() => setShowConfirm({ isOpen: true, action: 'pay', payroll: p })}
-                                                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-bold bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all duration-200">
-                                                    <DollarSign size={12} /> Marquer payée
-                                                </button>
-                                            )}
-                                            <button onClick={() => handleDownloadPDF(p)}
-                                                className="px-3 py-2 text-slate-300 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all duration-200" title="PDF">
-                                                <Download size={14} />
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
+                        {payrolls.map(renderPayrollCard)}
                     </div>
                 )}
 
                 <Pagination page={pagination.current_page} totalPages={pagination.last_page} onPageChange={setPage} totalItems={pagination.total} perPage={perPage} />
+
+                {/* Previous month */}
+                <div className="pt-4 space-y-4">
+                    <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                            <Calendar size={20} className="text-slate-400" />
+                            <label className="font-semibold text-slate-700">Mois précédent :</label>
+                            <span className="text-lg font-bold text-indigo-600">{previousMonthLabel} {previousMonth.year}</span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
+                            <span className="px-3 py-1.5 rounded-lg bg-slate-50 text-slate-600">{previousPayrolls.length} paie(s)</span>
+                            <span className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-600">{previousStats.paid} payée(s)</span>
+                            {previousStats.pending > 0 && (
+                                <span className="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-600">{previousStats.pending} en attente</span>
+                            )}
+                            <span className="px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600">Total net : {new Intl.NumberFormat('fr-FR').format(previousStats.totalNet)} FCFA</span>
+                        </div>
+                    </div>
+
+                    {loadingPrevious ? (
+                        <div className="flex justify-center py-10">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+                        </div>
+                    ) : previousPayrolls.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-center">
+                            <p className="text-sm font-bold text-slate-400">Aucune paie pour {previousMonthLabel} {previousMonth.year}</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                            {previousPayrolls.map(renderPayrollCard)}
+                        </div>
+                    )}
+                </div>
 
                 {/* Calculate Month Modal */}
                 {showCalculateModal && (
