@@ -118,6 +118,10 @@ class PayrollController extends Controller {
 
             $teacher = Teacher::findOrFail($validated['teacher_id']);
             $summary = $this->attendanceHours($teacher, (int)$validated['year'], (int)$validated['month']);
+            $leaves = $this->getApprovedLeaveDays($teacher, (int)$validated['year'], (int)$validated['month']);
+            $summary['leave_days'] = $leaves['total_days'];
+            $summary['leave_hours'] = $leaves['total_days'] * self::HOURS_PER_DAY;
+            $summary['hourly_rate'] = (float) $teacher->hourly_rate;
 
             Log::info('attendanceSummary: Résumé de présence récupéré', [
                 'teacher_id' => $validated['teacher_id'],
@@ -205,11 +209,16 @@ class PayrollController extends Controller {
                     ]);
                 });
 
-                Payroll::where([
+                $existing = Payroll::withTrashed()->where([
                     'teacher_id' => $teacher->id,
                     'year' => $validated['year'],
                     'month' => $validated['month'],
-                ])->whereIn('status', ['draft', 'calculated'])->delete();
+                ])->first();
+                if ($existing && !$existing->trashed() && in_array($existing->status, ['validated', 'paid'])) {
+                    return response()->json(['message' => 'Cette paie est déjà validée ou payée et ne peut plus être recalculée'], 422);
+                }
+                // Hard delete: the unique (teacher_id, year, month) index also covers soft-deleted rows.
+                $existing?->forceDelete();
 
                 $payroll = Payroll::create([
                     'teacher_id' => $teacher->id,
@@ -325,21 +334,16 @@ class PayrollController extends Controller {
                 'amount' => $validated['amount']
             ]);
 
+            // The BRS is already stored as a deduction line by calculate(), so it is included here.
             $details = PayrollDetail::where('payroll_id', $payroll->id)->get();
-            $totalEarnings = $details->where('type', 'earning')->sum('amount');
-            $totalDeductions = $details->where('type', 'deduction')->sum('amount');
-
-            $brsAmount = 0;
-            if ($totalEarnings >= self::BRS_THRESHOLD) {
-                $brsAmount = round($totalEarnings * self::BRS_RATE, 2);
-            }
+            $totalEarnings = round((float) $details->where('type', 'earning')->sum('amount'), 2);
+            $totalDeductions = round((float) $details->where('type', 'deduction')->sum('amount'), 2);
 
             $grossSalary = $totalEarnings;
-            $netSalary = max(0, $totalEarnings - $brsAmount - $totalDeductions);
+            $netSalary = max(0, $totalEarnings - $totalDeductions);
             $paymentMethod = $netSalary >= self::CHECK_THRESHOLD ? 'check' : 'cash';
 
             $payroll->update([
-                'brs_amount' => $brsAmount,
                 'gross_salary' => $grossSalary,
                 'deductions' => $totalDeductions,
                 'net_salary' => $netSalary,
@@ -454,7 +458,7 @@ class PayrollController extends Controller {
         }
     }
 
-    public function export(Request $request): \Symfony\Component\HttpFoundation\BinaryFileResponse|JsonResponse {
+    public function export(Request $request): \Symfony\Component\HttpFoundation\Response {
         try {
             if (!auth()->user()->hasAnyRole(['admin', 'accountant', 'hr_manager'])) {
                 return response()->json(['message' => 'Non autorisé'], 403);
@@ -469,7 +473,7 @@ class PayrollController extends Controller {
             $payrolls = $query->orderBy('year', 'desc')->orderBy('month', 'desc')->get();
 
             if ($payrolls->isEmpty()) {
-                return response()->json(['message' => 'Aucune donnée à exporter'], 204);
+                return response()->json(['message' => 'Aucune donnée à exporter pour cette période'], 404);
             }
 
             $filename = 'export_honoraires_' . now()->format('Y-m-d_H-i-s') . '.csv';
@@ -522,9 +526,9 @@ class PayrollController extends Controller {
             $month = (int)$request->input('month', date('m'));
             $year = (int)$request->input('year', date('Y'));
             $page = max(1, (int)$request->input('page', 1));
-            $perPage = (int)$request->input('per_page', 20);
+            $perPage = min(100, max(1, (int)$request->input('per_page', 20)));
 
-            $query = Payroll::with('teacher.user', 'teacher.ufr')
+            $query = Payroll::with('teacher.user', 'teacher.ufr', 'details')
                 ->where('year', $year)
                 ->where('month', $month);
 
@@ -620,11 +624,13 @@ class PayrollController extends Controller {
                         $netSalary = max(0, $baseAmount - $brsAmount);
                         $paymentMethod = $netSalary >= self::CHECK_THRESHOLD ? 'check' : 'cash';
 
-                        Payroll::where([
+                        $existing = Payroll::withTrashed()->where([
                             'teacher_id' => $teacher->id,
                             'year' => $validated['year'],
                             'month' => $validated['month'],
-                        ])->whereIn('status', ['draft', 'calculated'])->delete();
+                        ])->first();
+                        if ($existing && !$existing->trashed() && in_array($existing->status, ['validated', 'paid'])) continue;
+                        $existing?->forceDelete();
 
                         Payroll::create([
                             'teacher_id' => $teacher->id,

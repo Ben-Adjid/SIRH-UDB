@@ -8,24 +8,6 @@ use App\Http\Controllers\Api\AuthController;
 // Health check - Simple status without sensitive info
 Route::get('/health', fn() => response()->json(['status' => 'ok']))->middleware('throttle:60,1');
 
-// DEBUG - Check payroll data directly (PUBLIC - NO AUTH)
-Route::get('/test/payroll-check', function (Illuminate\Http\Request $request) {
-    $month = (int)$request->input('month', 8);
-    $year = (int)$request->input('year', 2026);
-
-    $count = DB::selectOne("SELECT COUNT(*) as cnt FROM payrolls WHERE year = ? AND month = ?", [$year, $month])->cnt ?? 0;
-    $data = DB::select("SELECT id, teacher_id, year, month, status, net_salary FROM payrolls WHERE year = ? AND month = ? LIMIT 10", [$year, $month]);
-
-    return response()->json([
-        'test' => 'payroll_check',
-        'query_month' => $month,
-        'query_year' => $year,
-        'total_found' => $count,
-        'sample_data' => $data,
-        'status' => $count > 0 ? 'DATA EXISTS' : 'NO DATA FOUND'
-    ]);
-});
-
 // Diagnostic routes (admin only)
 Route::middleware('auth:sanctum', 'role:admin')->group(function () {
     Route::get('/diagnostic/database-counts', function () {
@@ -41,92 +23,6 @@ Route::middleware('auth:sanctum', 'role:admin')->group(function () {
             'payrolls' => \App\Models\Payroll::count(),
             'database_status' => 'OK',
         ]);
-    });
-
-    // Test endpoint - Add attendance data for payroll testing
-    // DEBUG - Get payroll data with raw SQL (bypass all ORM issues)
-    Route::get('/debug/payroll-raw', function (Illuminate\Http\Request $request) {
-        $month = (int)$request->input('month', 8);
-        $year = (int)$request->input('year', 2026);
-
-        $payrolls = DB::select("
-            SELECT * FROM payrolls WHERE year = ? AND month = ? LIMIT 20
-        ", [$year, $month]);
-
-        return response()->json([
-            'debug' => true,
-            'query_month' => $month,
-            'query_year' => $year,
-            'total_found' => count($payrolls),
-            'data' => $payrolls
-        ]);
-    });
-
-    Route::post('/test/add-attendance', function () {
-        if (config('app.env') === 'production') {
-            return response()->json(['error' => 'Not available in production'], 403);
-        }
-
-        try {
-            // Add attendance for August 2026
-            DB::insert("
-                INSERT IGNORE INTO attendances (teacher_id, attendance_date, check_in_time, check_out_time, status, schedule_id, created_at, updated_at)
-                SELECT
-                    t.id,
-                    DATE_ADD('2026-08-01', INTERVAL d.num DAY) as attendance_date,
-                    '08:00:00',
-                    '16:00:00',
-                    'present',
-                    (SELECT id FROM schedules WHERE teacher_id = t.id ORDER BY id LIMIT 1),
-                    NOW(),
-                    NOW()
-                FROM teachers t
-                CROSS JOIN (
-                    SELECT 0 as num UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4
-                    UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9
-                ) d
-                WHERE t.status = 'active' AND t.id <= 10
-                AND EXISTS (SELECT 1 FROM schedules WHERE teacher_id = t.id LIMIT 1)
-            ");
-
-            // Add attendance for September 2026
-            DB::insert("
-                INSERT IGNORE INTO attendances (teacher_id, attendance_date, check_in_time, check_out_time, status, schedule_id, created_at, updated_at)
-                SELECT
-                    t.id,
-                    DATE_ADD('2026-09-01', INTERVAL d.num DAY) as attendance_date,
-                    '08:00:00',
-                    '16:00:00',
-                    'present',
-                    (SELECT id FROM schedules WHERE teacher_id = t.id ORDER BY id LIMIT 1),
-                    NOW(),
-                    NOW()
-                FROM teachers t
-                CROSS JOIN (
-                    SELECT 0 as num UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4
-                    UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9
-                ) d
-                WHERE t.status = 'active' AND t.id <= 10
-                AND EXISTS (SELECT 1 FROM schedules WHERE teacher_id = t.id LIMIT 1)
-            ");
-
-            // Update August payrolls to 'paid' status
-            DB::update("
-                UPDATE payrolls
-                SET status = 'paid',
-                    net_salary = COALESCE(honorarium_amount, 500000),
-                    validated_by = 1,
-                    validated_at = DATE_SUB(NOW(), INTERVAL 30 DAY)
-                WHERE year = 2026 AND month = 8 AND status = 'draft'
-            ");
-
-            // Delete September draft payrolls to recalculate
-            DB::delete("DELETE FROM payrolls WHERE year = 2026 AND month = 9 AND status = 'draft'");
-
-            return response()->json(['message' => 'Test data added successfully']);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
     });
 });
 

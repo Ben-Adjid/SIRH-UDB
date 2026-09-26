@@ -7,7 +7,6 @@ import toast from '../utils/toast';
 import ConfirmModal from '../components/ConfirmModal';
 import Pagination from '../components/Pagination';
 import { getUserRoles } from '../utils/roles';
-import { escapeHtml } from '../utils/escape';
 import { MONTH_NAMES } from '../utils/constants';
 
 const Payroll = () => {
@@ -17,7 +16,6 @@ const Payroll = () => {
     const [page, setPage] = useState(1);
     const perPage = 15;
     const [pagination, setPagination] = useState({ current_page: 1, last_page: 1, total: 0 });
-    const [selectedPayroll, setSelectedPayroll] = useState(null);
     const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().substring(0, 7));
     const [isCalculating, setIsCalculating] = useState(false);
     const [stats, setStats] = useState({ total: 0, calculated: 0, validated: 0, paid: 0, totalAmount: 0 });
@@ -26,9 +24,9 @@ const Payroll = () => {
     const [calculationProgress, setCalculationProgress] = useState('');
     const [showIndividualCalculateModal, setShowIndividualCalculateModal] = useState(false);
     const [teachers, setTeachers] = useState([]);
-    const [individualForm, setIndividualForm] = useState({ teacher_id: '', month: selectedMonth.split('-')[1], year: selectedMonth.split('-')[0] });
+    const formForMonth = (ym) => ({ teacher_id: '', month: String(parseInt(ym.split('-')[1], 10)), year: ym.split('-')[0] });
+    const [individualForm, setIndividualForm] = useState(() => formForMonth(selectedMonth));
     const [attendanceData, setAttendanceData] = useState(null);
-    const [leaveData, setLeaveData] = useState(null);
     const [calculationPreview, setCalculationPreview] = useState(null);
     const [loadingAttendance, setLoadingAttendance] = useState(false);
 
@@ -85,12 +83,9 @@ const Payroll = () => {
         return unsubscribe;
     }, [page, fetchPayrolls]);
 
-    const calculatePreview = useCallback((teacherId, month, year, attData) => {
-        const selectedTeacher = teachers.find(t => t.id == teacherId);
-        if (!selectedTeacher) return;
-
-        const hoursWorked = Math.max(0, attData?.hours || attData?.summary?.hours || 0);
-        const hourlyRate = parseFloat(selectedTeacher.hourly_rate) || 0;
+    const calculatePreview = useCallback((attData) => {
+        const hoursWorked = Math.max(0, (attData?.hours || 0) - (attData?.leave_hours || 0));
+        const hourlyRate = parseFloat(attData?.hourly_rate) || 0;
         const baseAmount = Math.round(hoursWorked * hourlyRate * 100) / 100;
         const brsAmount = baseAmount >= 25000 ? Math.round(baseAmount * 0.05 * 100) / 100 : 0;
         const netSalary = baseAmount - brsAmount;
@@ -98,12 +93,13 @@ const Payroll = () => {
 
         setCalculationPreview({
             hours: hoursWorked,
+            hourlyRate,
             baseAmount: Math.round(baseAmount * 100) / 100,
             brsAmount: Math.round(brsAmount * 100) / 100,
             netSalary: Math.max(0, Math.round(netSalary * 100) / 100),
             paymentMethod
         });
-    }, [teachers]);
+    }, []);
 
     const loadAttendanceData = useCallback(async (teacherId, month, year) => {
         if (!teacherId) return;
@@ -118,19 +114,15 @@ const Payroll = () => {
                 return;
             }
 
-            const [attendResp, leaveResp] = await Promise.all([
-                api.get('/payroll/attendance-hours', { params: { teacher_id: teacherId, month: monthNum, year: yearNum } }),
-                api.get('/leaves', { params: { teacher_id: teacherId, month: monthNum, year: yearNum, status: 'approved' } })
-            ]);
-            setAttendanceData(attendResp.data?.summary || attendResp.data);
-            setLeaveData(leaveResp.data?.data || []);
-            calculatePreview(teacherId, monthNum, yearNum, attendResp.data?.summary || attendResp.data);
+            const response = await api.get('/payroll/attendance-hours', { params: { teacher_id: teacherId, month: monthNum, year: yearNum } });
+            const summary = response.data?.summary || {};
+            setAttendanceData(summary);
+            calculatePreview(summary);
         } catch (error) {
+            setAttendanceData(null);
+            setCalculationPreview(null);
             if (error.response?.status === 401) {
                 toast.error('Session expirée, veuillez vous reconnecter');
-            } else if (error.response?.status === 404) {
-                toast.error('Données non trouvées pour ce mois');
-                setAttendanceData({ hours: 0, summary: { hours: 0 } });
             } else {
                 toast.error('Erreur lors du chargement des données');
             }
@@ -154,14 +146,13 @@ const Payroll = () => {
                 year: parseInt(individualForm.year),
             };
 
-            const response = await api.post('/payroll/calculate', payload);
+            await api.post('/payroll/calculate', payload);
             setCalculationProgress(`✅ Paie calculée avec succès`);
             setTimeout(() => {
                 setShowIndividualCalculateModal(false);
                 setCalculationProgress('');
-                setIndividualForm({ teacher_id: '', month: selectedMonth.split('-')[1], year: selectedMonth.split('-')[0] });
+                setIndividualForm(formForMonth(selectedMonth));
                 setAttendanceData(null);
-                setLeaveData(null);
                 setCalculationPreview(null);
                 toast.success('Paie calculée');
                 fetchPayrolls(1);
@@ -254,7 +245,7 @@ const Payroll = () => {
     const AVATAR_GRADIENTS = ['from-indigo-500 to-violet-600', 'from-emerald-500 to-teal-600', 'from-blue-500 to-indigo-600', 'from-amber-500 to-orange-600'];
 
     const [year, month] = selectedMonth.split('-').map(Number);
-    const monthLabel = MONTH_NAMES[month - 1] || '';
+    const monthLabel = MONTH_NAMES[month] || '';
 
     return (
         <div className="min-h-screen">
@@ -271,7 +262,7 @@ const Payroll = () => {
                     </div>
                     <div className="flex gap-2 flex-wrap">
                         {isAccountant && (
-                            <button onClick={() => setShowIndividualCalculateModal(true)} disabled={isCalculating}
+                            <button onClick={() => { setIndividualForm(formForMonth(selectedMonth)); setAttendanceData(null); setCalculationPreview(null); setShowIndividualCalculateModal(true); }} disabled={isCalculating}
                                 className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-xl font-semibold text-sm shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-300 active:scale-[0.97] disabled:opacity-50 hover:scale-105">
                                 <Zap size={20} />
                                 <div className="flex flex-col items-start">
@@ -550,7 +541,7 @@ const Payroll = () => {
                                                     if (individualForm.teacher_id) loadAttendanceData(individualForm.teacher_id, e.target.value, individualForm.year);
                                                 }}>
                                                 {[1,2,3,4,5,6,7,8,9,10,11,12].map(m => (
-                                                    <option key={m} value={m}>{MONTH_NAMES[m-1]}</option>
+                                                    <option key={m} value={m}>{MONTH_NAMES[m]}</option>
                                                 ))}
                                             </select>
                                         </div>
@@ -585,18 +576,16 @@ const Payroll = () => {
                                                 <div className="grid grid-cols-3 gap-4">
                                                     <div>
                                                         <p className="text-xs text-slate-500 font-semibold">Heures pointées</p>
-                                                        <p className="text-2xl font-bold text-slate-900">{(attendanceData.hours || attendanceData.summary?.hours || 0)}h</p>
+                                                        <p className="text-2xl font-bold text-slate-900">{attendanceData.hours || 0} h</p>
                                                     </div>
                                                     <div>
                                                         <p className="text-xs text-slate-500 font-semibold">Pointages incomplets</p>
-                                                        <p className="text-lg font-bold text-slate-600">{(attendanceData.incomplete || attendanceData.summary?.incomplete || 0)}</p>
+                                                        <p className="text-lg font-bold text-slate-600">{attendanceData.incomplete || 0}</p>
                                                     </div>
-                                                    {leaveData.length > 0 && (
-                                                        <div>
-                                                            <p className="text-xs text-slate-500 font-semibold">Congés approuvés</p>
-                                                            <p className="text-lg font-bold text-amber-600">{leaveData.length} jour(s)</p>
-                                                        </div>
-                                                    )}
+                                                    <div>
+                                                        <p className="text-xs text-slate-500 font-semibold">Congés approuvés</p>
+                                                        <p className="text-lg font-bold text-amber-600">{attendanceData.leave_days || 0} jour(s)</p>
+                                                    </div>
                                                 </div>
                                             </div>
 
@@ -606,7 +595,7 @@ const Payroll = () => {
                                                     <p className="text-xs font-bold text-emerald-900 mb-3">📊 PRÉVISUALISATION DU CALCUL</p>
                                                     <div className="space-y-2 text-sm">
                                                         <div className="flex justify-between">
-                                                            <span className="text-slate-600">{calculationPreview.hours || 0}h × taux horaire</span>
+                                                            <span className="text-slate-600">{calculationPreview.hours || 0} h × {new Intl.NumberFormat('fr-FR').format(calculationPreview.hourlyRate || 0)} FCFA</span>
                                                             <span className="font-bold text-slate-900">{new Intl.NumberFormat('fr-FR').format(calculationPreview.baseAmount || 0)} FCFA</span>
                                                         </div>
                                                         {(calculationPreview.brsAmount || 0) > 0 && (
