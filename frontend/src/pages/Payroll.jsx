@@ -445,56 +445,70 @@ const Payroll = () => {
                     </div>
                 )}
 
-                {/* Payrolls List */}
-                {loading ? (
-                    <div className="flex justify-center py-20">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600" />
-                    </div>
-                ) : payrolls.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-24 text-center">
-                        <CreditCard size={48} className="text-slate-200 mb-4" />
-                        <p className="text-lg font-bold text-slate-400 mb-2">Aucune paie</p>
-                        <p className="text-sm text-slate-300">{isAccountant ? 'Cliquez sur "Calculer paies" pour générer les paies du mois' : 'Pas de paie disponible'}</p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                        {payrolls.map(renderPayrollCard)}
-                    </div>
-                )}
+                {/* Current month (left) and previous month (right) */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                    <section className="space-y-4">
+                        <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                                <span className="font-semibold text-slate-700">Mois en cours :</span>
+                                <span className="text-lg font-bold text-emerald-600">{monthLabel} {year}</span>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
+                                <span className="px-3 py-1.5 rounded-lg bg-slate-50 text-slate-600">{stats.total} paie(s)</span>
+                                <span className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-600">Total net : {new Intl.NumberFormat('fr-FR').format(stats.totalAmount)} FCFA</span>
+                            </div>
+                        </div>
 
-                <Pagination page={pagination.current_page} totalPages={pagination.last_page} onPageChange={setPage} totalItems={pagination.total} perPage={perPage} />
+                        {loading ? (
+                            <div className="flex justify-center py-12">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600" />
+                            </div>
+                        ) : payrolls.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-12 text-center bg-white/60 rounded-2xl border border-dashed border-slate-200">
+                                <CreditCard size={40} className="text-slate-200 mb-3" />
+                                <p className="text-base font-bold text-slate-400 mb-1">Aucune paie pour {monthLabel} {year}</p>
+                                <p className="text-sm text-slate-400">{isAccountant ? 'Cliquez sur « Calculer paie » et choisissez un enseignant' : 'Pas de paie disponible'}</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4">
+                                {payrolls.map(renderPayrollCard)}
+                            </div>
+                        )}
 
-                {/* Previous month */}
-                <div className="pt-4 space-y-4">
-                    <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                            <Calendar size={20} className="text-slate-400" />
-                            <label className="font-semibold text-slate-700">Mois précédent :</label>
-                            <span className="text-lg font-bold text-indigo-600">{previousMonthLabel} {previousMonth.year}</span>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
-                            <span className="px-3 py-1.5 rounded-lg bg-slate-50 text-slate-600">{previousPayrolls.length} paie(s)</span>
-                            <span className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-600">{previousStats.paid} payée(s)</span>
-                            {previousStats.pending > 0 && (
-                                <span className="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-600">{previousStats.pending} en attente</span>
-                            )}
-                            <span className="px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600">Total net : {new Intl.NumberFormat('fr-FR').format(previousStats.totalNet)} FCFA</span>
-                        </div>
-                    </div>
+                        <Pagination page={pagination.current_page} totalPages={pagination.last_page} onPageChange={setPage} totalItems={pagination.total} perPage={perPage} />
+                    </section>
 
-                    {loadingPrevious ? (
-                        <div className="flex justify-center py-10">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+                    <section className="space-y-4">
+                        <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
+                                <span className="font-semibold text-slate-700">Mois précédent :</span>
+                                <span className="text-lg font-bold text-indigo-600">{previousMonthLabel} {previousMonth.year}</span>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
+                                <span className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-600">{previousStats.paid} payée(s)</span>
+                                {previousStats.pending > 0 && (
+                                    <span className="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-600">{previousStats.pending} en attente</span>
+                                )}
+                                <span className="px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600">Total net : {new Intl.NumberFormat('fr-FR').format(previousStats.totalNet)} FCFA</span>
+                            </div>
                         </div>
-                    ) : previousPayrolls.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-12 text-center">
-                            <p className="text-sm font-bold text-slate-400">Aucune paie pour {previousMonthLabel} {previousMonth.year}</p>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                            {previousPayrolls.map(renderPayrollCard)}
-                        </div>
-                    )}
+
+                        {loadingPrevious ? (
+                            <div className="flex justify-center py-12">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+                            </div>
+                        ) : previousPayrolls.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-12 text-center bg-white/60 rounded-2xl border border-dashed border-slate-200">
+                                <p className="text-base font-bold text-slate-400">Aucune paie pour {previousMonthLabel} {previousMonth.year}</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4">
+                                {previousPayrolls.map(renderPayrollCard)}
+                            </div>
+                        )}
+                    </section>
                 </div>
 
                 {/* Calculate Month Modal */}
