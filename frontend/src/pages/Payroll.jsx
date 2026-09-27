@@ -444,6 +444,13 @@ const Payroll = () => {
                             </button>
                         )}
                         {isAccountant && (
+                            <button onClick={() => { setCalculationProgress(''); setShowCalculateModal(true); }} disabled={isCalculating}
+                                className="flex items-center gap-2 px-5 py-2.5 bg-white border border-emerald-200 text-emerald-700 rounded-xl font-semibold text-sm shadow-sm hover:bg-emerald-50 transition-all duration-300 active:scale-[0.97] disabled:opacity-50">
+                                <Play size={18} />
+                                <span>Tout le mois</span>
+                            </button>
+                        )}
+                        {isAccountant && (
                             <button onClick={handleExport}
                                 className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-700 text-white rounded-xl font-semibold text-sm shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all duration-300 active:scale-[0.97]">
                                 <Download size={18} />
@@ -567,21 +574,18 @@ const Payroll = () => {
 
                             {!isCalculating && (
                                 <div className="bg-slate-50 rounded-xl p-4 mb-6">
-                                    <p className="text-sm font-semibold text-slate-700 mb-2">Résumé:</p>
+                                    <p className="text-sm font-semibold text-slate-700 mb-2">Paies déjà présentes pour {monthLabel} {year} :</p>
                                     <div className="space-y-2 text-sm">
                                         <div className="flex justify-between">
-                                            <span className="text-slate-600">Enseignants actifs:</span>
-                                            <span className="font-bold text-slate-900">{stats.total}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-600">Déjà calculées:</span>
+                                            <span className="text-slate-600">Calculées (seront recalculées)</span>
                                             <span className="font-bold text-amber-600">{stats.calculated}</span>
                                         </div>
                                         <div className="flex justify-between">
-                                            <span className="text-slate-600">À calculer:</span>
-                                            <span className="font-bold text-emerald-600">{stats.total - stats.calculated}</span>
+                                            <span className="text-slate-600">Validées ou payées (inchangées)</span>
+                                            <span className="font-bold text-emerald-600">{stats.validated + stats.paid}</span>
                                         </div>
                                     </div>
+                                    <p className="mt-3 text-xs text-slate-500">Seuls les enseignants actifs ayant pointé ce mois et ayant un taux horaire reçoivent une paie.</p>
                                 </div>
                             )}
 
