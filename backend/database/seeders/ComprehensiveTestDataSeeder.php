@@ -243,7 +243,7 @@ class ComprehensiveTestDataSeeder extends Seeder
         foreach ($teachers->slice(0, 2) as $teacher) {
             $startDate = now()->addDays(5);
             $endDate = now()->addDays(7);
-            $durationDays = $endDate->diffInDays($startDate);
+            $durationDays = $startDate->diffInDays($endDate);
 
             LeaveRequest::create([
                 'user_id' => $teacher->user_id,

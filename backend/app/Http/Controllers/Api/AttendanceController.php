@@ -460,7 +460,8 @@ class AttendanceController extends Controller {
             $checkOutParsed->addDay();
         }
 
-        $hoursWorked = round($checkOutParsed->diffInMinutes($inTime) / 60, 2);
+        // Carbon 3 diffs are signed: start from the check-in so the duration is positive.
+        $hoursWorked = round($inTime->diffInMinutes($checkOutParsed) / 60, 2);
 
         $attendance->update([
             'check_out_time' => $checkOutTime->toTimeString(),
@@ -1221,7 +1222,10 @@ class AttendanceController extends Controller {
             if ($inTime && $outTime) {
                 $in = Carbon::createFromFormat('H:i:s', $inTime);
                 $out = Carbon::createFromFormat('H:i:s', $outTime);
-                $validated['hours_worked'] = round($out->diffInMinutes($in) / 60, 2);
+                if ($out->lt($in)) {
+                    $out->addDay();
+                }
+                $validated['hours_worked'] = round($in->diffInMinutes($out) / 60, 2);
             }
         }
 
@@ -1478,7 +1482,7 @@ class AttendanceController extends Controller {
             // Calculer les heures travaillées
             if ($attendance->check_in_time) {
                 $checkInTime = Carbon::parse($attendance->check_in_time);
-                $hoursWorked = round(now()->diffInMinutes($checkInTime) / 60, 2);
+                $hoursWorked = round(max(0, $checkInTime->diffInMinutes(now())) / 60, 2);
                 $attendance->hours_worked = $hoursWorked;
             }
 

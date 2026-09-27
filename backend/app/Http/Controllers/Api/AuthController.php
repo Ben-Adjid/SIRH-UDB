@@ -473,7 +473,8 @@ class AuthController extends Controller
                 return response()->json(['success' => false, 'message' => 'Lien de réinitialisation invalide ou expiré.'], 422);
             }
 
-            if (now()->diffInMinutes($resetToken->created_at) > 60) {
+            // Carbon 3 diffs are signed: measure from creation to now so the age is positive.
+            if (\Carbon\Carbon::parse($resetToken->created_at)->diffInMinutes(now()) > 60) {
                 DB::table('password_reset_tokens')->where('email', $validated['email'])->delete();
                 Log::warning('[Auth] resetPassword - token expired', ['email' => $validated['email']]);
                 return response()->json(['success' => false, 'message' => 'Lien de réinitialisation expiré. Demandez un nouveau lien.'], 422);
@@ -574,7 +575,7 @@ class AuthController extends Controller
                 return response()->json(['success' => false, 'message' => 'Lien de vérification invalide.'], 422);
             }
 
-            if (now()->diffInHours($verificationToken->created_at) > 24) {
+            if (\Carbon\Carbon::parse($verificationToken->created_at)->diffInHours(now()) > 24) {
                 DB::table('email_verification_tokens')->where('email', $validated['email'])->delete();
                 Log::warning('[Auth] verifyEmail - token expired', ['email' => $validated['email']]);
                 return response()->json(['success' => false, 'message' => 'Lien de vérification expiré. Demandez un nouveau lien.'], 422);
