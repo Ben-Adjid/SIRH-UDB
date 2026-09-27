@@ -126,7 +126,7 @@ class TeacherController extends Controller {
             }
 
             return response()->json([
-                'message' => 'Enseignant créé. Un SMS avec le mot de passe temporaire a été envoyé au ' . ($validated['phone'] ?? 'numéro non renseigné'),
+                'message' => 'Enseignant créé. Les identifiants de connexion ont été envoyés par e-mail à ' . $validated['email'],
                 'teacher' => $teacher->load('user', 'ufr')
             ], 201);
         } catch (\Illuminate\Validation\ValidationException $e) {

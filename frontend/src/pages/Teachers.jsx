@@ -561,7 +561,7 @@ const Teachers = () => {
                             <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">Authentification</p>
                             <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
                                 <p className="text-blue-700 text-xs font-medium">
-                                    Un mot de passe temporaire sera genere automatiquement et envoye par SMS au numero de telephone fourni. L'utilisateur devra le changer lors de sa premiere connexion.
+                                    Un mot de passe temporaire sera généré automatiquement et envoyé par e-mail. L'utilisateur devra le changer lors de sa première connexion.
                                 </p>
                             </div>
                         </div>

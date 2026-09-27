@@ -176,7 +176,7 @@ class UserController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Utilisateur créé. Un SMS avec le mot de passe temporaire a été envoyé.',
+                'message' => 'Utilisateur créé. Les identifiants de connexion ont été envoyés par e-mail.',
                 'data' => $user->fresh()->load('roles', 'teacher'),
             ], 201);
         } catch (\Illuminate\Validation\ValidationException $e) {

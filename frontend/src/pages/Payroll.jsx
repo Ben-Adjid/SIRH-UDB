@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import api from '../services/api';
 import { dataRefresh } from '../services/dataRefresh';
 import useAuthStore from '../store/authStore';
-import { CreditCard, Download, DollarSign, FileText, CheckCircle, AlertCircle, Zap, TrendingDown, Calendar, Play, ChevronRight } from 'lucide-react';
+import { CreditCard, Download, DollarSign, FileText, CheckCircle, Zap, TrendingDown, Calendar, ChevronRight } from 'lucide-react';
 import toast from '../utils/toast';
 import ConfirmModal from '../components/ConfirmModal';
 import Pagination from '../components/Pagination';
@@ -29,7 +29,6 @@ const Payroll = () => {
     const [stats, setStats] = useState(EMPTY_STATS);
     const [previousStats, setPreviousStats] = useState(EMPTY_STATS);
     const [showConfirm, setShowConfirm] = useState({ isOpen: false, action: null, payroll: null });
-    const [showCalculateModal, setShowCalculateModal] = useState(false);
     const [calculationProgress, setCalculationProgress] = useState('');
     const [showIndividualCalculateModal, setShowIndividualCalculateModal] = useState(false);
     const [teachers, setTeachers] = useState([]);
@@ -208,29 +207,6 @@ const Payroll = () => {
             setIsCalculating(false);
         }
     }, [individualForm, selectedMonth, refreshAll]);
-
-    const handleCalculateMonth = useCallback(async () => {
-        if (!selectedMonth) return;
-        setIsCalculating(true);
-        setCalculationProgress('Préparation du calcul...');
-        try {
-            const [year, month] = selectedMonth.split('-').map(Number);
-            setCalculationProgress('Calcul en cours...');
-            const response = await api.post('/payroll/calculate-month', { month, year });
-            setCalculationProgress(`✅ ${response.data.calculated} paies calculées avec succès`);
-            setTimeout(() => {
-                setShowCalculateModal(false);
-                setCalculationProgress('');
-                toast.success(`${response.data.calculated} paies calculées automatiquement`);
-                refreshAll();
-            }, 1500);
-        } catch (error) {
-            setCalculationProgress('❌ Erreur lors du calcul');
-            toast.error(error.response?.data?.message || 'Erreur lors du calcul automatique');
-        } finally {
-            setIsCalculating(false);
-        }
-    }, [selectedMonth, refreshAll]);
 
     const handleValidate = useCallback(async (id) => {
         try {
@@ -444,13 +420,6 @@ const Payroll = () => {
                             </button>
                         )}
                         {isAccountant && (
-                            <button onClick={() => { setCalculationProgress(''); setShowCalculateModal(true); }} disabled={isCalculating}
-                                className="flex items-center gap-2 px-5 py-2.5 bg-white border border-emerald-200 text-emerald-700 rounded-xl font-semibold text-sm shadow-sm hover:bg-emerald-50 transition-all duration-300 active:scale-[0.97] disabled:opacity-50">
-                                <Play size={18} />
-                                <span>Tout le mois</span>
-                            </button>
-                        )}
-                        {isAccountant && (
                             <button onClick={handleExport}
                                 className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-700 text-white rounded-xl font-semibold text-sm shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all duration-300 active:scale-[0.97]">
                                 <Download size={18} />
@@ -540,78 +509,6 @@ const Payroll = () => {
                         <Pagination page={previousPagination.current_page} totalPages={previousPagination.last_page} onPageChange={setPreviousPage} totalItems={previousPagination.total} perPage={perPage} />
                     </section>
                 </div>
-
-                {/* Calculate Month Modal */}
-                {showCalculateModal && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
-                                    <Play className="text-emerald-600" size={24} />
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-bold text-slate-900">Calculer les paies</h2>
-                                    <p className="text-sm text-slate-500">{monthLabel} {year}</p>
-                                </div>
-                            </div>
-
-                            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-6 space-y-3">
-                                <div className="flex items-start gap-3">
-                                    <AlertCircle className="text-emerald-600 flex-shrink-0 mt-1" size={20} />
-                                    <div>
-                                        <p className="font-semibold text-emerald-900">Calcul automatique</p>
-                                        <p className="text-sm text-emerald-700 mt-1">Le système va automatiquement:</p>
-                                        <ul className="text-sm text-emerald-700 mt-2 space-y-1 ml-4">
-                                            <li>✓ Récupérer les heures pointées</li>
-                                            <li>✓ Déduire les congés approuvés</li>
-                                            <li>✓ Calculer le brut (heures × taux)</li>
-                                            <li>✓ Appliquer la BRS si nécessaire</li>
-                                            <li>✓ Déterminer le mode de paiement</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {!isCalculating && (
-                                <div className="bg-slate-50 rounded-xl p-4 mb-6">
-                                    <p className="text-sm font-semibold text-slate-700 mb-2">Paies déjà présentes pour {monthLabel} {year} :</p>
-                                    <div className="space-y-2 text-sm">
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-600">Calculées (seront recalculées)</span>
-                                            <span className="font-bold text-amber-600">{stats.calculated}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-600">Validées ou payées (inchangées)</span>
-                                            <span className="font-bold text-emerald-600">{stats.validated + stats.paid}</span>
-                                        </div>
-                                    </div>
-                                    <p className="mt-3 text-xs text-slate-500">Seuls les enseignants actifs ayant pointé ce mois et ayant un taux horaire reçoivent une paie.</p>
-                                </div>
-                            )}
-
-                            {isCalculating && (
-                                <div className="bg-blue-50 rounded-xl p-4 mb-6 text-center">
-                                    <div className="inline-block mb-3">
-                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                                    </div>
-                                    <p className="text-sm font-semibold text-blue-900">{calculationProgress || 'Calcul en cours...'}</p>
-                                </div>
-                            )}
-
-                            <div className="flex gap-3">
-                                <button onClick={() => { setShowCalculateModal(false); setCalculationProgress(''); }} disabled={isCalculating}
-                                    className="flex-1 px-4 py-2.5 border border-slate-300 text-slate-700 rounded-xl font-semibold hover:bg-slate-50 transition-all disabled:opacity-50">
-                                    Annuler
-                                </button>
-                                <button onClick={handleCalculateMonth} disabled={isCalculating}
-                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50">
-                                    <Zap size={18} />
-                                    <span>{isCalculating ? 'Calcul...' : 'Calculer'}</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
 
                 {/* Individual Calculate Modal - Automated */}
                 {showIndividualCalculateModal && (

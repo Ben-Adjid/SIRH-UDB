@@ -130,7 +130,7 @@ const UsersPage = () => {
                 delete payload.ufr_id;
             }
             const res = await api.post('/auth/users', payload);
-            toast.success(res.data?.message || 'Compte cree. Un SMS avec le mot de passe temporaire a ete envoye.');
+            toast.success(res.data?.message || 'Compte créé. Les identifiants ont été envoyés par e-mail.');
             await fetchUsers(1);
             setShowCreateModal(false);
             setCreateForm({ name: '', email: '', phone: '', roles: [], ufr_id: '' });
@@ -351,7 +351,6 @@ const UsersPage = () => {
                                 onChange={e => setCreateForm({ ...createForm, phone: e.target.value.replace(/\D/g, '').slice(0, 9) })}
                                 placeholder="77 123 45 67" className="input-field icon" pattern="[0-9]{9}" />
                         </div>
-                        <p className="text-[10px] text-gray-400 mt-1 ml-1">Le mot de passe temporaire sera envoye par SMS a ce numero</p>
                     </div>
                     <div className="form-group">
                         <label className="form-label">Acces / Roles</label>
@@ -387,7 +386,7 @@ const UsersPage = () => {
                     )}
                     <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
                         <p className="text-blue-700 text-xs font-medium">
-                            Un mot de passe temporaire sera genere automatiquement et envoye par SMS et par email. L'utilisateur devra le changer lors de sa premiere connexion.
+                            Un mot de passe temporaire sera généré automatiquement et envoyé par e-mail. L'utilisateur devra le changer lors de sa première connexion.
                         </p>
                     </div>
                 </div>
