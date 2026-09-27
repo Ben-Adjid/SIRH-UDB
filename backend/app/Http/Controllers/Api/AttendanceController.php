@@ -479,7 +479,7 @@ class AttendanceController extends Controller {
                     $user->id,
                     'Volume horaire épuisé',
                     'Votre volume d\'heures contractuel est maintenant épuisé. Contactez les RH.',
-                    'danger',
+                    'error',
                     '/attendance'
                 );
             } elseif ($remaining <= 5) {
@@ -815,7 +815,7 @@ class AttendanceController extends Controller {
                 $notifUserId,
                 'Signalement ' . $decision,
                 'Votre ' . ($attendance->status === 'late' ? 'retard' : 'absence') . ' du ' . $attendance->attendance_date . ' a été traité(e) comme ' . $decision . ' par ' . $user->name . '.',
-                $validated['justified'] ? 'success' : 'danger',
+                $validated['justified'] ? 'success' : 'error',
                 '/attendance'
             );
         }

@@ -439,7 +439,7 @@ class HomeworkController extends Controller {
                     $homework->teacher->user->id,
                     'Devoir annulé',
                     'Le devoir "' . $homework->title . '" a été annulé par l\'administration.' . (!empty($validated['reason']) ? ' Motif : ' . $validated['reason'] : ''),
-                    'danger',
+                    'error',
                     '/homeworks'
                 );
             }

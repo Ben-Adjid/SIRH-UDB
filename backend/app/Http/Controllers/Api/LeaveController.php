@@ -124,7 +124,7 @@ class LeaveController extends Controller {
                         $leave->user_id,
                         $validated['status'] === 'approved' ? 'Congé Approuvé' : 'Congé Rejeté',
                         "Votre demande de congé du " . $startDateStr . " au " . $endDateStr . " a été " . ($validated['status'] === 'approved' ? 'approuvée' : 'rejetée') . ".",
-                        $validated['status'] === 'approved' ? 'success' : 'danger',
+                        $validated['status'] === 'approved' ? 'success' : 'error',
                         '/leaves'
                     );
 

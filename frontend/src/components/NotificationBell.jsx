@@ -75,6 +75,7 @@ const NotificationBell = () => {
     const getTypeStyles = (type) => {
         switch (type) {
             case 'success': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+            case 'error':
             case 'danger': return 'bg-red-50 text-red-600 border-red-100';
             case 'warning': return 'bg-amber-50 text-amber-600 border-amber-100';
             default: return 'bg-blue-50 text-blue-600 border-blue-100';

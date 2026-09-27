@@ -300,7 +300,7 @@ class ScheduleController extends Controller {
                     $teacher->user->id,
                     'Cours supprimé',
                     'Votre cours du ' . $schedule->day_of_week . ' (' . ($schedule->subject?->name ?? 'N/A') . ') a été supprimé de l\'emploi du temps.',
-                    'danger',
+                    'error',
                     '/schedules'
                 );
             }
