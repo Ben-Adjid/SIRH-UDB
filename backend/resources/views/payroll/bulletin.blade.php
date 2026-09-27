@@ -303,7 +303,7 @@
             <thead>
                 <tr>
                     <th>Description</th>
-                    <th style="text-align: right;">Montant (FCFA)</th>
+                    <th style="text-align: right;">Montant (XOF)</th>
                     <th style="text-align: center;">Type</th>
                 </tr>
             </thead>
@@ -327,19 +327,19 @@
         <div class="summary-section">
             <div class="summary-row">
                 <span class="summary-label">Salaire Brut</span>
-                <span class="summary-amount">{{ number_format($gross_salary, 0, ',', ' ') }} FCFA</span>
+                <span class="summary-amount">{{ number_format($gross_salary, 0, ',', ' ') }} XOF</span>
             </div>
             <div class="summary-row">
                 <span class="summary-label">Retenues & Déductions</span>
-                <span class="summary-amount" style="color: #dc2626;">-{{ number_format($deductions, 0, ',', ' ') }} FCFA</span>
+                <span class="summary-amount" style="color: #dc2626;">-{{ number_format($deductions, 0, ',', ' ') }} XOF</span>
             </div>
             <div class="summary-row total">
                 <span class="summary-label">Sous-Total</span>
-                <span class="summary-amount">{{ number_format($gross_salary - $deductions, 0, ',', ' ') }} FCFA</span>
+                <span class="summary-amount">{{ number_format($gross_salary - $deductions, 0, ',', ' ') }} XOF</span>
             </div>
             <div class="summary-row net">
                 <span class="summary-label">NET À PAYER</span>
-                <span class="summary-amount">{{ number_format($net_salary, 0, ',', ' ') }} FCFA</span>
+                <span class="summary-amount">{{ number_format($net_salary, 0, ',', ' ') }} XOF</span>
             </div>
         </div>
 

@@ -425,7 +425,7 @@ const Teachers = () => {
                                             {teacher.hourly_rate && (
                                                 <div className="flex items-center text-xs text-slate-500">
                                                     <Banknote size={12} className="mr-2 text-violet-400 shrink-0" />
-                                                    <span>{teacher.volume_hours || 0}h x {new Intl.NumberFormat('fr-FR').format(teacher.hourly_rate)} FCFA/h</span>
+                                                    <span>{teacher.volume_hours || 0}h x {new Intl.NumberFormat('fr-FR').format(teacher.hourly_rate)} XOF/h</span>
                                                 </div>
                                             )}
                                         </div>
@@ -527,7 +527,7 @@ const Teachers = () => {
                             {fieldErrors.volume_hours && <p className="text-xs text-red-500 mt-1">{fieldErrors.volume_hours[0]}</p>}
                         </div>
                         <div>
-                            <label className="form-label">Taux horaire FCFA</label>
+                            <label className="form-label">Taux horaire XOF</label>
                             <input required type="number" min="0" className="input-field" placeholder="15000"
                                 value={formData.hourly_rate} onChange={e => setFormData({...formData, hourly_rate: e.target.value})} />
                             {fieldErrors.hourly_rate && <p className="text-xs text-red-500 mt-1">{fieldErrors.hourly_rate[0]}</p>}

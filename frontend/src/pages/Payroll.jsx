@@ -264,7 +264,7 @@ const Payroll = () => {
 
     const AVATAR_GRADIENTS = ['from-indigo-500 to-violet-600', 'from-emerald-500 to-teal-600', 'from-blue-500 to-indigo-600', 'from-amber-500 to-orange-600'];
 
-    const formatFcfa = (value) => `${new Intl.NumberFormat('fr-FR').format(Number(value || 0))} FCFA`;
+    const formatFcfa = (value) => `${new Intl.NumberFormat('fr-FR').format(Number(value || 0))} XOF`;
 
     const STATUS_STYLES = {
         paid: { label: 'Payée', badge: 'bg-emerald-50 text-emerald-700 ring-emerald-200', dot: 'bg-emerald-500', bar: 'bg-emerald-500' },
@@ -302,7 +302,7 @@ const Payroll = () => {
 
                     <dl className="mt-4 space-y-1.5 text-sm">
                         <div className="flex justify-between">
-                            <dt className="text-slate-500">{hours > 0 ? `${hours} h × ${new Intl.NumberFormat('fr-FR').format(rate)} FCFA` : 'Brut'}</dt>
+                            <dt className="text-slate-500">{hours > 0 ? `${hours} h × ${new Intl.NumberFormat('fr-FR').format(rate)} XOF` : 'Brut'}</dt>
                             <dd className="font-semibold text-slate-900 tabular-nums">{formatFcfa(p.gross_salary || p.honorarium_amount)}</dd>
                         </div>
                         {Number(p.brs_amount || 0) > 0 && (
@@ -608,18 +608,18 @@ const Payroll = () => {
                                                     <p className="text-xs font-bold text-emerald-900 mb-3">📊 PRÉVISUALISATION DU CALCUL</p>
                                                     <div className="space-y-2 text-sm">
                                                         <div className="flex justify-between">
-                                                            <span className="text-slate-600">{calculationPreview.hours || 0} h × {new Intl.NumberFormat('fr-FR').format(calculationPreview.hourlyRate || 0)} FCFA</span>
-                                                            <span className="font-bold text-slate-900">{new Intl.NumberFormat('fr-FR').format(calculationPreview.baseAmount || 0)} FCFA</span>
+                                                            <span className="text-slate-600">{calculationPreview.hours || 0} h × {new Intl.NumberFormat('fr-FR').format(calculationPreview.hourlyRate || 0)} XOF</span>
+                                                            <span className="font-bold text-slate-900">{new Intl.NumberFormat('fr-FR').format(calculationPreview.baseAmount || 0)} XOF</span>
                                                         </div>
                                                         {(calculationPreview.brsAmount || 0) > 0 && (
                                                             <div className="flex justify-between text-red-600">
                                                                 <span>BRS (5%)</span>
-                                                                <span className="font-bold">- {new Intl.NumberFormat('fr-FR').format(calculationPreview.brsAmount || 0)} FCFA</span>
+                                                                <span className="font-bold">- {new Intl.NumberFormat('fr-FR').format(calculationPreview.brsAmount || 0)} XOF</span>
                                                             </div>
                                                         )}
                                                         <div className="border-t border-emerald-300 pt-2 flex justify-between font-bold text-lg">
                                                             <span className="text-emerald-900">NET À PAYER</span>
-                                                            <span className="text-emerald-600">{new Intl.NumberFormat('fr-FR').format(calculationPreview.netSalary || 0)} FCFA</span>
+                                                            <span className="text-emerald-600">{new Intl.NumberFormat('fr-FR').format(calculationPreview.netSalary || 0)} XOF</span>
                                                         </div>
                                                         <div className="flex justify-between text-xs text-slate-500 mt-2">
                                                             <span>Mode de paiement</span>
@@ -672,7 +672,7 @@ const Payroll = () => {
                     title={showConfirm.action === 'validate' ? "Valider la paie" : "Marquer comme payée"}
                     message={showConfirm.action === 'validate' ?
                         `Valider l'honoraire de ${showConfirm.payroll?.teacher?.user?.name} (${showConfirm.payroll?.month}/${showConfirm.payroll?.year})?` :
-                        `Confirmer le paiement de ${showConfirm.payroll?.teacher?.user?.name} (${showConfirm.payroll?.net_salary} FCFA)?`
+                        `Confirmer le paiement de ${showConfirm.payroll?.teacher?.user?.name} (${showConfirm.payroll?.net_salary} XOF)?`
                     }
                     confirmText="Confirmer"
                     type="warning"

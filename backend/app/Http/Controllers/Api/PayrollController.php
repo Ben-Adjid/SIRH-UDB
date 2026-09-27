@@ -428,7 +428,7 @@ class PayrollController extends Controller {
                 NotificationService::send(
                     $payroll->teacher->user->id,
                     'Honoraire payé',
-                    'Votre honoraire de ' . $netSalaryFormatted . ' FCFA pour ' . $payroll->month . '/' . $payroll->year . ' a été payé par ' . ($payroll->payment_method === 'check' ? 'chèque' : 'espèces') . '.',
+                    'Votre honoraire de ' . $netSalaryFormatted . ' XOF pour ' . $payroll->month . '/' . $payroll->year . ' a été payé par ' . ($payroll->payment_method === 'check' ? 'chèque' : 'espèces') . '.',
                     'success',
                     '/payroll'
                 );
