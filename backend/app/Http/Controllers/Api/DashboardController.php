@@ -592,8 +592,30 @@ class DashboardController extends Controller {
                     ->orWhereHas('schedules.teacher', fn($teacher) => $teacher->whereIn('ufr_id', $visibleUfrIds)))->count()
                 : Subject::count();
 
+            $teacherQuery = Teacher::where('status', 'active');
+            if ($isScoped && !empty($visibleUfrIds)) {
+                $teacherQuery->whereIn('ufr_id', $visibleUfrIds);
+            }
+            $activeTeachers = $teacherQuery->count();
+
+            $totalTeachersQuery = Teacher::query();
+            if ($isScoped && !empty($visibleUfrIds)) {
+                $totalTeachersQuery->whereIn('ufr_id', $visibleUfrIds);
+            }
+            $totalTeachers = $totalTeachersQuery->count();
+
+            $weekStart = now()->startOfWeek();
+            $weekEnd = now()->endOfWeek();
+            $attendanceStats = Attendance::whereBetween('check_in_time', [$weekStart, $weekEnd])
+                ->selectRaw("SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as present_count, COUNT(*) as total_count")
+                ->first();
+            $attendanceRate = $attendanceStats && $attendanceStats->total_count > 0
+                ? round(($attendanceStats->present_count / $attendanceStats->total_count) * 100, 1)
+                : 0;
+
             Log::info('[Dashboard] Academic stats loaded', [
                 'total_subjects' => $totalSubjects,
+                'active_teachers' => $activeTeachers,
                 'user_role' => auth()->user()->roles->pluck('name')->first(),
                 'is_scoped' => $isScoped,
                 'timestamp' => now(),
@@ -607,6 +629,9 @@ class DashboardController extends Controller {
                 'submitted_homeworks' => $submittedHomeworks,
                 'total_homeworks' => $totalHomeworks,
                 'schedules_this_week' => $schedulesThisWeek,
+                'active_teachers' => $activeTeachers,
+                'total_teachers' => $totalTeachers,
+                'attendance_rate' => $attendanceRate,
                 'teachers_per_ufr' => $teachersPerUfr,
                 'recent_schedules' => $recentSchedules->get(['id', 'teacher_id', 'subject_id', 'classroom_id', 'day_of_week', 'start_time', 'end_time', 'is_archived', 'created_at']),
                 'classroom_occupancy' => Classroom::withCount('schedules')->get(['id', 'name']),
