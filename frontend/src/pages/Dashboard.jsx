@@ -529,9 +529,9 @@ const Dashboard = () => {
                 <WelcomeHero user={user} userRole={userRole} onRefresh={handleRefresh} loading={loading} />
                 <QuickActions role={userRole} />
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+                    <StatCard title="Enseignants" value={stats.total_teachers ?? 0} icon={Users} accent="purple" subValue={`${stats.active_teachers ?? 0} actifs`} />
                     <StatCard title="Masse salariale" value={formatCurrency(stats.total_gross_salary ?? 0)} icon={Wallet} accent="emerald" />
                     <StatCard title="Honoraires" value={stats.payrolls_total ?? 0} icon={FileText} accent="blue" subValue="Ce mois" />
-                    <StatCard title="Validés" value={stats.payrolls_validated ?? 0} icon={CheckCircle} accent="indigo" subValue="Prêts" />
                     <StatCard title="Payés" value={stats.payrolls_paid ?? 0} icon={Shield} accent="amber" subValue="Effectués" />
                 </div>
                 <SectionCard title="Résumé Financier" subtitle="Masse salariale et paiements">

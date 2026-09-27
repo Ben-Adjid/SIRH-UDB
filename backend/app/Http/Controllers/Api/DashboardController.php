@@ -511,13 +511,19 @@ class DashboardController extends Controller {
             $prevNet = (float)($prevMonthStats->net ?? 0);
             $netVariation = $prevNet > 0 ? round((($totalNet - $prevNet) / $prevNet) * 100, 1) : 0;
 
+            $teacherStats = Teacher::selectRaw("SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active, COUNT(*) as total")
+                ->first();
+
             Log::info('[Dashboard] Accountant stats loaded', [
                 'payrolls_paid' => $paid,
                 'total_net' => $totalNet,
+                'total_teachers' => (int)($teacherStats->total ?? 0),
                 'timestamp' => now(),
             ]);
 
             $data = [
+                'total_teachers' => (int)($teacherStats->total ?? 0),
+                'active_teachers' => (int)($teacherStats->active ?? 0),
                 'payrolls_calculated' => $calculated,
                 'payrolls_validated' => $validated,
                 'payrolls_paid' => $paid,
