@@ -79,8 +79,8 @@ class TeachingTypeController extends Controller
             }
 
             $validated = $request->validate([
-                'name' => 'required|string|max:255|unique:teaching_types,name',
-                'code' => 'required|string|max:10|unique:teaching_types,code',
+                'name' => 'required|string|max:255|unique:teaching_types,name,NULL,id,deleted_at,NULL',
+                'code' => 'required|string|max:10|unique:teaching_types,code,NULL,id,deleted_at,NULL',
                 'hourly_rate' => 'required|numeric|min:0|max:999999.99',
                 'description' => 'nullable|string|max:1000',
             ]);
@@ -121,8 +121,8 @@ class TeachingTypeController extends Controller
             }
 
             $validated = $request->validate([
-                'name' => 'sometimes|string|max:255|unique:teaching_types,name,' . $teachingType->id,
-                'code' => 'sometimes|string|max:10|unique:teaching_types,code,' . $teachingType->id,
+                'name' => 'sometimes|string|max:255|unique:teaching_types,name,' . $teachingType->id . ',id,deleted_at,NULL',
+                'code' => 'sometimes|string|max:10|unique:teaching_types,code,' . $teachingType->id . ',id,deleted_at,NULL',
                 'hourly_rate' => 'sometimes|numeric|min:0|max:999999.99',
                 'description' => 'nullable|string|max:1000',
             ]);

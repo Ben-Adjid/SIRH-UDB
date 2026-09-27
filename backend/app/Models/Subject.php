@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Subject extends Model {
     use SoftDeletes;
 
+    protected $hidden = ['name_active', 'code_active'];
+
+
     protected $fillable = ['ufr_id', 'name', 'code', 'level', 'credit_hours', 'description'];
 
     protected $casts = [

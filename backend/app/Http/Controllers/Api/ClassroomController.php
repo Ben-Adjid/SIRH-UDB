@@ -131,8 +131,8 @@ class ClassroomController extends Controller
             }
 
             $validated = $request->validate([
-                'name' => 'required|string|max:255|unique:classrooms,name',
-                'code' => 'required|string|max:50|unique:classrooms,code',
+                'name' => 'required|string|max:255|unique:classrooms,name,NULL,id,deleted_at,NULL',
+                'code' => 'required|string|max:50|unique:classrooms,code,NULL,id,deleted_at,NULL',
                 'capacity' => 'required|integer|min:1|max:9999',
                 'location' => 'nullable|string|max:500',
                 'type' => 'required|string|in:classroom,lab,amphitheater',
@@ -185,8 +185,8 @@ class ClassroomController extends Controller
             }
 
             $validated = $request->validate([
-                'name' => 'sometimes|string|max:255|unique:classrooms,name,' . $classroom->id,
-                'code' => 'sometimes|string|max:50|unique:classrooms,code,' . $classroom->id,
+                'name' => 'sometimes|string|max:255|unique:classrooms,name,' . $classroom->id . ',id,deleted_at,NULL',
+                'code' => 'sometimes|string|max:50|unique:classrooms,code,' . $classroom->id . ',id,deleted_at,NULL',
                 'capacity' => 'sometimes|integer|min:1|max:9999',
                 'location' => 'nullable|string|max:500',
                 'type' => 'sometimes|string|in:classroom,lab,amphitheater',

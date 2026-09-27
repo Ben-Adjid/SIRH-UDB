@@ -154,8 +154,8 @@ class UfrController extends Controller
             }
 
             $validated = $request->validate([
-                'name' => 'required|string|max:255|unique:ufrs,name',
-                'code' => 'required|string|max:10|unique:ufrs,code',
+                'name' => 'required|string|max:255|unique:ufrs,name,NULL,id,deleted_at,NULL',
+                'code' => 'required|string|max:10|unique:ufrs,code,NULL,id,deleted_at,NULL',
                 'description' => 'nullable|string|max:1000',
                 'head_id' => 'nullable|integer|exists:users,id',
             ]);
@@ -220,8 +220,8 @@ class UfrController extends Controller
             }
 
             $validated = $request->validate([
-                'name' => 'sometimes|string|max:255|unique:ufrs,name,' . $ufr->id,
-                'code' => 'sometimes|string|max:10|unique:ufrs,code,' . $ufr->id,
+                'name' => 'sometimes|string|max:255|unique:ufrs,name,' . $ufr->id . ',id,deleted_at,NULL',
+                'code' => 'sometimes|string|max:10|unique:ufrs,code,' . $ufr->id . ',id,deleted_at,NULL',
                 'description' => 'nullable|string|max:1000',
                 'head_id' => 'nullable|integer|exists:users,id',
             ]);

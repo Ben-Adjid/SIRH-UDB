@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class TeachingType extends Model {
     use SoftDeletes;
+    protected $hidden = ['name_active', 'code_active'];
+
     protected $fillable = [
         'name',
         'code',

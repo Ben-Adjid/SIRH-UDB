@@ -170,8 +170,8 @@ class SubjectController extends Controller
 
             $validated = $request->validate([
                 'ufr_id' => 'nullable|integer|exists:ufrs,id',
-                'name' => 'required|string|max:255|unique:subjects,name',
-                'code' => 'required|string|max:50|unique:subjects,code',
+                'name' => 'required|string|max:255|unique:subjects,name,NULL,id,deleted_at,NULL',
+                'code' => 'required|string|max:50|unique:subjects,code,NULL,id,deleted_at,NULL',
                 'level' => 'required|string|in:L1,L2,L3,M1,M2',
                 'credit_hours' => 'nullable|integer|min:0',
                 'description' => 'nullable|string|max:1000',
@@ -247,8 +247,8 @@ class SubjectController extends Controller
 
             $validated = $request->validate([
                 'ufr_id' => 'sometimes|nullable|integer|exists:ufrs,id',
-                'name' => 'sometimes|string|max:255|unique:subjects,name,' . $subject->id,
-                'code' => 'sometimes|string|max:50|unique:subjects,code,' . $subject->id,
+                'name' => 'sometimes|string|max:255|unique:subjects,name,' . $subject->id . ',id,deleted_at,NULL',
+                'code' => 'sometimes|string|max:50|unique:subjects,code,' . $subject->id . ',id,deleted_at,NULL',
                 'level' => 'sometimes|string|in:L1,L2,L3,M1,M2',
                 'credit_hours' => 'sometimes|integer|min:0',
                 'description' => 'nullable|string|max:1000',

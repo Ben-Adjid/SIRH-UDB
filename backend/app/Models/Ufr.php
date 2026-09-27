@@ -10,6 +10,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Ufr extends Model {
     use SoftDeletes;
 
+    protected $hidden = ['name_active', 'code_active'];
+
+
     protected $fillable = ['name', 'code', 'description', 'head_id'];
 
     protected $casts = [
