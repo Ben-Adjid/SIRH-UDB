@@ -195,18 +195,26 @@ class DashboardController extends Controller {
             $today = Carbon::today()->toDateString();
             $startOfMonth = Carbon::now()->startOfMonth()->toDateString();
 
-            $absenceByDateRaw = Attendance::select('attendance_date')
-                ->selectRaw("SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as absent, SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) as late")
+            $attendanceByDateRaw = Attendance::select('attendance_date')
+                ->selectRaw("SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as present, SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as absent, SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) as late, COUNT(*) as total")
                 ->whereDate('attendance_date', '>=', Carbon::today()->subDays(6)->toDateString())
                 ->groupBy('attendance_date')
                 ->get();
 
-            $absenceByDate = $absenceByDateRaw->keyBy('attendance_date');
+            $attendanceByDate = $attendanceByDateRaw->keyBy('attendance_date');
 
+            $attendanceTrend = [];
             $absenceTrend = [];
             for ($i = 6; $i >= 0; $i--) {
                 $date = Carbon::today()->subDays($i);
-                $data = isset($absenceByDate[$date->toDateString()]) ? $absenceByDate[$date->toDateString()] : (object)['absent' => 0, 'late' => 0];
+                $data = isset($attendanceByDate[$date->toDateString()]) ? $attendanceByDate[$date->toDateString()] : (object)['present' => 0, 'absent' => 0, 'late' => 0, 'total' => 0];
+
+                $attendanceTrend[] = [
+                    'day' => $date->translatedFormat('D'),
+                    'present' => (int)($data->present ?? 0),
+                    'count' => (int)($data->present ?? 0),
+                ];
+
                 $absenceTrend[] = [
                     'label' => $date->translatedFormat('D'),
                     'absent' => (int)($data->absent ?? 0),
@@ -249,15 +257,26 @@ class DashboardController extends Controller {
             ]);
 
             $data = [
-                'teachers_active' => (int)($teacherStats->active ?? 0),
-                'teachers_total' => (int)($teacherStats->total ?? 0),
+                'total_teachers' => (int)($teacherStats->total ?? 0),
+                'active_teachers' => (int)($teacherStats->active ?? 0),
+                'teachers_on_leave' => LeaveRequest::whereHas('teacher')
+                    ->where('status', 'approved')
+                    ->where(function($q) {
+                        $q->where('end_date', '>=', Carbon::today())
+                          ->where('start_date', '<=', Carbon::today());
+                    })
+                    ->distinct('teacher_id')
+                    ->count(),
                 'pending_leave_requests' => $pendingRequests,
                 'pending_leave_count' => LeaveRequest::where('status', 'pending')->count(),
                 'attendance_today' => $todayTotal,
                 'today_present' => $todayPresent,
                 'today_late' => $todayLate,
                 'today_absent' => $todayAbsent,
+                'month_absences' => $monthAbsent,
                 'month_attendance_rate' => $monthRate,
+                'approved_leaves' => LeaveRequest::where('status', 'approved')->count(),
+                'rejected_leaves' => LeaveRequest::where('status', 'rejected')->count(),
                 'honoraires' => Teacher::selectRaw('hourly_rate, COUNT(*) as count')->whereNotNull('hourly_rate')->groupBy('hourly_rate')->get(),
                 'ufr_distribution' => Ufr::withCount('teachers')->get(),
                 'recent_attendances' => Attendance::with(['teacher:id,user_id', 'teacher.user:id,name,email', 'user:id,name'])
@@ -266,6 +285,7 @@ class DashboardController extends Controller {
                     ->take(10)
                     ->get(['id', 'teacher_id', 'user_id', 'attendance_date', 'status', 'check_in_time', 'check_out_time']),
                 'charts' => [
+                    'attendance' => $attendanceTrend,
                     'absences' => $absenceTrend
                 ]
             ];
