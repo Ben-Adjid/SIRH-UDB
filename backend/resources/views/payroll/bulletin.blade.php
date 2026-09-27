@@ -246,6 +246,10 @@
     </style>
 </head>
 <body>
+@php
+    $monthNames = [1 => 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+    $periodLabel = ($monthNames[(int) $month] ?? '') . ' ' . $year;
+@endphp
     <div class="container">
         <!-- Logo Section -->
         <div class="logo-section">
@@ -258,7 +262,7 @@
             </div>
             <div class="university-info">
                 <h1>UNIVERSITÉ DAKAR BOURGUIBA</h1>
-                <p>📍 Dakar, Sénégal</p>
+                <p>Dakar, Sénégal</p>
                 <div class="university-motto">De la ténèbre vers la lumière</div>
             </div>
         </div>
@@ -266,7 +270,7 @@
         <!-- Header -->
         <div class="header">
             <h2>BULLETIN DE PAIE</h2>
-            <div class="period">Septembre {{ $year }}</div>
+            <div class="period">{{ $periodLabel }}</div>
         </div>
 
         <!-- Info Grid -->
@@ -284,7 +288,7 @@
             <div class="info-row">
                 <div class="info-cell">
                     <div class="info-label">Période</div>
-                    <div class="info-value">Septembre {{ $year }}</div>
+                    <div class="info-value">{{ $periodLabel }}</div>
                 </div>
                 <div class="info-cell">
                     <div class="info-label">Généré le</div>
@@ -310,8 +314,8 @@
                     <td class="amount {{ $detail->type === 'earning' ? 'earning' : 'deduction' }}">
                         {{ $detail->type === 'earning' ? '+' : '-' }}{{ number_format($detail->amount, 0, ',', ' ') }}
                     </td>
-                    <td style="text-align: center; font-size: 9px; color: #64748b;">
-                        {{ $detail->type === 'earning' ? '💰' : '💸' }}
+                    <td style="text-align: center; font-size: 9px; font-weight: bold; color: {{ $detail->type === 'earning' ? '#059669' : '#dc2626' }};">
+                        {{ $detail->type === 'earning' ? 'Gain' : 'Retenue' }}
                     </td>
                 </tr>
                 @endforeach
@@ -341,7 +345,8 @@
 
         <!-- Footer -->
         <div class="footer">
-            <p>✓ Certifié conforme par l'administration</p>
+            {{-- The PDF's default font has no check-mark glyph; DejaVu Sans ships with DomPDF and does. --}}
+            <p><span style="font-family: 'DejaVu Sans', sans-serif;">&#10003;</span> Certifié conforme par l'administration</p>
             <p>Bulletin établi en conformité avec la réglementation en vigueur</p>
             <div class="certification">
                 Université Dakar Bourguiba © {{ date('Y') }}
