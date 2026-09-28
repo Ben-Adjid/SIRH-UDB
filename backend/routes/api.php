@@ -34,6 +34,9 @@ use App\Http\Controllers\Api\TwoFactorController;
 Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
 Route::post('/auth/register', [AuthController::class, 'register'])->middleware(['auth:sanctum', 'role:admin|hr_manager|secretary', 'throttle:15,1']);
 
+// ✅ NOUVEAU: Activation de compte via lien unique (publique)
+Route::post('/auth/activation', [AuthController::class, 'activation'])->middleware('throttle:6,1');
+
 // Refresh token
 Route::middleware('auth:sanctum')->post('/auth/refresh', [AuthController::class, 'refreshToken'])->middleware('throttle:10,1');
 

@@ -109,6 +109,12 @@ class AuthController extends Controller
                 return response()->json(['success' => false, 'message' => 'Compte désactivé'], 403);
             }
 
+            // ✅ NOUVEAU: Vérifier que le compte est activé
+            if (!$user->is_activated) {
+                Log::warning('[Auth] Login attempt on non-activated account', ['user_id' => $user->id]);
+                return response()->json(['success' => false, 'message' => 'Votre compte n\'a pas encore été activé. Consultez votre e-mail pour l\'activer.'], 403);
+            }
+
             $requires2fa = !is_null($user->two_factor_enabled_at);
 
             if ($requires2fa) {
@@ -637,6 +643,60 @@ class AuthController extends Controller
         } catch (\Throwable $e) {
             Log::error('[Auth] refreshToken error', ['error' => $e->getMessage()]);
             return response()->json(['success' => false, 'message' => 'Erreur serveur'], 500);
+        }
+    }
+
+    /**
+     * ✅ NOUVEAU: Activation de compte via lien à usage unique
+     * POST /api/auth/activation
+     * Throttle: 6 tentatives / 1 minute
+     */
+    public function activation(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'token' => 'required|string',
+                'email' => 'required|email',
+                'password' => [
+                    'required',
+                    'string',
+                    'min:12',
+                    'confirmed',
+                    'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{12,}$/',
+                ],
+            ]);
+
+            $activationService = app(AccountActivationService::class);
+
+            if (!$activationService->activateAccount($validated['email'], $validated['token'], $validated['password'])) {
+                Log::warning('[Auth] Account activation failed - invalid/expired token', ['email' => $validated['email']]);
+                // Message générique pour ne pas révéler l'existence du compte
+                return response()->json(['message' => 'Lien invalide ou expiré.'], 422);
+            }
+
+            $user = User::where('email', $validated['email'])->first();
+
+            AuditLog::create([
+                'user_id' => $user->id,
+                'action' => 'account_activated',
+                'model' => 'User',
+                'model_id' => $user->id,
+                'ip_address' => $request->getClientIp(),
+                'user_agent' => $request->userAgent(),
+            ]);
+
+            Log::info('[Auth] Account activated successfully', ['user_id' => $user->id]);
+
+            return response()->json([
+                'message' => 'Compte activé avec succès. Vous pouvez maintenant vous connecter.',
+                'success' => true,
+            ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::warning('[Auth] Validation error on activation', ['errors' => $e->errors()]);
+            return response()->json(['errors' => $e->errors()], 422);
+        } catch (\Throwable $e) {
+            Log::error('[Auth] Activation error', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Lien invalide ou expiré.'], 422);
         }
     }
 }

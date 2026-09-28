@@ -7,21 +7,24 @@ use App\Models\Teacher;
 use App\Models\Ufr;
 use App\Models\AuditLog;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class UserCreationService
 {
     public function createUser(array $data, string $role, ?array $teacherData = null): array
     {
-        $tempPassword = 'UDB' . random_int(1000, 9999);
+        // Créer un mot de passe aléatoire inutilisable (jamais communiqué à l'utilisateur)
+        $unusablePassword = Hash::make(Str::random(64));
 
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'phone' => $data['phone'] ?? null,
             'address' => $data['address'] ?? null,
-            'password' => Hash::make($tempPassword),
+            'password' => $unusablePassword,
             'status' => 'active',
-            'must_change_password' => true,
+            'is_activated' => false, // ✅ NOUVEAU: Compte en attente d'activation
+            'must_change_password' => false, // Pas de changement forcé au premier login
         ]);
 
         $user->assignRole($role);
@@ -54,11 +57,12 @@ class UserCreationService
             ], $teacherData ?? []));
         }
 
-        $this->sendNotifications($user, $data, $tempPassword, $pinCode);
+        $this->sendActivationNotifications($user, $data, $pinCode);
 
-        $this->auditLog($user, $data, $role);
+        $this->auditLog($user, $data, $role, 'account_created');
 
-        return ['user' => $user->fresh()->load('roles', 'teacher'), 'temp_password' => $tempPassword];
+        // ✅ NE PAS RETOURNER DE MOT DE PASSE
+        return ['user' => $user->fresh()->load('roles', 'teacher')];
     }
 
     private function generateUniquePinCode(): string
@@ -70,8 +74,19 @@ class UserCreationService
         return $pin;
     }
 
-    private function sendNotifications(User $user, array $data, string $tempPassword, ?string $pinCode = null): void
+    private function sendActivationNotifications(User $user, array $data, ?string $pinCode = null): void
     {
+        // Envoyer le lien d'activation par email
+        try {
+            $activationService = app(AccountActivationService::class);
+            $activationService->sendActivationLink($user);
+
+            $this->auditLog($user, $data, $user->roles->first()?->name, 'activation_link_sent');
+        } catch (\Exception $e) {
+            \Log::error('Erreur envoi lien activation: ' . $e->getMessage());
+        }
+
+        // SMS (optionnel): Message générique SANS mot de passe
         $phone = $data['phone'] ?? null;
         if ($phone) {
             if (!str_starts_with($phone, '+')) {
@@ -79,24 +94,18 @@ class UserCreationService
             }
             $smsService = app(SmsServiceInterface::class);
             try {
-                $smsService->sendWelcomePassword($phone, $user->name, $tempPassword, $pinCode);
+                $smsService->sendAccountCreatedNotification($phone, $user->name);
             } catch (\Exception $e) {
-                \Log::error('Erreur SMS bienvenue: ' . $e->getMessage());
+                \Log::error('Erreur SMS notification: ' . $e->getMessage());
             }
-        }
-
-        try {
-            app(BrevoMailService::class)->sendWelcomeEmail($user, $tempPassword, $pinCode);
-        } catch (\Exception $e) {
-            \Log::error('Erreur email bienvenue: ' . $e->getMessage());
         }
     }
 
-    private function auditLog(User $user, array $data, string $role): void
+    private function auditLog(User $user, array $data, ?string $role = null, string $action = 'user_created'): void
     {
         AuditLog::create([
             'user_id' => auth()->id(),
-            'action' => 'user_created',
+            'action' => $action,
             'model' => 'User',
             'model_id' => $user->id,
             'new_values' => [
@@ -104,6 +113,7 @@ class UserCreationService
                 'email' => $user->email,
                 'phone' => $user->phone,
                 'role' => $role,
+                'is_activated' => $user->is_activated,
             ],
             'ip_address' => request()->ip(),
             'user_agent' => request()->userAgent(),

@@ -30,13 +30,24 @@ class AfricaTalkingSmsService implements SmsServiceInterface
         return $this->send($phone, $message);
     }
 
+    /**
+     * ✅ SÉCURISÉ: Envoie une notification SANS mot de passe temporaire
+     * Le compte utilise maintenant un lien d'activation par email
+     */
+    public function sendAccountCreatedNotification(string $phone, string $name): bool
+    {
+        $message = "SIRH Dakar - Bienvenue {$name}! Votre compte a été créé. Consultez votre e-mail pour l'activer.";
+        return $this->send($phone, $message);
+    }
+
+    /**
+     * @deprecated Utiliser sendAccountCreatedNotification à la place
+     * Ne plus envoyer les mots de passe par SMS (faille de sécurité)
+     */
     public function sendWelcomePassword(string $phone, string $name, string $password, ?string $pinCode = null): bool
     {
-        $message = "SIRH Dakar - Bienvenue {$name}! Votre mot de passe temporaire est: {$password}. Connectez-vous et changez-le immediatement.";
-        if ($pinCode) {
-            $message .= " Votre code PIN de pointage: {$pinCode}.";
-        }
-        return $this->send($phone, $message);
+        // ✅ SÉCURISÉ: Ne pas envoyer le mot de passe en SMS
+        return $this->sendAccountCreatedNotification($phone, $name);
     }
 
     private function send(string $phone, string $message): bool
