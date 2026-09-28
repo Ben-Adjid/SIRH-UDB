@@ -33,6 +33,8 @@ class User extends Authenticatable
         'two_factor_recovery_codes',
         'attendance_pin',
         'two_factor_enabled_at',
+        'is_activated',
+        'activated_at',
     ];
 
     protected $hidden = [

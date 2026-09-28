@@ -160,6 +160,8 @@ class AccountActivationTest extends TestCase
             'email' => 'login@example.com',
             'password' => Hash::make($password),
             'status' => 'active',
+            'is_activated' => true,
+            'activated_at' => now(),
         ]);
 
         $user->assignRole('teacher');
