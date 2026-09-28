@@ -11,6 +11,7 @@ import Layout from './components/Layout';
 const Login = lazy(() => import('./pages/Login'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const ActivationPage = lazy(() => import('./pages/ActivationPage'));
 const TwoFactorSetup = lazy(() => import('./pages/TwoFactorSetup'));
 const TwoFactorVerify = lazy(() => import('./pages/TwoFactorVerify'));
 const PhoneVerification = lazy(() => import('./pages/PhoneVerification'));
@@ -76,6 +77,7 @@ function AppContent() {
                 <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
                 <Route path="/forgot-password" element={<GuestRoute><ForgotPassword /></GuestRoute>} />
                 <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/activer-compte" element={<ActivationPage />} />
                 <Route path="/verify-email" element={<VerifyEmail />} />
                 <Route path="/2fa-verify" element={<TempTokenRoute tokenKey="temp_2fa_token"><TwoFactorVerify /></TempTokenRoute>} />
                 <Route path="/force-password-change" element={<TempTokenRoute tokenKey="temp_force_pw_token"><ForcePasswordChange /></TempTokenRoute>} />
