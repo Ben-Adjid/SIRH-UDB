@@ -130,7 +130,7 @@ const UsersPage = () => {
                 delete payload.ufr_id;
             }
             const res = await api.post('/auth/users', payload);
-            toast.success(res.data?.message || 'Compte créé. Les identifiants ont été envoyés par e-mail.');
+            toast.success(res.data?.message || 'Compte créé. Un lien d\'activation a été envoyé par e-mail.');
             await fetchUsers(1);
             setShowCreateModal(false);
             setCreateForm({ name: '', email: '', phone: '', roles: [], ufr_id: '' });
@@ -319,9 +319,9 @@ const UsersPage = () => {
                 onClose={() => setShowCreateModal(false)}
                 onSubmit={handleCreate}
                 title="Nouveau Compte"
-                subtitle="Creer un compte avec un mot de passe temporaire"
+                subtitle="Créer un compte avec lien d'activation sécurisé"
                 size="md"
-                submitText={createLoading ? 'Creation...' : 'Creer le compte'}
+                submitText={createLoading ? 'Création...' : 'Créer le compte'}
                 disableSubmit={createLoading}
             >
                 <div className="space-y-3">
@@ -386,7 +386,7 @@ const UsersPage = () => {
                     )}
                     <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
                         <p className="text-blue-700 text-xs font-medium">
-                            Un mot de passe temporaire sera généré automatiquement et envoyé par e-mail. L'utilisateur devra le changer lors de sa première connexion.
+                            Un lien d'activation sera envoyé à l'adresse e-mail indiquée. L'utilisateur pourra activer son compte et définir son mot de passe sécurisé via ce lien (valable 48h).
                         </p>
                     </div>
                 </div>

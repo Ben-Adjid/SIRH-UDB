@@ -17,11 +17,6 @@ use App\Services\BrevoMailService;
 
 class AuthController extends Controller
 {
-    public static function generateTempPassword(): string
-    {
-        return 'UDB' . random_int(1000, 9999);
-    }
-
     public function register(Request $request): JsonResponse
     {
         try {
