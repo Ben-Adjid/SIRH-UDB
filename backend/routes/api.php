@@ -101,6 +101,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:admin')->group(function () {
         Route::delete('/auth/users/{user}', [App\Http\Controllers\Api\UserController::class, 'destroy']);
         Route::patch('/auth/users/{user}/toggle-status', [App\Http\Controllers\Api\UserController::class, 'toggleStatus']);
+        Route::post('/auth/users/{user}/resend-activation-link', [App\Http\Controllers\Api\UserController::class, 'resendActivationLink'])->middleware('throttle:5,1');
     });
 
     // ── DONNÉES DE RÉFÉRENCE (Lecture pour tous) ──

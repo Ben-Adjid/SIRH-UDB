@@ -503,6 +503,56 @@ class UserController extends Controller
         }
     }
 
+    public function resendActivationLink(User $user, Request $request): JsonResponse
+    {
+        try {
+            $authUser = auth()->user();
+
+            if (!$authUser->hasRole('admin')) {
+                Log::warning('[User] Unauthorized resendActivationLink access', ['user_id' => $authUser->id]);
+                return response()->json(['success' => false, 'message' => 'Non autorisé'], 403);
+            }
+
+            if ($user->is_activated) {
+                Log::warning('[User] Cannot resend activation link for activated account', ['user_id' => $user->id]);
+                return response()->json(['success' => false, 'message' => 'Ce compte est déjà activé'], 422);
+            }
+
+            // Invalider l'ancien token
+            \Illuminate\Support\Facades\DB::table('password_reset_tokens')
+                ->where('email', $user->email)
+                ->delete();
+
+            // Créer un nouveau token
+            $activationService = app(\App\Services\AccountActivationService::class);
+            $activationService->sendActivationLink($user);
+
+            AuditLog::create([
+                'user_id' => $authUser->id,
+                'action' => 'resend_activation_link',
+                'model' => 'User',
+                'model_id' => $user->id,
+                'ip_address' => $request->getClientIp(),
+            ]);
+
+            Log::info('[User] Activation link resent', [
+                'user_id' => $user->id,
+                'resent_by' => $authUser->id,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Lien d\'activation renvoyé par e-mail',
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('[User] resendActivationLink error', [
+                'error' => $e->getMessage(),
+                'user_id' => $user->id ?? null,
+            ]);
+            return response()->json(['success' => false, 'message' => 'Erreur serveur'], 500);
+        }
+    }
+
     private function invalidateCache(): void
     {
         Cache::tags(['users'])->flush();
