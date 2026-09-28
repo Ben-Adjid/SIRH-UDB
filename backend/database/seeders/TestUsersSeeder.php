@@ -45,6 +45,8 @@ class TestUsersSeeder extends Seeder
                 'status'              => 'active',
                 'email_verified_at'   => now(),
                 'must_change_password' => false,
+                'is_activated'        => true,
+                'activated_at'        => now(),
                 'created_at'          => now(),
                 'updated_at'          => now(),
             ]);

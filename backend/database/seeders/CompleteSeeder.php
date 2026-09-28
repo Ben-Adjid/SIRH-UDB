@@ -229,6 +229,8 @@ class CompleteSeeder extends Seeder
                 'status' => $userData['status'],
                 'email_verified_at' => now(),
                 'must_change_password' => $userData['must_change_password'] ?? true,
+                'is_activated' => true,
+                'activated_at' => now(),
             ]);
 
             $role = Role::where('name', $userData['role'])->first();
