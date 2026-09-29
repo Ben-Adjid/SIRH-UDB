@@ -336,7 +336,7 @@ class DocumentController extends Controller
             abort(401, 'Unauthenticated');
         }
         $teacher->loadMissing('user');
-        if ($user->id !== $teacher->user?->id && !$user->hasAnyRole(['admin', 'hr_manager', 'secretary', 'accountant'])) {
+        if ($user->id !== $teacher->user?->id && !$user->hasAnyRole(['admin', 'hr_manager', 'hr_manager', 'accountant'])) {
             Log::warning('[Document] Unauthorized teacher access', [
                 'teacher_id' => $teacher->id,
                 'user_id' => $user->id,
@@ -353,7 +353,7 @@ class DocumentController extends Controller
             abort(401, 'Unauthenticated');
         }
         $document->loadMissing('teacher.user');
-        if (!$document->teacher?->user || ($user->id !== $document->teacher->user->id && !$user->hasAnyRole(['admin', 'hr_manager', 'secretary', 'accountant']))) {
+        if (!$document->teacher?->user || ($user->id !== $document->teacher->user->id && !$user->hasAnyRole(['admin', 'hr_manager', 'hr_manager', 'accountant']))) {
             Log::warning('[Document] Unauthorized document access', [
                 'document_id' => $document->id,
                 'user_id' => $user->id,

@@ -16,7 +16,7 @@ class AccountActivationService
     {
         $token = Password::broker()->createToken($user);
 
-        Mail::send(new AccountActivationMail(
+        Mail::to($user->email)->send(new AccountActivationMail(
             $user,
             $token,
             config('app.frontend_url', 'http://localhost:3000')

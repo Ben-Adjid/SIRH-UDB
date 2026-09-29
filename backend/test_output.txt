@@ -1,0 +1,269 @@
+﻿
+   PASS  Tests\Unit\NotificationServiceTest
+  ✓ send creates notification                                            2.10s  
+  ✓ send with default values                                             0.29s  
+  ✓ send warning notification                                            0.31s  
+  ✓ send success notification                                            0.30s  
+
+   PASS  Tests\Unit\PayrollControllerTest
+  ✓ calculate payroll with valid data                                    0.26s  
+  ✓ brs applied at threshold                                             0.09s  
+  ✓ brs not applied below threshold                                      0.09s  
+  ✓ payment method check threshold                                       0.09s  
+  ✓ payment method cash threshold                                        0.08s  
+  ✓ unauthorized user cannot calculate                                   0.07s  
+  ✓ no hours returns error                                               0.07s  
+
+   PASS  Tests\Unit\ScheduleConflictServiceTest
+  ✓ no conflict for non overlapping schedules                            0.31s  
+  ✓ conflict detected for overlapping schedules                          0.33s  
+  ✓ same teacher same day overlapping times                              0.33s  
+  ✓ different teacher no conflict                                        0.27s  
+
+   PASS  Tests\Feature\AccountActivationTest
+  ✓ activation endpoint validates input                                  0.13s  
+  ✓ activation validates password requirements                           0.08s  
+  ✓ activation rejects invalid token                                     0.07s  
+  ✓ throttle protection exists                                           0.10s  
+  ✓ login requires valid credentials                                     0.06s  
+  ✓ login with inactive account fails                                    0.07s  
+  ✓ successful login creates token                                       0.10s  
+
+   WARN  Tests\Feature\AttendanceTest
+  ✓ check in with valid pin                                              0.43s  
+  ✓ check in with invalid pin is rejected                                0.31s  
+  - check out → Check-in failed, cannot test check-out                   0.34s  
+  ✓ list attendances                                                     0.39s  
+  ✓ validation keeps reason shows validator and cannot repeat            0.45s  
+
+   PASS  Tests\Feature\AuthSeederTest
+  ✓ all seeded accounts can login                                        0.31s  
+
+   FAIL  Tests\Feature\AuthTest
+  ✓ admin can login                                                      1.16s  
+  ✓ invalid credentials returns 401                                      1.20s  
+  ✓ inactive account returns 403                                         1.14s  
+  ⨯ register creates teacher user                                        1.35s  
+  - register without ufr returns 503 → Cannot test with existing UFRs (… 1.32s  
+  ⨯ me returns authenticated user                                        1.31s  
+  ✓ unauthenticated me returns 401                                       1.26s  
+  ✓ logout deletes tokens                                                1.33s  
+
+   FAIL  Tests\Feature\AuthenticationTest
+  ✓ login with valid credentials                                         0.35s  
+  ✓ login fails with wrong password                                      0.35s  
+  ⨯ get authenticated user info                                          0.34s  
+  ✓ logout                                                               0.33s  
+  ✓ rate limiting on login                                               0.41s  
+  ✓ inactive account cannot login                                        0.31s  
+
+   PASS  Tests\Feature\HomeworkWorkflowTest
+  ✓ teacher submission is pending and notifies academic manager          0.37s  
+  ✓ only academic manager or admin can approve                           0.37s  
+  ✓ teacher cannot enter grades before approval                          0.37s  
+  ✓ teacher can only schedule an assigned subject                        0.32s  
+  ✓ teacher cannot modify or delete approved homework                    0.42s  
+  ✓ academic manager can reschedule then close homework                  0.44s  
+
+   FAIL  Tests\Feature\LeaveTest
+  ✓ admin can list leaves                                                0.27s  
+  ✓ administrative user can view leave balances                          0.26s  
+  ✓ admin can update leave status                                        0.76s  
+  ✓ admin can reject leave                                               0.79s  
+  ✓ admin can update leave balance                                       0.31s  
+  ✓ admin can get leave history                                          0.33s  
+  ✓ get leave types                                                      0.32s  
+  ✓ teacher cannot access leaves                                         0.35s  
+  ⨯ administrative user can submit leave request                         0.33s  
+  ✓ teacher cannot list leave types                                      0.33s  
+
+   FAIL  Tests\Feature\PayrollCalculationTest
+  ✓ calculate honorarium for teacher with valid hours                    0.37s  
+  ✓ error when teacher has no hourly rate                                0.34s  
+  ✓ brs applied when honorarium above 25000                              0.47s  
+  ✓ brs not applied when honorarium below 25000                          0.34s  
+  ✓ payment method is check when net above 100000                        0.37s  
+  ✓ payment method is cash when net below 100000                         0.36s  
+  ⨯ list payrolls with pagination                                        0.45s  
+  ✓ validate payroll                                                     0.42s  
+  ✓ mark as paid only from validated                                     0.46s  
+  ✓ export csv                                                           0.34s  
+
+   FAIL  Tests\Feature\PayrollTest
+  ✓ calculate honorarium for vacataire                                   0.35s  
+  ✓ all teachers are paid by hour                                        0.34s  
+  ✓ brs applied when above threshold                                     0.30s  
+  ✓ brs not applied below threshold                                      0.33s  
+  ✓ payment by check when above 100000                                   0.31s  
+  ✓ calculate requires hourly rate                                       0.33s  
+  ✓ calculate rejects missing hours                                      0.31s  
+  ✓ validate payroll                                                     0.50s  
+  ✓ mark as paid                                                         0.47s  
+  ✓ export csv                                                           0.41s  
+  ⨯ teacher can view own payroll                                         0.38s  
+  ✓ unauthorized cannot calculate                                        0.30s  
+  ✓ add line item                                                        0.33s  
+
+   FAIL  Tests\Feature\ScheduleVisibilityTest
+  ⨯ ufr manager only sees schedules of owned ufr                         0.40s  
+
+   PASS  Tests\Feature\TeacherManagementTest
+  ✓ create a teacher via api                                             0.45s  
+  ✓ list teachers with pagination                                        0.42s  
+  ✓ show a teacher                                                       0.45s  
+  ✓ update a teacher                                                     0.39s  
+  ✓ archive and activate teacher                                         0.31s  
+  ✓ delete a teacher                                                     0.33s  
+
+   PASS  Tests\Feature\TeacherTest
+  ✓ admin can list teachers                                              1.39s  
+  ✓ admin can create teacher                                             1.39s  
+  ✓ admin can show teacher                                               1.18s  
+  ✓ admin can update teacher                                             1.11s  
+  ✓ admin can archive teacher                                            1.41s  
+  ✓ hr manager can access teachers                                       1.13s  
+  ✓ teacher cannot create teacher                                        1.28s  
+
+   FAIL  Tests\Feature\UfrTest
+  ✓ admin can list ufrs                                                  1.44s  
+  ✓ admin can create department                                          1.30s  
+  ✓ create department requires unique code                               1.63s  
+  ⨯ admin can show department                                            1.25s  
+  ✓ show nonexistent department returns 404                              1.54s  
+  ✓ admin can update department                                          1.56s  
+  ✓ admin can delete empty department                                    1.19s  
+  ✓ cannot delete ufr with teachers                                      1.43s  
+  ✓ unauthenticated cannot access ufrs                                   1.12s  
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\AuthTest > register creates teacher user       Error   
+  Call to undefined method Tests\Feature\AuthTest::assertIn()
+
+  at tests\Feature\AuthTest.php:61
+     57▕             'phone' => '+221000000000',
+     58▕             'role' => 'teacher',
+     59▕         ]);
+     60▕ 
+  ➜  61▕         $this->assertIn($response->status(), [201, 503]);
+     62▕         if ($response->status() === 201) {
+     63▕             $this->assertDatabaseHas('users', ['email' => 'new@teacher.local']);
+     64▕         }
+     65▕     }
+
+  1   tests\Feature\AuthTest.php:61
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\AuthTest > me returns authenticated user               
+  Failed asserting that null is identical to 'admin@sirh.local'.
+
+  at tests\Feature\AuthTest.php:96
+     92▕         $response = $this->withHeader('Authorization', "Bearer $token")
+     93▕                          ->getJson('/api/auth/me');
+     94▕ 
+     95▕         $response->assertOk()
+  ➜  96▕                  ->assertJsonPath('user.email', 'admin@sirh.local');
+     97▕     }
+     98▕ 
+     99▕     public function test_unauthenticated_me_returns_401() {
+    100▕         $response = $this->getJson('/api/auth/me');
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\AuthenticationTest > get authenticated user info       
+  Failed asserting that null is identical to 'admin@sirh.local'.
+
+  at tests\Feature\AuthenticationTest.php:53
+     49▕         $response = $this->withHeader('Authorization', "Bearer $token")
+     50▕             ->getJson('/api/auth/me');
+     51▕ 
+     52▕         $response->assertOk()
+  ➜  53▕             ->assertJsonPath('user.email', 'admin@sirh.local')
+     54▕             ->assertJsonPath('user.name', 'Administrateur Système');
+     55▕     }
+     56▕ 
+     57▕     public function test_logout()
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\LeaveTest > administrative user can submit leave re…   
+  Expected response status code [201] but received 422.
+Failed asserting that 422 is identical to 201.
+
+  at tests\Feature\LeaveTest.php:172
+    168▕             'end_date' => '2026-08-12',
+    169▕             'reason' => 'Congé administratif',
+    170▕         ]);
+    171▕ 
+  ➜ 172▕         $response->assertCreated();
+    173▕         $this->assertDatabaseHas('leaves', [
+    174▕             'user_id' => $administrativeUser->id,
+    175▕             'status' => 'pending',
+    176▕         ]);
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\PayrollCalculationTest > list payrolls with paginat…   
+  Failed asserting that actual size 0 matches expected size 2.
+
+  at tests\Feature\PayrollCalculationTest.php:162
+    158▕         $response->assertStatus(200);
+    159▕         $json = $response->json();
+    160▕         $this->assertArrayHasKey('data', $json);
+    161▕         $this->assertArrayHasKey('per_page', $json);
+  ➜ 162▕         $this->assertCount(2, $json['data']);
+    163▕     }
+    164▕ 
+    165▕     public function test_validate_payroll()
+    166▕     {
+
+  1   tests\Feature\PayrollCalculationTest.php:162
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\PayrollTest > teacher can view own payroll             
+  Failed asserting that an array is not empty.
+
+  at tests\Feature\PayrollTest.php:220
+    216▕             ->getJson('/api/payroll');
+    217▕ 
+    218▕         $response->assertStatus(200);
+    219▕         $data = $response->json('data') ?? $response->json();
+  ➜ 220▕         $this->assertNotEmpty($data);
+    221▕     }
+    222▕ 
+    223▕     public function test_unauthorized_cannot_calculate()
+    224▕     {
+
+  1   tests\Feature\PayrollTest.php:220
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\ScheduleVisibilityTest > ufr manager only sees sche…   
+  Failed asserting that an array does not contain 6.
+
+  at tests\Feature\ScheduleVisibilityTest.php:102
+     98▕         $attendanceResponse = $this->actingAs($manager, 'sanctum')->getJson('/api/attendance?date=' . $attendanceDate . '&per_page=50');
+     99▕         $attendanceResponse->assertOk();
+    100▕         $visibleAttendanceUserIds = collect($attendanceResponse->json('data'))->pluck('user_id')->all();
+    101▕         $this->assertContains($ownedTeacher->user_id, $visibleAttendanceUserIds);
+  ➜ 102▕         $this->assertNotContains($otherTeacher->user_id, $visibleAttendanceUserIds);
+    103▕ 
+    104▕         $ufrResponse = $this->actingAs($manager, 'sanctum')->getJson('/api/ufrs?per_page=50');
+    105▕         $ufrResponse->assertOk();
+    106▕         $this->assertCount(1, $ufrResponse->json('data'));
+
+  1   tests\Feature\ScheduleVisibilityTest.php:102
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\UfrTest > admin can show department                    
+  Failed asserting that null is identical to 1.
+
+  at tests\Feature\UfrTest.php:63
+     59▕         $response = $this->withHeaders($this->adminHeaders)
+     60▕                          ->getJson("/api/ufrs/{$dept->id}");
+     61▕ 
+     62▕         $response->assertOk()
+  ➜  63▕                  ->assertJsonPath('id', $dept->id);
+     64▕     }
+     65▕ 
+     66▕     public function test_show_nonexistent_department_returns_404() {
+     67▕         $response = $this->withHeaders($this->adminHeaders)
+
+
+  Tests:    8 failed, 2 skipped, 94 passed (224 assertions)
+  Duration: 59.49s
+

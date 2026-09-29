@@ -58,7 +58,7 @@ class AuthTest extends TestCase {
             'role' => 'teacher',
         ]);
 
-        $this->assertIn($response->status(), [201, 503]);
+        $this->assertContains($response->status(), [201, 503]);
         if ($response->status() === 201) {
             $this->assertDatabaseHas('users', ['email' => 'new@teacher.local']);
         }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import api from '../services/api';
 import { dataRefresh } from '../services/dataRefresh';
 import {
@@ -62,6 +62,7 @@ const Teachers = () => {
     });
 
     const [formData, setFormData] = useState(emptyForm);
+    const pageRef = useRef(1);
 
     const fetchTeachers = async (pageNum = 1) => {
         setLoading(true);
@@ -102,9 +103,13 @@ const Teachers = () => {
     useEffect(() => { setPage(1); }, [searchTerm, ufrFilter, statusFilter]);
 
     useEffect(() => {
-        const unsubscribe = dataRefresh.subscribe('teachers', () => fetchTeachers(page));
-        return unsubscribe;
+        pageRef.current = page;
     }, [page]);
+
+    useEffect(() => {
+        const unsubscribe = dataRefresh.subscribe('teachers', () => fetchTeachers(pageRef.current));
+        return unsubscribe;
+    }, []);
 
     const handleOpenAddModal = () => {
         setIsEditing(false);

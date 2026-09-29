@@ -134,7 +134,7 @@ class ScheduleController extends Controller {
 
     public function store(StoreScheduleRequest $request): JsonResponse {
         try {
-            if (!auth()->user()->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'secretary', 'teacher'])) {
+            if (!auth()->user()->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'hr_manager', 'teacher'])) {
                 return response()->json(['message' => 'Non autorisé'], 403);
             }
 
@@ -212,7 +212,7 @@ class ScheduleController extends Controller {
 
     public function update(Request $request, Schedule $schedule): JsonResponse {
         try {
-            if (!auth()->user()->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'secretary'])) {
+            if (!auth()->user()->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'hr_manager'])) {
                 return response()->json(['message' => 'Non autorisé'], 403);
             }
             $schedule->load('teacher');
@@ -287,7 +287,7 @@ class ScheduleController extends Controller {
 
     public function destroy(Request $request, Schedule $schedule): JsonResponse {
         try {
-            if (!auth()->user()->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'secretary'])) {
+            if (!auth()->user()->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'hr_manager'])) {
                 return response()->json(['message' => 'Non autorisé'], 403);
             }
             $schedule->load('teacher');
@@ -324,7 +324,7 @@ class ScheduleController extends Controller {
 
     public function storeExam(Request $request): JsonResponse {
         try {
-            if (!auth()->user()->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'secretary'])) {
+            if (!auth()->user()->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'hr_manager'])) {
                 return response()->json(['message' => 'Non autorisé'], 403);
             }
 

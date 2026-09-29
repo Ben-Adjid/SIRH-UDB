@@ -91,7 +91,7 @@ class RoleAndPermissionSeeder extends Seeder
         $adminRole = Role::firstOrCreate(['name' => 'admin']);
         $accountantRole = Role::firstOrCreate(['name' => 'accountant']);
         $hrRole = Role::firstOrCreate(['name' => 'hr_manager']);
-        $secretaryRole = Role::firstOrCreate(['name' => 'secretary']);
+        $secretaryRole = Role::firstOrCreate(['name' => 'hr_manager']);
         $academicRole = Role::firstOrCreate(['name' => 'academic_manager']);
         $teacherRole = Role::firstOrCreate(['name' => 'teacher']);
 

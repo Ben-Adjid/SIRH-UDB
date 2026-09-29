@@ -34,7 +34,7 @@ class TeacherController extends Controller {
     private function isUfrHeadOnly(User $user): bool
     {
         return $user->hasRole('academic_manager')
-            && !$user->hasAnyRole(['admin', 'hr_manager', 'secretary']);
+            && !$user->hasAnyRole(['admin', 'hr_manager', 'hr_manager']);
     }
 
     private function canAccessTeacher(Teacher $teacher, User $user): bool
@@ -115,7 +115,7 @@ class TeacherController extends Controller {
                 'success', '/profile'
             );
 
-            $admins = \App\Models\User::whereHas('roles', fn($q) => $q->whereIn('name', ['admin', 'hr_manager', 'secretary']))->get();
+            $admins = \App\Models\User::whereHas('roles', fn($q) => $q->whereIn('name', ['admin', 'hr_manager', 'hr_manager']))->get();
             foreach ($admins as $admin) {
                 \App\Services\NotificationService::send(
                     $admin->id,
@@ -146,7 +146,7 @@ class TeacherController extends Controller {
             }
             $data = $teacher->load('user', 'ufr');
 
-            if (!$user->hasAnyRole(['admin', 'hr_manager', 'secretary', 'accountant'])) {
+            if (!$user->hasAnyRole(['admin', 'hr_manager', 'hr_manager', 'accountant'])) {
                 $data->setHidden(['hourly_rate']);
             }
 
@@ -219,7 +219,7 @@ class TeacherController extends Controller {
     public function update(Request $request, Teacher $teacher): JsonResponse {
         try {
             $authUser = auth()->user();
-            if (!$authUser->hasAnyRole(['admin', 'hr_manager', 'secretary', 'academic_manager'])) {
+            if (!$authUser->hasAnyRole(['admin', 'hr_manager', 'hr_manager', 'academic_manager'])) {
                 return response()->json(['message' => 'Non autorisé'], 403);
             }
             if ($this->isUfrHeadOnly($authUser) && !$this->canAccessTeacher($teacher, $authUser)) {
@@ -306,7 +306,7 @@ class TeacherController extends Controller {
 
     public function destroy(Teacher $teacher): JsonResponse {
         try {
-            if (!auth()->user()->hasAnyRole(['admin', 'hr_manager', 'secretary'])) {
+            if (!auth()->user()->hasAnyRole(['admin', 'hr_manager', 'hr_manager'])) {
                 return response()->json(['message' => 'Non autorisé'], 403);
             }
 

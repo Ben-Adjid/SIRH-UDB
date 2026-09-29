@@ -58,7 +58,7 @@ class SubjectController extends Controller
                         })
                         ->where('status', '!=', 'cancelled');
                 });
-            } elseif (!$user->hasAnyRole(['admin', 'hr_manager', 'secretary', 'accountant'])) {
+            } elseif (!$user->hasAnyRole(['admin', 'hr_manager', 'hr_manager', 'accountant'])) {
                 // Chef UFR: voir matières de son UFR seulement
                 $ufrIds = $this->visibleUfrIds($user);
                 $query->where(function ($q) use ($ufrIds) {
@@ -375,7 +375,7 @@ class SubjectController extends Controller
     private function isTeacherOnly(User $user): bool
     {
         return $user->hasRole('teacher')
-            && !$user->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'secretary']);
+            && !$user->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'hr_manager']);
     }
 
     private function invalidateCache(): void

@@ -187,11 +187,11 @@ class AttendanceController extends Controller {
     private function restrictToVisibleUfr($query, User $user): void
     {
         // Admin et rôles de gestion voient TOUS les pointages (pas de restriction)
-        if ($user->hasAnyRole(['admin', 'hr_manager', 'secretary', 'accountant', 'academic_manager'])) {
+        if ($user->hasAnyRole(['admin', 'hr_manager', 'hr_manager', 'accountant'])) {
             return;
         }
 
-        // Chef UFR voit uniquement les pointages des profs de son UFR
+        // Chef UFR et academic_manager voient uniquement les pointages des profs de son UFR
         $ufrIds = $this->visibleUfrIds($user);
         if (empty($ufrIds)) {
             // Pas d'UFR visible: ne montrer aucun résultat
@@ -531,7 +531,7 @@ class AttendanceController extends Controller {
             $teacher = Teacher::where('user_id', $user->id)->first();
 
             if (!$user->hasRole('teacher')) {
-            if (!$user->hasAnyRole(['admin', 'hr_manager', 'secretary', 'accountant', 'academic_manager'])) {
+            if (!$user->hasAnyRole(['admin', 'hr_manager', 'hr_manager', 'accountant', 'academic_manager'])) {
                 return response()->json(['message' => 'Signalement non autorisé pour ce profil'], 403);
             }
 
@@ -596,7 +596,7 @@ class AttendanceController extends Controller {
         );
 
         $adminUsers = \App\Models\User::whereHas('roles', function ($q) {
-            $q->whereIn('name', ['admin', 'hr_manager', 'secretary']);
+            $q->whereIn('name', ['admin', 'hr_manager', 'hr_manager']);
         })->pluck('id');
 
         foreach ($adminUsers as $adminId) {
@@ -822,7 +822,7 @@ class AttendanceController extends Controller {
         }
 
         $reviewers = \App\Models\User::whereHas('roles', function ($query) {
-            $query->whereIn('name', ['admin', 'hr_manager', 'secretary', 'academic_manager']);
+            $query->whereIn('name', ['admin', 'hr_manager', 'hr_manager', 'academic_manager']);
         })->whereKeyNot($user->id)->get();
         foreach ($reviewers as $reviewer) {
             NotificationService::send(
@@ -873,7 +873,7 @@ class AttendanceController extends Controller {
         }
 
         // Si l'utilisateur est enseignant et ne demande pas explicitement la vue registre/gestion
-        $isManagementRequest = $request->boolean('management') || $request->filled('ufr_id') || ($request->filled('date') && $user->hasAnyRole(['admin', 'hr_manager', 'secretary', 'accountant', 'academic_manager']));
+        $isManagementRequest = $request->boolean('management') || $request->filled('ufr_id') || ($request->filled('date') && $user->hasAnyRole(['admin', 'hr_manager', 'hr_manager', 'accountant', 'academic_manager']));
         if ($user->hasRole('teacher') && !$isManagementRequest) {
             $teacher = $this->getOrCreateTeacher($user);
             if (!$teacher) {
@@ -925,7 +925,7 @@ class AttendanceController extends Controller {
             ]);
         }
 
-        if (!$user->hasAnyRole(['admin', 'hr_manager', 'secretary', 'accountant', 'academic_manager'])) {
+        if (!$user->hasAnyRole(['admin', 'hr_manager', 'hr_manager', 'accountant', 'academic_manager'])) {
             $history = Attendance::with('justifiedBy')->where('user_id', $user->id)
                 ->orderBy('attendance_date', 'desc')
                 ->limit(28)
@@ -1306,7 +1306,7 @@ class AttendanceController extends Controller {
     public function getAvailabilities(Request $request): JsonResponse {
         try {
             $user = auth()->user();
-            if (!$user->hasAnyRole(['admin', 'hr_manager', 'secretary', 'academic_manager'])) {
+            if (!$user->hasAnyRole(['admin', 'hr_manager', 'hr_manager', 'academic_manager'])) {
                 return response()->json(['message' => 'Non autorisé'], 403);
             }
 

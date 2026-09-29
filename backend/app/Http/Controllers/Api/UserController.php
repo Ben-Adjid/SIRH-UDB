@@ -24,7 +24,7 @@ class UserController extends Controller
         try {
             $user = auth()->user();
 
-            if (!$user->hasAnyRole(['admin', 'hr_manager', 'secretary'])) {
+            if (!$user->hasAnyRole(['admin', 'hr_manager', 'hr_manager'])) {
                 Log::warning('[User] Unauthorized index access', ['user_id' => $user->id]);
                 return response()->json(['success' => false, 'message' => 'Non autorisé'], 403);
             }
@@ -107,7 +107,7 @@ class UserController extends Controller
         try {
             $authUser = auth()->user();
 
-            if (!$authUser->hasAnyRole(['admin', 'hr_manager', 'secretary'])) {
+            if (!$authUser->hasAnyRole(['admin', 'hr_manager', 'hr_manager'])) {
                 Log::warning('[User] Unauthorized store access', ['user_id' => $authUser->id]);
                 return response()->json(['success' => false, 'message' => 'Non autorisé'], 403);
             }
@@ -140,7 +140,7 @@ class UserController extends Controller
                 ], 422);
             }
 
-            if ($authUser->hasAnyRole(['hr_manager', 'secretary']) && in_array('admin', $roles)) {
+            if ($authUser->hasAnyRole(['hr_manager', 'hr_manager']) && in_array('admin', $roles)) {
                 Log::warning('[User] Unauthorized admin role assignment', ['user_id' => $authUser->id]);
                 return response()->json(['success' => false, 'message' => 'Vous ne pouvez pas attribuer le rôle administrateur'], 403);
             }
@@ -301,6 +301,32 @@ class UserController extends Controller
                 return response()->json(['success' => false, 'message' => 'Non autorisé'], 403);
             }
 
+            if ($authUser->id === $user->id) {
+                Log::warning('[User] Cannot delete self', ['user_id' => $authUser->id]);
+                return response()->json(['success' => false, 'message' => 'Impossible de supprimer votre propre compte'], 403);
+            }
+
+            if ($user->hasRole('admin') && $authUser->id !== $user->id) {
+                Log::warning('[User] Cannot delete another admin', ['user_id' => $authUser->id, 'target_id' => $user->id]);
+                return response()->json(['success' => false, 'message' => 'Un administrateur ne peut pas supprimer un autre administrateur'], 403);
+            }
+
+            $systemAccounts = [
+                env('ADMIN_EMAIL', 'admin@sirh.local'),
+                'rh@sirh.local',
+                'academic@sirh.local',
+                'compta@sirh.local',
+                'prof@sirh.local',
+                'diop@sirh.local',
+                'sarr@sirh.local',
+                'secretary@sirh.local',
+            ];
+
+            if (in_array($user->email, $systemAccounts)) {
+                Log::warning('[User] Cannot delete system account', ['user_id' => $user->id, 'email' => $user->email]);
+                return response()->json(['success' => false, 'message' => 'Impossible de supprimer un compte système'], 403);
+            }
+
             if ($user->hasRole('admin') && User::whereHas('roles', fn($q) => $q->where('name', 'admin'))->count() <= 1) {
                 Log::warning('[User] Cannot delete last admin', ['user_id' => $user->id]);
                 return response()->json(['success' => false, 'message' => 'Impossible de supprimer le dernier administrateur'], 403);
@@ -406,7 +432,7 @@ class UserController extends Controller
         try {
             $authUser = auth()->user();
 
-            if (!$authUser->hasAnyRole(['admin', 'hr_manager', 'secretary'])) {
+            if (!$authUser->hasAnyRole(['admin', 'hr_manager', 'hr_manager'])) {
                 Log::warning('[User] Unauthorized auditLogs access', ['user_id' => $authUser->id]);
                 return response()->json(['success' => false, 'message' => 'Non autorisé'], 403);
             }
@@ -468,7 +494,7 @@ class UserController extends Controller
         try {
             $authUser = auth()->user();
 
-            if (!$authUser->hasAnyRole(['admin', 'hr_manager', 'secretary'])) {
+            if (!$authUser->hasAnyRole(['admin', 'hr_manager', 'hr_manager'])) {
                 Log::warning('[User] Unauthorized clearAuditLogs access', ['user_id' => $authUser->id]);
                 return response()->json(['success' => false, 'message' => 'Action réservée à l\'administration RH'], 403);
             }

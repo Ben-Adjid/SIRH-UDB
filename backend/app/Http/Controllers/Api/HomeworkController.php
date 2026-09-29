@@ -146,7 +146,7 @@ class HomeworkController extends Controller {
                     return response()->json(['message' => 'Vous ne pouvez programmer un devoir que dans une matière qui vous est affectée'], 422);
                 }
                 $validated['teacher_id'] = $teacher->id;
-            } elseif ($user->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'secretary'])) {
+            } elseif ($user->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'hr_manager'])) {
                 $additional = $request->validate([
                     'teacher_id' => 'required|exists:teachers,id'
                 ]);
@@ -221,7 +221,7 @@ class HomeworkController extends Controller {
             ]);
 
             $teacher = Teacher::where('user_id', $user->id)->first();
-            $canManage = $user->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'secretary']);
+            $canManage = $user->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'hr_manager']);
             if (!$canManage && (!$user->hasRole('teacher') || !$teacher || $homework->teacher_id !== $teacher->id)) {
                 return response()->json(['message' => 'Accès Interdit'], 403);
             }
@@ -273,7 +273,7 @@ class HomeworkController extends Controller {
                 return response()->json(['message' => 'Vous ne pouvez supprimer que les devoirs de votre UFR'], 403);
             }
 
-            if (!$user->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'secretary'])) {
+            if (!$user->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'hr_manager'])) {
                 $teacher = Teacher::where('user_id', $user->id)->first();
                 if (!$user->hasRole('teacher') || !$teacher || $homework->teacher_id !== $teacher->id) {
                     return response()->json(['message' => 'Accès Interdit'], 403);
@@ -305,7 +305,7 @@ class HomeworkController extends Controller {
         try {
             $user = auth()->user();
 
-            if (!$user->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'secretary'])) {
+            if (!$user->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'hr_manager'])) {
                 return response()->json(['message' => 'Accès Interdit'], 403);
             }
             if (!$this->canAccessAcademicHomework($homework, $user)) {
@@ -355,7 +355,7 @@ class HomeworkController extends Controller {
     {
         try {
             $user = auth()->user();
-            if (!$user->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'secretary'])) {
+            if (!$user->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'hr_manager'])) {
                 return response()->json(['message' => 'Accès Interdit'], 403);
             }
             if (!$this->canAccessAcademicHomework($homework, $user)) {
@@ -412,7 +412,7 @@ class HomeworkController extends Controller {
     {
         try {
             $user = auth()->user();
-            if (!$user->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'secretary'])) {
+            if (!$user->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'hr_manager'])) {
                 return response()->json(['message' => 'Accès Interdit'], 403);
             }
             if (!$this->canAccessAcademicHomework($homework, $user)) {
@@ -467,7 +467,7 @@ class HomeworkController extends Controller {
     {
         try {
             $user = auth()->user();
-            if (!$user->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'secretary'])) {
+            if (!$user->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'hr_manager'])) {
                 return response()->json(['message' => 'Accès Interdit'], 403);
             }
             if (!$this->canAccessAcademicHomework($homework, $user)) {
@@ -535,7 +535,7 @@ class HomeworkController extends Controller {
             if (!$this->canAccessAcademicHomework($homework, $user)) {
                 return response()->json(['message' => 'Vous ne pouvez gérer que les devoirs de votre UFR'], 403);
             }
-            if (!$user->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'secretary'])) {
+            if (!$user->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'hr_manager'])) {
                 $teacher = Teacher::where('user_id', $user->id)->first();
                 if (!$teacher || $homework->teacher_id !== $teacher->id) {
                     return response()->json(['message' => 'Accès Interdit'], 403);
@@ -586,7 +586,7 @@ class HomeworkController extends Controller {
             if (!$this->canAccessAcademicHomework($homework, $user)) {
                 return response()->json(['message' => 'Vous ne pouvez consulter que les devoirs de votre UFR'], 403);
             }
-            if (!$user->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'secretary'])) {
+            if (!$user->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'hr_manager'])) {
                 $teacher = Teacher::where('user_id', $user->id)->first();
                 if (!$teacher || $homework->teacher_id !== $teacher->id) {
                     return response()->json(['message' => 'Accès Interdit'], 403);

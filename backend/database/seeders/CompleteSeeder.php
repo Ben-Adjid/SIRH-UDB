@@ -82,8 +82,6 @@ class CompleteSeeder extends Seeder
             'reports.generate',
         ];
 
-        $secretaryPermissions = $hrPermissions;
-
         $academicPermissions = [
             'schedules.create', 'homeworks.validate', 'schedules.assign_teachers',
             'courses.create', 'schedules.plan', 'exams.plan', 'ufrs.create',
@@ -97,7 +95,6 @@ class CompleteSeeder extends Seeder
 
         $allPermissions = array_unique(array_merge(
             $adminPermissions, $accountantPermissions, $hrPermissions,
-            $secretaryPermissions, $academicPermissions, $teacherPermissions
         ));
 
         foreach ($allPermissions as $permission) {
@@ -106,7 +103,7 @@ class CompleteSeeder extends Seeder
 
         $adminRole = Role::firstOrCreate(['name' => 'admin']);
         $hrRole = Role::firstOrCreate(['name' => 'hr_manager']);
-        $secretaryRole = Role::firstOrCreate(['name' => 'secretary']);
+        $secretaryRole = Role::firstOrCreate(['name' => 'hr_manager']);
         $academicRole = Role::firstOrCreate(['name' => 'academic_manager']);
         $accountantRole = Role::firstOrCreate(['name' => 'accountant']);
         $teacherRole = Role::firstOrCreate(['name' => 'teacher']);
@@ -114,7 +111,6 @@ class CompleteSeeder extends Seeder
         $adminRole->syncPermissions($adminPermissions);
         $accountantRole->syncPermissions($accountantPermissions);
         $hrRole->syncPermissions($hrPermissions);
-        $secretaryRole->syncPermissions($secretaryPermissions);
         $academicRole->syncPermissions($academicPermissions);
         $teacherRole->syncPermissions($teacherPermissions);
 
@@ -187,9 +183,8 @@ class CompleteSeeder extends Seeder
                 'status' => 'active', 'role' => 'hr_manager', 'teacher_data' => null,
             ],
             [
-                'name' => 'Secrétaire Administratif', 'email' => 'secretaire@sirh.local',
                 'password' => Hash::make(env('SEED_SECRETARY_PASSWORD', 'password')),
-                'status' => 'active', 'role' => 'secretary', 'teacher_data' => null,
+                'status' => 'active', 'role' => 'hr_manager', 'teacher_data' => null,
             ],
             [
                 'name' => 'Chef UFR', 'email' => 'academic@sirh.local',
@@ -255,7 +250,6 @@ class CompleteSeeder extends Seeder
         $this->command->info('📋 COMPTES CRÉÉS :');
         $this->command->info("├── Administrateur: $adminEmail (mot de passe: $adminPw)");
         $this->command->info('├── RH: rh@sirh.local');
-        $this->command->info('├── Secrétaire: secretaire@sirh.local');
         $this->command->info('├── Académique: academic@sirh.local');
         $this->command->info('├── Comptable: compta@sirh.local');
         $this->command->info('├── Prof Martin: prof@sirh.local');

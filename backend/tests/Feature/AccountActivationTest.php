@@ -20,7 +20,7 @@ class AccountActivationTest extends TestCase
         Role::findOrCreate('teacher', 'web');
         Role::findOrCreate('hr', 'web');
         Role::findOrCreate('accountant', 'web');
-        Role::findOrCreate('secretary', 'web');
+        Role::findOrCreate('hr_manager', 'web');
         Role::findOrCreate('chef_ufr', 'web');
     }
 

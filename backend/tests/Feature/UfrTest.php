@@ -60,7 +60,7 @@ class UfrTest extends TestCase {
                          ->getJson("/api/ufrs/{$dept->id}");
 
         $response->assertOk()
-                 ->assertJsonPath('id', $dept->id);
+                 ->assertJsonPath('data.id', $dept->id);
     }
 
     public function test_show_nonexistent_department_returns_404() {

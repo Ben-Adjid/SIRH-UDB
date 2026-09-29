@@ -119,7 +119,7 @@ class FakerSeeder extends Seeder
 
         $existingStaff = [
             ['name' => 'Responsable Administratif', 'email' => 'rh@sirh.local', 'role' => 'hr_manager', 'pass' => env('SEED_RH_PASSWORD', 'password')],
-            ['name' => 'Secrétaire Administratif', 'email' => 'secretaire@sirh.local', 'role' => 'secretary', 'pass' => env('SEED_SECRETARY_PASSWORD', 'password')],
+            ['name' => 'Secrétaire Administratif', 'email' => 'secretaire@sirh.local', 'role' => 'hr_manager', 'pass' => env('SEED_SECRETARY_PASSWORD', 'password')],
             ['name' => 'Comptable', 'email' => 'compta@sirh.local', 'role' => 'accountant', 'pass' => env('SEED_COMPTA_PASSWORD', 'password')],
             ['name' => 'Chef de UFR', 'email' => 'academic@sirh.local', 'role' => 'academic_manager', 'pass' => env('SEED_ACADEMIC_PASSWORD', 'password')],
         ];

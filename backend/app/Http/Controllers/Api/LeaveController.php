@@ -17,8 +17,8 @@ use App\Services\NotificationService;
 
 class LeaveController extends Controller {
 
-    private const MANAGER_ROLES = ['admin', 'hr_manager', 'secretary'];
-    private const ELIGIBLE_ROLES = ['admin', 'hr_manager', 'secretary', 'academic_manager', 'accountant'];
+    private const MANAGER_ROLES = ['admin', 'hr_manager', 'hr_manager'];
+    private const ELIGIBLE_ROLES = ['admin', 'hr_manager', 'hr_manager', 'academic_manager', 'accountant'];
 
     private function canManageAll(User $user): bool
     {
@@ -65,7 +65,7 @@ class LeaveController extends Controller {
 
     public function updateStatus(Request $request, LeaveRequest $leave): JsonResponse {
         try {
-            if (!auth()->user()->hasAnyRole(['admin', 'hr_manager', 'secretary'])) {
+            if (!auth()->user()->hasAnyRole(['admin', 'hr_manager', 'hr_manager'])) {
                 return response()->json(['message' => 'Non autorisé'], 403);
             }
 
@@ -152,7 +152,7 @@ class LeaveController extends Controller {
 
     public function updateBalance(Request $request): JsonResponse {
         try {
-            if (!auth()->user()->hasAnyRole(['admin', 'hr_manager', 'secretary'])) {
+            if (!auth()->user()->hasAnyRole(['admin', 'hr_manager', 'hr_manager'])) {
                 return response()->json(['message' => 'Non autorisé'], 403);
             }
 

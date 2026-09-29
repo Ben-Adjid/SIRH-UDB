@@ -8,7 +8,7 @@ class StoreScheduleRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->user()->hasAnyRole(['admin', 'academic_manager', 'teacher', 'hr_manager', 'secretary']);
+        return auth()->user()->hasAnyRole(['admin', 'academic_manager', 'teacher', 'hr_manager', 'hr_manager']);
     }
 
     public function rules(): array

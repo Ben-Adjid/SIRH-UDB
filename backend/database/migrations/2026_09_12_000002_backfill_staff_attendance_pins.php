@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         $roleIds = DB::table('roles')
-            ->whereIn('name', ['admin', 'hr_manager', 'secretary', 'accountant', 'academic_manager'])
+            ->whereIn('name', ['admin', 'hr_manager', 'hr_manager', 'accountant', 'academic_manager'])
             ->pluck('id');
         $used = [];
 

@@ -8,7 +8,7 @@ class CalculatePayrollRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->user()->hasAnyRole(['admin', 'hr_manager', 'secretary', 'accountant']);
+        return auth()->user()->hasAnyRole(['admin', 'hr_manager', 'hr_manager', 'accountant']);
     }
 
     public function rules(): array

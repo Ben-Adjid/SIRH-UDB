@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Auth\Events\PasswordReset;
 use App\Services\BrevoMailService;
+use App\Services\AccountActivationService;
 
 class AuthController extends Controller
 {
@@ -183,7 +184,8 @@ class AuthController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => $user->load('roles', 'teacher'),
+                'user' => $user->load('roles', 'teacher'),
+                'message' => 'Utilisateur authentifié',
             ]);
         } catch (\Throwable $e) {
             Log::error('[Auth] Me error', ['error' => $e->getMessage()]);

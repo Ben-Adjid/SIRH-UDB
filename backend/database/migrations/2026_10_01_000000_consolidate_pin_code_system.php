@@ -28,7 +28,7 @@ return new class extends Migration
         }
 
         // Backfill staff attendance PINs if empty
-        $staffRoles = ['admin', 'hr_manager', 'secretary', 'accountant', 'academic_manager'];
+        $staffRoles = ['admin', 'hr_manager', 'hr_manager', 'accountant', 'academic_manager'];
         $used = [];
         DB::table('users')
             ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
