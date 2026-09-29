@@ -183,10 +183,6 @@ class CompleteSeeder extends Seeder
                 'status' => 'active', 'role' => 'hr_manager', 'teacher_data' => null,
             ],
             [
-                'password' => Hash::make(env('SEED_SECRETARY_PASSWORD', 'password')),
-                'status' => 'active', 'role' => 'hr_manager', 'teacher_data' => null,
-            ],
-            [
                 'name' => 'Chef UFR', 'email' => 'academic@sirh.local',
                 'password' => Hash::make(env('SEED_ACADEMIC_PASSWORD', 'password')),
                 'status' => 'active', 'role' => 'academic_manager', 'teacher_data' => null,

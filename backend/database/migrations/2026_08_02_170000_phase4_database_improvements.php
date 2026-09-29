@@ -14,9 +14,11 @@ return new class extends Migration
         ];
 
         foreach ($softDeleteTables as $table) {
-            Schema::table($table, function (Blueprint $table) {
-                $table->softDeletes();
-            });
+            if (!Schema::hasColumn($table, 'deleted_at')) {
+                Schema::table($table, function (Blueprint $table) {
+                    $table->softDeletes();
+                });
+            }
         }
 
         Schema::table('leave_balances', function (Blueprint $table) {

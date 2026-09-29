@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use App\Models\User;
 use App\Models\Teacher;
 
@@ -12,6 +13,12 @@ class TestUsersSeeder extends Seeder
 {
     public function run(): void
     {
+        // Create a default UFR if none exists
+        $defaultUfr = \App\Models\Ufr::firstOrCreate(
+            ['code' => 'UFR-GJ'],
+            ['name' => 'Unité de Formation et de Recherche', 'description' => 'UFR par défaut']
+        );
+
         $users = [
             ['name' => 'Admin Système',     'email' => 'admin@sirh.local',     'role' => 'admin'],
             ['name' => 'Responsable RH',     'email' => 'rh@sirh.local',         'role' => 'hr_manager'],
@@ -38,18 +45,30 @@ class TestUsersSeeder extends Seeder
                 $existing->forceDelete();
             }
 
-            $userId = DB::table('users')->insertGetId([
-                'name'                => $data['name'],
-                'email'               => $data['email'],
-                'password'            => $hashed,
-                'status'              => 'active',
-                'email_verified_at'   => now(),
-                'must_change_password' => false,
-                'is_activated'        => true,
-                'activated_at'        => now(),
-                'created_at'          => now(),
-                'updated_at'          => now(),
-            ]);
+            $userData = [
+                'name'              => $data['name'],
+                'email'             => $data['email'],
+                'password'          => $hashed,
+                'email_verified_at' => now(),
+                'created_at'        => now(),
+                'updated_at'        => now(),
+            ];
+
+            // Add optional columns if they exist in the schema
+            if (Schema::hasColumn('users', 'status')) {
+                $userData['status'] = 'active';
+            }
+            if (Schema::hasColumn('users', 'must_change_password')) {
+                $userData['must_change_password'] = false;
+            }
+            if (Schema::hasColumn('users', 'is_activated')) {
+                $userData['is_activated'] = true;
+            }
+            if (Schema::hasColumn('users', 'activated_at')) {
+                $userData['activated_at'] = now();
+            }
+
+            $userId = DB::table('users')->insertGetId($userData);
 
             $roleId = DB::table('roles')->where('name', $data['role'])->value('id');
             if ($roleId) {
@@ -67,7 +86,7 @@ class TestUsersSeeder extends Seeder
 
                 Teacher::create([
                     'user_id'      => $userId,
-                    'ufr_id'       => \App\Models\Ufr::first()?->id ?? 1,
+                    'ufr_id'       => $defaultUfr->id,
                     'employee_id'  => 'ENS-' . str_pad($userId, 5, '0', STR_PAD_LEFT),
                     'pin_code'     => $pin,
                     'hire_date'    => now(),

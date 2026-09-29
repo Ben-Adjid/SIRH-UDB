@@ -1,0 +1,2 @@
+DROP DATABASE IF EXISTS sirh_udb;
+CREATE DATABASE sirh_udb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
