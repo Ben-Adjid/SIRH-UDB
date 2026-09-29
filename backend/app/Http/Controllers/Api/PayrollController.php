@@ -313,7 +313,7 @@ class PayrollController extends Controller {
 
     public function addLineItem(Request $request, Payroll $payroll): JsonResponse {
         try {
-            if (!auth()->user()->hasAnyRole(['admin', 'accountant', 'hr_manager', 'hr_manager'])) {
+            if (!auth()->user()->hasAnyRole(['admin', 'accountant', 'hr_manager'])) {
                 return response()->json(['message' => 'Non autorisé'], 403);
             }
 
@@ -363,7 +363,7 @@ class PayrollController extends Controller {
 
     public function validatePayroll(Request $request, Payroll $payroll): JsonResponse {
         try {
-            if (!auth()->user()->hasAnyRole(['admin', 'accountant', 'hr_manager', 'hr_manager'])) {
+            if (!auth()->user()->hasAnyRole(['admin', 'accountant', 'hr_manager'])) {
                 return response()->json(['message' => 'Non autorisé'], 403);
             }
 
@@ -587,7 +587,7 @@ class PayrollController extends Controller {
                 if (!$teacher || $teacher->id !== $payroll->teacher_id) {
                     return response()->json(['message' => 'Non autorisé'], 403);
                 }
-            } elseif (!$user->hasAnyRole(['admin', 'accountant', 'hr_manager', 'hr_manager'])) {
+            } elseif (!$user->hasAnyRole(['admin', 'accountant', 'hr_manager'])) {
                 return response()->json(['message' => 'Non autorisé'], 403);
             }
 
@@ -707,7 +707,7 @@ class PayrollController extends Controller {
         try {
             $user = auth()->user();
 
-            if (!$user->hasAnyRole(['admin', 'accountant', 'hr_manager', 'hr_manager'])) {
+            if (!$user->hasAnyRole(['admin', 'accountant', 'hr_manager'])) {
                 return response()->json(['message' => 'Non autorisé'], 403);
             }
 

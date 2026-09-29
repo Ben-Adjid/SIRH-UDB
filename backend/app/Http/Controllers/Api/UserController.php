@@ -24,7 +24,7 @@ class UserController extends Controller
         try {
             $user = auth()->user();
 
-            if (!$user->hasAnyRole(['admin', 'hr_manager', 'hr_manager'])) {
+            if (!$user->hasAnyRole(['admin', 'hr_manager'])) {
                 Log::warning('[User] Unauthorized index access', ['user_id' => $user->id]);
                 return response()->json(['success' => false, 'message' => 'Non autorisé'], 403);
             }
@@ -107,7 +107,7 @@ class UserController extends Controller
         try {
             $authUser = auth()->user();
 
-            if (!$authUser->hasAnyRole(['admin', 'hr_manager', 'hr_manager'])) {
+            if (!$authUser->hasAnyRole(['admin', 'hr_manager'])) {
                 Log::warning('[User] Unauthorized store access', ['user_id' => $authUser->id]);
                 return response()->json(['success' => false, 'message' => 'Non autorisé'], 403);
             }
@@ -140,7 +140,7 @@ class UserController extends Controller
                 ], 422);
             }
 
-            if ($authUser->hasAnyRole(['hr_manager', 'hr_manager']) && in_array('admin', $roles)) {
+            if ($authUser->hasRole('hr_manager') && in_array('admin', $roles)) {
                 Log::warning('[User] Unauthorized admin role assignment', ['user_id' => $authUser->id]);
                 return response()->json(['success' => false, 'message' => 'Vous ne pouvez pas attribuer le rôle administrateur'], 403);
             }
@@ -319,7 +319,6 @@ class UserController extends Controller
                 'prof@sirh.local',
                 'diop@sirh.local',
                 'sarr@sirh.local',
-                'secretary@sirh.local',
             ];
 
             if (in_array($user->email, $systemAccounts)) {
@@ -432,7 +431,7 @@ class UserController extends Controller
         try {
             $authUser = auth()->user();
 
-            if (!$authUser->hasAnyRole(['admin', 'hr_manager', 'hr_manager'])) {
+            if (!$authUser->hasAnyRole(['admin', 'hr_manager'])) {
                 Log::warning('[User] Unauthorized auditLogs access', ['user_id' => $authUser->id]);
                 return response()->json(['success' => false, 'message' => 'Non autorisé'], 403);
             }
@@ -494,7 +493,7 @@ class UserController extends Controller
         try {
             $authUser = auth()->user();
 
-            if (!$authUser->hasAnyRole(['admin', 'hr_manager', 'hr_manager'])) {
+            if (!$authUser->hasAnyRole(['admin', 'hr_manager'])) {
                 Log::warning('[User] Unauthorized clearAuditLogs access', ['user_id' => $authUser->id]);
                 return response()->json(['success' => false, 'message' => 'Action réservée à l\'administration RH'], 403);
             }

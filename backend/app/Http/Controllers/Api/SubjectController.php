@@ -58,7 +58,7 @@ class SubjectController extends Controller
                         })
                         ->where('status', '!=', 'cancelled');
                 });
-            } elseif (!$user->hasAnyRole(['admin', 'hr_manager', 'hr_manager', 'accountant'])) {
+            } elseif (!$user->hasAnyRole(['admin', 'hr_manager', 'accountant'])) {
                 // Chef UFR: voir matières de son UFR seulement
                 $ufrIds = $this->visibleUfrIds($user);
                 $query->where(function ($q) use ($ufrIds) {
@@ -68,7 +68,7 @@ class SubjectController extends Controller
                         });
                 });
             }
-            // Admin, RH, Secretary, Accountant: voir TOUTES les matières (pas de restriction)
+            // Admin, RH, Accountant: voir TOUTES les matières (pas de restriction)
 
             if ($search) {
                 $query->where(function($builder) use ($search) {
@@ -375,7 +375,7 @@ class SubjectController extends Controller
     private function isTeacherOnly(User $user): bool
     {
         return $user->hasRole('teacher')
-            && !$user->hasAnyRole(['admin', 'academic_manager', 'hr_manager', 'hr_manager']);
+            && !$user->hasAnyRole(['admin', 'academic_manager', 'hr_manager']);
     }
 
     private function invalidateCache(): void

@@ -30,10 +30,10 @@ const quickActions = {
         { label: 'Gérer enseignants', icon: Users, path: '/teachers', color: 'from-emerald-500 to-teal-600' },
         { label: 'Gérer absences', icon: Calendar, path: '/leaves', color: 'from-blue-500 to-indigo-600' },
     ],
-     [
-        { label: 'Nouveau compte', icon: Users, path: '/users', color: 'from-indigo-500 to-purple-600' },
-        { label: 'Gérer enseignants', icon: Users, path: '/teachers', color: 'from-emerald-500 to-teal-600' },
-        { label: 'Gérer absences', icon: Calendar, path: '/leaves', color: 'from-blue-500 to-indigo-600' },
+    academic_manager: [
+        { label: 'Planifier cours', icon: Calendar, path: '/schedules', color: 'from-purple-500 to-pink-600' },
+        { label: 'Gérer salles', icon: MapPin, path: '/classrooms', color: 'from-blue-500 to-cyan-600' },
+        { label: 'Nouveau devoir', icon: BookOpen, path: '/homeworks', color: 'from-amber-500 to-orange-600' },
     ],
     accountant: [
         { label: 'Nouvel honoraire', icon: Wallet, path: '/payroll', color: 'from-emerald-500 to-teal-600' },
@@ -249,7 +249,6 @@ const Dashboard = () => {
         const roleMap = {
             admin: 'admin',
             hr_manager: 'hr',
-             'hr',
             accountant: 'accountant',
             academic_manager: 'academic',
             teacher: 'teacher'
@@ -454,8 +453,8 @@ const Dashboard = () => {
         );
     }
 
-    // RH / SECRETAIRE
-    if (userRole === 'hr_manager' || userRole === ) {
+    // RH
+    if (userRole === 'hr_manager') {
         return (
             <div className="space-y-6 animate-fadeIn">
                 <WelcomeHero user={user} userRole={userRole} onRefresh={handleRefresh} loading={loading} />

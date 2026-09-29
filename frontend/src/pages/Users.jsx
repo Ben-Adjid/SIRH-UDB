@@ -225,7 +225,7 @@ const UsersPage = () => {
                                 accountant: 'bg-emerald-50 text-emerald-700 border-emerald-200',
                                 teacher: 'bg-amber-50 text-amber-700 border-amber-200'
                             }[role] || 'bg-gray-50 text-gray-600 border-gray-200';
-                            const subText = userRoles.length > 1 ? userRoles.slice(1).map(getRoleLabel).join(' / ') : 'Acces standard';
+                            const subText = userRoles.length > 1 ? userRoles.slice(1).map(getRoleLabel).join(' / ') : 'Accès standard';
 
                             return (
                                 <div key={u.id} onClick={null}
@@ -248,7 +248,7 @@ const UsersPage = () => {
                                         <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border ${roleBadgeBg}`}>
                                             <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
                                                 role === 'admin' ? 'bg-gray-500' :
-                                                role === 'hr_manager' || role ===  ? 'bg-blue-500' :
+                                                role === 'hr_manager' ? 'bg-blue-500' :
                                                 role === 'academic_manager' ? 'bg-purple-500' :
                                                 role === 'accountant' ? 'bg-emerald-500' : 'bg-amber-500'
                                             }`}></span>
