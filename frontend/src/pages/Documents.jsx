@@ -12,7 +12,7 @@ const FILE_ICONS = { 'application/pdf': { icon: FileText, color: 'text-red-500',
 
 const Documents = () => {
     const user = useAuthStore((state) => state.user);
-    const canSelectTeacher = hasAnyRole(user, ['admin', 'hr_manager', 'secretary', 'accountant']);
+    const canSelectTeacher = hasAnyRole(user, ['admin', 'hr_manager', 'accountant']);
     const fileInput = useRef(null);
     const [teachers, setTeachers] = useState([]);
     const [teacherId, setTeacherId] = useState(user?.teacher?.id || '');

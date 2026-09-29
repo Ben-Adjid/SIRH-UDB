@@ -1,7 +1,6 @@
 export const ROLE_LABELS = {
     admin: 'Administrateur',
     hr_manager: 'Responsable Administratif',
-    secretary: 'Secrétaire Administratif',
     academic_manager: 'Chef d\'UFR',
     accountant: 'Comptable',
     teacher: 'Enseignant',

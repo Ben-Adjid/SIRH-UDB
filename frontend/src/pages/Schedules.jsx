@@ -33,8 +33,8 @@ const emptyForm = {
 
 const Schedules = () => {
     const user = useAuthStore(s => s.user);
-    const canManage = hasAnyRole(user, ['admin', 'academic_manager', 'hr_manager', 'secretary']);
-    const isTeacher = hasAnyRole(user, ['teacher']) && !hasAnyRole(user, ['admin', 'hr_manager', 'secretary', 'academic_manager', 'accountant']);
+    const canManage = hasAnyRole(user, ['admin', 'academic_manager', 'hr_manager']);
+    const isTeacher = hasAnyRole(user, ['teacher']) && !hasAnyRole(user, ['admin', 'hr_manager', 'academic_manager', 'accountant']);
 
     const [schedules, setSchedules] = useState([]);
     const [exams, setExams] = useState([]);

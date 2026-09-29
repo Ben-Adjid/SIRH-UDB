@@ -145,7 +145,7 @@ const Attendance = () => {
     const [availabilityForm, setAvailabilityForm] = useState({ date: new Date().toISOString().split('T')[0], available: true, time_slots: '' });
 
     const userRoles = getUserRoles(user);
-    const isAdminOrHR = userRoles.includes('admin') || userRoles.includes('hr_manager') || userRoles.includes('secretary');
+    const isAdminOrHR = userRoles.includes('admin') || userRoles.includes('hr_manager') || userRoles.includes();
     const isAccountant = userRoles.includes('accountant');
     const isAcademicManager = userRoles.includes('academic_manager');
     const isTeacher = userRoles.includes('teacher');

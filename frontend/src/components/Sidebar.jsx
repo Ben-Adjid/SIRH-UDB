@@ -32,21 +32,21 @@ const Sidebar = ({ sidebarOpen, onToggle }) => {
         {
             label: 'Pointage & Présences',
             items: [
-                { icon: <Clock size={18} />, label: 'Pointage', path: '/attendance', roles: ['admin', 'hr_manager', 'secretary', 'academic_manager', 'accountant', 'teacher'] },
+                { icon: <Clock size={18} />, label: 'Pointage', path: '/attendance', roles: ['admin', 'hr_manager', 'academic_manager', 'accountant', 'teacher'] },
             ]
         },
         {
             label: 'Paie & Honoraires',
             items: [
-                { icon: <CreditCard size={18} />, label: 'Paie', path: '/payroll', roles: ['admin', 'accountant', 'hr_manager', 'secretary', 'teacher'] },
+                { icon: <CreditCard size={18} />, label: 'Paie', path: '/payroll', roles: ['admin', 'accountant', 'hr_manager', 'teacher'] },
             ]
         },
         {
             label: 'Gestion Ressources Humaines',
             items: [
-                { icon: <Users size={18} />, label: 'Enseignants', path: '/teachers', roles: ['admin', 'hr_manager', 'secretary', 'academic_manager', 'accountant'] },
-                { icon: <Palmtree size={18} />, label: 'Congés & Absences', path: '/leaves', roles: ['admin', 'hr_manager', 'secretary', 'academic_manager', 'accountant'] },
-                { icon: <FileText size={18} />, label: 'Documents', path: '/documents', roles: ['admin', 'hr_manager', 'secretary', 'accountant', 'teacher'] },
+                { icon: <Users size={18} />, label: 'Enseignants', path: '/teachers', roles: ['admin', 'hr_manager', 'academic_manager', 'accountant'] },
+                { icon: <Palmtree size={18} />, label: 'Congés & Absences', path: '/leaves', roles: ['admin', 'hr_manager', 'academic_manager', 'accountant'] },
+                { icon: <FileText size={18} />, label: 'Documents', path: '/documents', roles: ['admin', 'hr_manager', 'accountant', 'teacher'] },
             ]
         },
         {
@@ -55,8 +55,8 @@ const Sidebar = ({ sidebarOpen, onToggle }) => {
                 { icon: <LayoutGrid size={18} />, label: 'UFR', path: '/ufrs', roles: ['admin'] }, // Admin only - UFR management
                 { icon: <GraduationCap size={18} />, label: 'Matières', path: '/subjects', roles: ['admin', 'academic_manager'] },
                 { icon: <MapPin size={18} />, label: 'Salles', path: '/classrooms', roles: ['admin', 'academic_manager'] },
-                { icon: <Calendar size={18} />, label: 'Emploi du Temps', path: '/schedules', roles: ['admin', 'academic_manager', 'teacher', 'hr_manager', 'secretary'] },
-                { icon: <BookOpen size={18} />, label: 'Cours & Devoirs', path: '/homeworks', roles: ['admin', 'academic_manager', 'teacher', 'hr_manager', 'secretary'] },
+                { icon: <Calendar size={18} />, label: 'Emploi du Temps', path: '/schedules', roles: ['admin', 'academic_manager', 'teacher', 'hr_manager'] },
+                { icon: <BookOpen size={18} />, label: 'Cours & Devoirs', path: '/homeworks', roles: ['admin', 'academic_manager', 'teacher', 'hr_manager'] },
             ]
         },
         {
@@ -67,9 +67,9 @@ const Sidebar = ({ sidebarOpen, onToggle }) => {
         },
         {
             label: 'Administration',
-            roles: ['admin', 'hr_manager', 'secretary'],
+            roles: ['admin', 'hr_manager'],
             items: [
-                { icon: <Shield size={18} />, label: 'Gestion Comptes', path: '/users', roles: ['admin', 'hr_manager', 'secretary'] },
+                { icon: <Shield size={18} />, label: 'Gestion Comptes', path: '/users', roles: ['admin', 'hr_manager'] },
                 { icon: <FileText size={18} />, label: 'Audit & Logs', path: '/audit-logs', roles: ['admin', 'hr_manager'] },
             ]
         },

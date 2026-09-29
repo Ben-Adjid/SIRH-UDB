@@ -19,12 +19,12 @@ const STATUS_CONFIG = {
     pending: { label: 'En attente', color: 'text-amber-600 bg-amber-50 border-amber-100' },
 };
 
-const ELIGIBLE_ROLES = ['admin', 'hr_manager', 'secretary', 'academic_manager', 'accountant'];
+const ELIGIBLE_ROLES = ['admin', 'hr_manager', 'academic_manager', 'accountant'];
 const emptyForm = { leave_type_id: '', start_date: '', end_date: '', reason: '' };
 
 const Leaves = () => {
     const user = useAuthStore((state) => state.user);
-    const canManage = hasAnyRole(user, ['admin', 'hr_manager', 'secretary']);
+    const canManage = hasAnyRole(user, ['admin', 'hr_manager']);
     const canRequest = hasAnyRole(user, ELIGIBLE_ROLES);
     const [leaves, setLeaves] = useState([]);
     const [types, setTypes] = useState([]);

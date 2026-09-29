@@ -68,7 +68,7 @@ const Ufrs = () => {
 
     useEffect(() => {
         const controller = new AbortController();
-        const endpoint = hasAnyRole(userAuth, ['admin', 'hr_manager', 'secretary']) ? '/auth/users' : '/teachers';
+        const endpoint = hasAnyRole(userAuth, ['admin', 'hr_manager']) ? '/auth/users' : '/teachers';
         api.get(endpoint, { params: { per_page: 200 }, signal: controller.signal }).then(res => {
             const d = res.data;
             const list = Array.isArray(d) ? d : (d?.data || []);

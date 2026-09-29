@@ -36,7 +36,7 @@ const Homeworks = () => {
 
     const userRoles = getUserRoles(user);
     const isAdmin = userRoles.includes('admin');
-    const isAcademic = userRoles.includes('academic_manager') || isAdmin || userRoles.includes('hr_manager') || userRoles.includes('secretary');
+    const isAcademic = userRoles.includes('academic_manager') || isAdmin || userRoles.includes('hr_manager') || userRoles.includes();
     const isTeacher = userRoles.includes('teacher') && !isAcademic;
     const canCreateHomework = isTeacher || isAcademic;
     const currentUserId = user?.id;

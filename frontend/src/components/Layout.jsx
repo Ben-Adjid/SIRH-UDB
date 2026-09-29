@@ -90,7 +90,7 @@ const Layout = () => {
 
     const handleQuickAction = () => {
         if (userRoles.includes('admin')) navigate('/users');
-        else if (userRoles.includes('hr_manager') || userRoles.includes('secretary')) navigate('/users');
+        else if (userRoles.includes('hr_manager')) navigate('/users');
         else if (userRoles.includes('academic_manager')) navigate('/schedules');
         else if (userRoles.includes('accountant')) navigate('/payroll');
         else navigate('/homeworks');
@@ -199,7 +199,7 @@ const Layout = () => {
                                     <button type="button" onClick={() => { navigate('/profile'); setShowMenu(false); }} className="w-full flex items-center space-x-3 px-3 py-2.5 text-xs font-semibold text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-colors">
                                         <User size={14} /> <span>Mon Profil</span>
                                     </button>
-                                    <button type="button" onClick={() => { navigate(['admin', 'hr_manager', 'secretary'].some(r => userRoles.includes(r)) ? '/users' : '/profile'); setShowMenu(false); }} className="w-full flex items-center space-x-3 px-3 py-2.5 text-xs font-semibold text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-colors">
+                                    <button type="button" onClick={() => { navigate(['admin', 'hr_manager'].some(r => userRoles.includes(r)) ? '/users' : '/profile'); setShowMenu(false); }} className="w-full flex items-center space-x-3 px-3 py-2.5 text-xs font-semibold text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-colors">
                                         <Settings size={14} /> <span>Paramètres</span>
                                     </button>
                                     <button type="button" onClick={() => { toast.success(`Contact support : ${SUPPORT_EMAIL}`); setShowMenu(false); }} className="w-full flex items-center space-x-3 px-3 py-2.5 text-xs font-semibold text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-colors">

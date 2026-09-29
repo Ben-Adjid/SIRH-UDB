@@ -40,8 +40,8 @@ const emptyForm = {
 
 const Teachers = () => {
     const user = useAuthStore((s) => s.user);
-    const canManage = hasAnyRole(user, ['admin', 'hr_manager', 'secretary']);
-    const canEdit = hasAnyRole(user, ['admin', 'hr_manager', 'secretary', 'academic_manager']);
+    const canManage = hasAnyRole(user, ['admin', 'hr_manager']);
+    const canEdit = hasAnyRole(user, ['admin', 'hr_manager', 'academic_manager']);
     const [teachers, setTeachers] = useState([]);
     const [ufrs, setUfrs] = useState([]);
     const [loading, setLoading] = useState(true);

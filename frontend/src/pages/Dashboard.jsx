@@ -30,7 +30,7 @@ const quickActions = {
         { label: 'Gérer enseignants', icon: Users, path: '/teachers', color: 'from-emerald-500 to-teal-600' },
         { label: 'Gérer absences', icon: Calendar, path: '/leaves', color: 'from-blue-500 to-indigo-600' },
     ],
-    secretary: [
+     [
         { label: 'Nouveau compte', icon: Users, path: '/users', color: 'from-indigo-500 to-purple-600' },
         { label: 'Gérer enseignants', icon: Users, path: '/teachers', color: 'from-emerald-500 to-teal-600' },
         { label: 'Gérer absences', icon: Calendar, path: '/leaves', color: 'from-blue-500 to-indigo-600' },
@@ -249,7 +249,7 @@ const Dashboard = () => {
         const roleMap = {
             admin: 'admin',
             hr_manager: 'hr',
-            secretary: 'hr',
+             'hr',
             accountant: 'accountant',
             academic_manager: 'academic',
             teacher: 'teacher'
@@ -455,7 +455,7 @@ const Dashboard = () => {
     }
 
     // RH / SECRETAIRE
-    if (userRole === 'hr_manager' || userRole === 'secretary') {
+    if (userRole === 'hr_manager' || userRole === ) {
         return (
             <div className="space-y-6 animate-fadeIn">
                 <WelcomeHero user={user} userRole={userRole} onRefresh={handleRefresh} loading={loading} />
