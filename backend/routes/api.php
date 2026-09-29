@@ -32,7 +32,7 @@ use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\TwoFactorController;
 
 Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
-Route::post('/auth/register', [AuthController::class, 'register'])->middleware(['auth:sanctum', 'role:admin|hr_manager|secretary', 'throttle:15,1']);
+Route::post('/auth/register', [AuthController::class, 'register'])->middleware(['auth:sanctum', 'role:admin|hr_manager', 'throttle:15,1']);
 
 // ✅ NOUVEAU: Activation de compte via lien unique (publique)
 Route::post('/auth/activation', [AuthController::class, 'activation'])->middleware('throttle:6,1');
@@ -82,19 +82,19 @@ Route::middleware('auth:sanctum')->group(function () {
     // Dashboards
     Route::prefix('dashboards')->group(function () {
         Route::middleware('role:admin', 'throttle:30,1')->get('/admin', [App\Http\Controllers\Api\DashboardController::class, 'adminStats']);
-        Route::middleware('role:admin|hr_manager|secretary', 'throttle:30,1')->get('/hr', [App\Http\Controllers\Api\DashboardController::class, 'hrStats']);
+        Route::middleware('role:admin|hr_manager', 'throttle:30,1')->get('/hr', [App\Http\Controllers\Api\DashboardController::class, 'hrStats']);
         Route::middleware('role:teacher', 'throttle:30,1')->get('/teacher', [App\Http\Controllers\Api\DashboardController::class, 'teacherStats']);
         Route::middleware('role:admin|academic_manager', 'throttle:30,1')->get('/academic', [App\Http\Controllers\Api\DashboardController::class, 'academicStats']);
         Route::middleware('role:admin|accountant', 'throttle:30,1')->get('/accountant', [App\Http\Controllers\Api\DashboardController::class, 'accountantStats']);
     });
 
     // ── ADMINISTRATION SYSTÈME (Admin uniquement) ──
-    Route::middleware('role:admin|hr_manager|secretary')->group(function () {
+    Route::middleware('role:admin|hr_manager')->group(function () {
         Route::get('/auth/audit-logs', [App\Http\Controllers\Api\UserController::class, 'auditLogs']);
         Route::delete('/auth/audit-logs', [App\Http\Controllers\Api\UserController::class, 'clearAuditLogs']);
         Route::post('/auth/users', [App\Http\Controllers\Api\UserController::class, 'store']);
     });
-    Route::middleware('role:admin|hr_manager|secretary')->get('/auth/users', [App\Http\Controllers\Api\UserController::class, 'index']);
+    Route::middleware('role:admin|hr_manager')->get('/auth/users', [App\Http\Controllers\Api\UserController::class, 'index']);
     Route::middleware('role:admin|hr_manager')->group(function () {
         Route::put('/auth/users/{user}', [App\Http\Controllers\Api\UserController::class, 'update']);
     });
@@ -131,13 +131,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/classrooms/{classroom}', [App\Http\Controllers\Api\ClassroomController::class, 'show'])->middleware('throttle:60,1');
 
     // Enseignants : création/modification (RH + Chef UFR, limité à son UFR côté contrôleur)
-    Route::middleware('role:admin|hr_manager|secretary|academic_manager')->group(function () {
+    Route::middleware('role:admin|hr_manager|academic_manager')->group(function () {
         Route::post('/teachers', [App\Http\Controllers\Api\TeacherController::class, 'store'])->middleware('throttle:30,1');
         Route::put('/teachers/{teacher}', [App\Http\Controllers\Api\TeacherController::class, 'update'])->middleware('throttle:60,1');
     });
 
     // ── RESSOURCES HUMAINES (Admin + RH) ──
-    Route::middleware('role:admin|hr_manager|secretary')->group(function () {
+    Route::middleware('role:admin|hr_manager')->group(function () {
         // Enseignants
         Route::delete('/teachers/{teacher}', [App\Http\Controllers\Api\TeacherController::class, 'destroy'])->middleware('throttle:30,1');
         Route::patch('/teachers/{teacher}/archive', [App\Http\Controllers\Api\TeacherController::class, 'archive']);
@@ -150,16 +150,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/reports/teachers', [App\Http\Controllers\Api\TeacherController::class, 'report']);
     });
 
-    Route::middleware('role:admin|hr_manager|secretary|academic_manager')->group(function () {
+    Route::middleware('role:admin|hr_manager|academic_manager')->group(function () {
         Route::get('/reports/attendance', [App\Http\Controllers\Api\AttendanceController::class, 'report']);
     });
 
     // Documents enseignants (teacher accède aux siens, admin/rh accède à tous)
-    Route::middleware('role:admin|hr_manager|secretary|accountant|teacher')->group(function () {
+    Route::middleware('role:admin|hr_manager|accountant|teacher')->group(function () {
         Route::get('/teachers/{teacher}/documents', [DocumentController::class, 'index'])->middleware('throttle:120,1');
         Route::get('/documents/{document}/download', [DocumentController::class, 'download'])->middleware('throttle:30,1');
     });
-    Route::middleware('role:admin|hr_manager|secretary|accountant|teacher')->group(function () {
+    Route::middleware('role:admin|hr_manager|accountant|teacher')->group(function () {
         Route::post('/teachers/{teacher}/documents', [DocumentController::class, 'store'])->middleware('throttle:20,1');
         Route::put('/documents/{document}', [DocumentController::class, 'update'])->middleware('throttle:20,1');
         Route::delete('/documents/{document}', [DocumentController::class, 'destroy'])->middleware('throttle:20,1');
@@ -193,7 +193,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/exams/{schedule}', [App\Http\Controllers\Api\ScheduleController::class, 'destroyExam']);
     });
 
-    Route::middleware('role:admin|academic_manager|teacher|hr_manager|secretary')->get('/exams', [App\Http\Controllers\Api\ScheduleController::class, 'exams']);
+    Route::middleware('role:admin|academic_manager|teacher|hr_manager')->get('/exams', [App\Http\Controllers\Api\ScheduleController::class, 'exams']);
 
 
     // ── POINTAGE ──
@@ -210,42 +210,42 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/attendance/declare-availability', [App\Http\Controllers\Api\AttendanceController::class, 'declareAvailability'])->middleware('throttle:10,1');
     Route::get('/attendance/weekly', [App\Http\Controllers\Api\AttendanceController::class, 'weekly'])->middleware('throttle:30,1');
 
-    Route::middleware('role:admin|hr_manager|secretary|accountant|academic_manager')->group(function () {
+    Route::middleware('role:admin|hr_manager|accountant|academic_manager')->group(function () {
         Route::get('/attendance/stats', [App\Http\Controllers\Api\AttendanceController::class, 'stats'])->middleware('throttle:30,1');
          Route::get('/attendance/export', [App\Http\Controllers\Api\AttendanceController::class, 'export'])->middleware('throttle:30,1');
         Route::get('/availabilities', [App\Http\Controllers\Api\AttendanceController::class, 'getAvailabilities'])->middleware('throttle:30,1');
     });
 
     // Admin/RH/Chef UFR: gestion des présences/absences
-    Route::middleware('role:admin|hr_manager|secretary|academic_manager')->group(function () {
+    Route::middleware('role:admin|hr_manager|academic_manager')->group(function () {
         Route::post('/attendance/generate-code', [App\Http\Controllers\Api\AttendanceController::class, 'generateCode']);
         Route::patch('/attendance/{attendance}/validate-absence', [App\Http\Controllers\Api\AttendanceController::class, 'validateAbsence']);
     });
-    Route::middleware('role:admin|hr_manager|secretary')->group(function () {
+    Route::middleware('role:admin|hr_manager')->group(function () {
         Route::patch('/attendance/{attendance}', [App\Http\Controllers\Api\AttendanceController::class, 'update']);
         Route::post('/attendance/record-absence', [App\Http\Controllers\Api\AttendanceController::class, 'recordAbsence']);
     });
 
     // ── CONGÉS (réservés au personnel non enseignant) ──
-    Route::middleware('role:admin|hr_manager|secretary|academic_manager|accountant')->group(function () {
+    Route::middleware('role:admin|hr_manager|academic_manager|accountant')->group(function () {
         Route::post('/leaves', [App\Http\Controllers\Api\LeaveController::class, 'store'])->middleware('throttle:30,1');
         Route::get('/leaves/history', [App\Http\Controllers\Api\LeaveController::class, 'getHistory'])->middleware('throttle:60,1');
         Route::get('/leaves/balances', [App\Http\Controllers\Api\LeaveController::class, 'getBalances'])->middleware('throttle:60,1');
     });
-    Route::middleware('role:admin|hr_manager|secretary|academic_manager|accountant')->group(function () {
+    Route::middleware('role:admin|hr_manager|academic_manager|accountant')->group(function () {
         Route::get('/leave-types', [App\Http\Controllers\Api\LeaveController::class, 'getLeaveTypes'])->middleware('throttle:60,1');
     });
 
-    Route::middleware('role:admin|hr_manager|secretary|academic_manager|accountant')->group(function () {
+    Route::middleware('role:admin|hr_manager|academic_manager|accountant')->group(function () {
         Route::get('/leaves', [App\Http\Controllers\Api\LeaveController::class, 'index']);
     });
-    Route::middleware('role:admin|hr_manager|secretary')->group(function () {
+    Route::middleware('role:admin|hr_manager')->group(function () {
         Route::patch('/leaves/{leave}/status', [App\Http\Controllers\Api\LeaveController::class, 'updateStatus'])->middleware('throttle:60,1');
         Route::post('/leaves/update-balance', [App\Http\Controllers\Api\LeaveController::class, 'updateBalance'])->middleware('throttle:30,1');
     });
 
     // Emploi du temps et devoirs
-    Route::middleware('role:admin|academic_manager|teacher|hr_manager|secretary')->group(function () {
+    Route::middleware('role:admin|academic_manager|teacher|hr_manager')->group(function () {
         Route::apiResource('schedules', App\Http\Controllers\Api\ScheduleController::class)->middleware('throttle:60,1');
         Route::apiResource('homeworks', App\Http\Controllers\Api\HomeworkController::class)->middleware('throttle:60,1');
         Route::post('/homeworks/{homework}/grades', [App\Http\Controllers\Api\HomeworkController::class, 'recordGrades'])->middleware('throttle:30,1');
@@ -253,7 +253,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // ── PAIE (Admin + Comptable + RH) ──
-    Route::middleware('role:admin|accountant|hr_manager|secretary')->group(function () {
+    Route::middleware('role:admin|accountant|hr_manager')->group(function () {
         Route::get('/payroll/attendance-hours', [App\Http\Controllers\Api\PayrollController::class, 'attendanceSummary']);
         Route::post('/payroll/calculate', [App\Http\Controllers\Api\PayrollController::class, 'calculate'])->middleware('throttle:30,1');
         Route::post('/payroll/calculate-month', [App\Http\Controllers\Api\PayrollController::class, 'calculateMonth'])->middleware('throttle:30,1');
@@ -264,7 +264,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Consultation paie (admin, RH, comptable, ou enseignant pour son propre)
-    Route::middleware('role:admin|hr_manager|secretary|accountant|teacher')->group(function () {
+    Route::middleware('role:admin|hr_manager|accountant|teacher')->group(function () {
         Route::get('/payroll', [App\Http\Controllers\Api\PayrollController::class, 'index']);
         Route::get('/payroll/{payroll}', [App\Http\Controllers\Api\PayrollController::class, 'show']);
         Route::get('/payroll/{payroll}/pdf', [App\Http\Controllers\Api\PayrollController::class, 'downloadPDF']);
