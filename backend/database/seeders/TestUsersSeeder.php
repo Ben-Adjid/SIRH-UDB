@@ -22,7 +22,6 @@ class TestUsersSeeder extends Seeder
         $users = [
             ['name' => 'Admin Système',     'email' => 'admin@sirh.local',     'role' => 'admin'],
             ['name' => 'Responsable RH',     'email' => 'rh@sirh.local',         'role' => 'hr_manager'],
-            ['name' => 'Secrétaire',        'email' => 'secretaire@sirh.local', 'role' => 'hr_manager'],
             ['name' => 'Chef UFR',           'email' => 'academic@sirh.local',   'role' => 'academic_manager'],
             ['name' => 'Comptable',          'email' => 'compta@sirh.local',     'role' => 'accountant'],
             ['name' => 'Prof Amadou Diallo', 'email' => 'prof1@sirh.local',      'role' => 'teacher'],

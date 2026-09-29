@@ -86,18 +86,18 @@ function AppContent() {
                 <Route path="/access-denied" element={<AccessDenied />} />
                 <Route element={<Layout />}>
                     <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                    <Route path="/teachers" element={<ProtectedRoute allowedRoles={['admin', 'hr_manager', 'secretary', 'academic_manager', 'accountant', 'teacher']}><Teachers /></ProtectedRoute>} />
+                    <Route path="/teachers" element={<ProtectedRoute allowedRoles={['admin', 'hr_manager', 'academic_manager', 'accountant', 'teacher']}><Teachers /></ProtectedRoute>} />
                     <Route path="/ufrs" element={<ProtectedRoute allowedRoles={['admin', 'academic_manager']}><Ufrs /></ProtectedRoute>} />
                     <Route path="/subjects" element={<ProtectedRoute allowedRoles={['admin', 'academic_manager']}><Subjects /></ProtectedRoute>} />
                     <Route path="/classrooms" element={<ProtectedRoute allowedRoles={['admin', 'academic_manager']}><Classrooms /></ProtectedRoute>} />
-                    <Route path="/users" element={<ProtectedRoute allowedRoles={['admin', 'hr_manager', 'secretary']}><Users /></ProtectedRoute>} />
+                    <Route path="/users" element={<ProtectedRoute allowedRoles={['admin', 'hr_manager']}><Users /></ProtectedRoute>} />
                     <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-                    <Route path="/schedules" element={<ProtectedRoute allowedRoles={['admin', 'academic_manager', 'teacher', 'hr_manager', 'secretary']}><Schedules /></ProtectedRoute>} />
-                    <Route path="/homeworks" element={<ProtectedRoute allowedRoles={['admin', 'academic_manager', 'teacher', 'hr_manager', 'secretary']}><Homeworks /></ProtectedRoute>} />
-                    <Route path="/attendance" element={<ProtectedRoute allowedRoles={['admin', 'hr_manager', 'secretary', 'teacher', 'accountant', 'academic_manager']}><Attendance /></ProtectedRoute>} />
-                    <Route path="/leaves" element={<ProtectedRoute allowedRoles={['admin', 'hr_manager', 'secretary', 'academic_manager', 'accountant', 'teacher']}><Leaves /></ProtectedRoute>} />
-                    <Route path="/payroll" element={<ProtectedRoute allowedRoles={['admin', 'accountant', 'teacher', 'hr_manager', 'secretary']}><Payroll /></ProtectedRoute>} />
-                    <Route path="/documents" element={<ProtectedRoute allowedRoles={['admin', 'hr_manager', 'secretary', 'accountant', 'teacher']}><Documents /></ProtectedRoute>} />
+                    <Route path="/schedules" element={<ProtectedRoute allowedRoles={['admin', 'academic_manager', 'teacher', 'hr_manager']}><Schedules /></ProtectedRoute>} />
+                    <Route path="/homeworks" element={<ProtectedRoute allowedRoles={['admin', 'academic_manager', 'teacher', 'hr_manager']}><Homeworks /></ProtectedRoute>} />
+                    <Route path="/attendance" element={<ProtectedRoute allowedRoles={['admin', 'hr_manager', 'teacher', 'accountant', 'academic_manager']}><Attendance /></ProtectedRoute>} />
+                    <Route path="/leaves" element={<ProtectedRoute allowedRoles={['admin', 'hr_manager', 'academic_manager', 'accountant', 'teacher']}><Leaves /></ProtectedRoute>} />
+                    <Route path="/payroll" element={<ProtectedRoute allowedRoles={['admin', 'accountant', 'teacher', 'hr_manager']}><Payroll /></ProtectedRoute>} />
+                    <Route path="/documents" element={<ProtectedRoute allowedRoles={['admin', 'hr_manager', 'accountant', 'teacher']}><Documents /></ProtectedRoute>} />
                     <Route path="/audit-logs" element={<ProtectedRoute allowedRoles={['admin', 'hr_manager']}><AuditLogs /></ProtectedRoute>} />
                     <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                     <Route path="*" element={<Navigate to="/dashboard" replace />} />

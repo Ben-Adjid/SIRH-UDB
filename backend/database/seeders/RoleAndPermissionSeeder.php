@@ -51,9 +51,6 @@ class RoleAndPermissionSeeder extends Seeder
             'reports.generate',
         ];
 
-        // SECRÉTAIRE ADMINISTRATIF (mêmes accès que le Responsable Administratif)
-        $secretaryPermissions = $hrPermissions;
-
         // CHEF DE DEPARTEMENT
         $academicPermissions = [
             'schedules.create',
@@ -80,7 +77,7 @@ class RoleAndPermissionSeeder extends Seeder
         // Créer toutes les permissions uniques
         $allPermissions = array_unique(array_merge(
             $adminPermissions, $accountantPermissions, $hrPermissions,
-            $secretaryPermissions, $academicPermissions, $teacherPermissions
+            $academicPermissions, $teacherPermissions
         ));
 
         foreach ($allPermissions as $permission) {
@@ -91,7 +88,6 @@ class RoleAndPermissionSeeder extends Seeder
         $adminRole = Role::firstOrCreate(['name' => 'admin']);
         $accountantRole = Role::firstOrCreate(['name' => 'accountant']);
         $hrRole = Role::firstOrCreate(['name' => 'hr_manager']);
-        $secretaryRole = Role::firstOrCreate(['name' => 'hr_manager']);
         $academicRole = Role::firstOrCreate(['name' => 'academic_manager']);
         $teacherRole = Role::firstOrCreate(['name' => 'teacher']);
 
@@ -99,7 +95,6 @@ class RoleAndPermissionSeeder extends Seeder
         $adminRole->syncPermissions($adminPermissions);
         $accountantRole->syncPermissions($accountantPermissions);
         $hrRole->syncPermissions($hrPermissions);
-        $secretaryRole->syncPermissions($secretaryPermissions);
         $academicRole->syncPermissions($academicPermissions);
         $teacherRole->syncPermissions($teacherPermissions);
     }

@@ -103,7 +103,6 @@ class CompleteSeeder extends Seeder
 
         $adminRole = Role::firstOrCreate(['name' => 'admin']);
         $hrRole = Role::firstOrCreate(['name' => 'hr_manager']);
-        $secretaryRole = Role::firstOrCreate(['name' => 'hr_manager']);
         $academicRole = Role::firstOrCreate(['name' => 'academic_manager']);
         $accountantRole = Role::firstOrCreate(['name' => 'accountant']);
         $teacherRole = Role::firstOrCreate(['name' => 'teacher']);

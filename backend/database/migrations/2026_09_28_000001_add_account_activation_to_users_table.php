@@ -9,8 +9,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->boolean('is_activated')->default(false)->after('email_verified_at');
-            $table->timestamp('activated_at')->nullable()->after('is_activated');
+            if (!Schema::hasColumn('users', 'is_activated')) {
+                $table->boolean('is_activated')->default(false)->after('email_verified_at');
+            }
+            if (!Schema::hasColumn('users', 'activated_at')) {
+                $table->timestamp('activated_at')->nullable()->after('is_activated');
+            }
         });
     }
 
