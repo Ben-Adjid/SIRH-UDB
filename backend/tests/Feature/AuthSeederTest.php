@@ -16,7 +16,6 @@ class AuthSeederTest extends TestCase
         $accounts = [
             'admin@sirh.local',
             'rh@sirh.local',
-            'secretaire@sirh.local',
             'academic@sirh.local',
             'compta@sirh.local',
             'prof@sirh.local',

@@ -74,7 +74,7 @@ class HomeworkWorkflowTest extends TestCase
     {
         $homework = $this->createHomework();
 
-        $this->actingAs(User::where('email', 'secretaire@sirh.local')->firstOrFail(), 'sanctum')
+        $this->actingAs(User::where('email', 'rh@sirh.local')->firstOrFail(), 'sanctum')
             ->patchJson("/api/homeworks/{$homework->id}/approve")
             ->assertForbidden();
 
