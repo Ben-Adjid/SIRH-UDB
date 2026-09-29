@@ -13,7 +13,6 @@ import useAuthStore from '../store/authStore';
 const ROLES = [
     { value: 'teacher', label: 'Enseignant', desc: 'Emploi du temps, cours, devoirs, pointage' },
     { value: 'hr_manager', label: 'Responsable Administratif', desc: 'Enseignants, contrats, pointage, absences, rapports' },
-    { value: label: 'Secretaire Administratif', desc: 'Memes acces que le Responsable Administratif' },
     { value: 'academic_manager', label: "Chef d'UFR", desc: 'Emploi du temps, salles, matieres, devoirs' },
     { value: 'accountant', label: 'Comptable', desc: 'Paie, bulletins, validation, exports' },
     { value: 'admin', label: 'Administrateur', desc: 'Acces complet au systeme' },
