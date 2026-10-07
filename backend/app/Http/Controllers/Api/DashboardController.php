@@ -126,6 +126,12 @@ class DashboardController extends Controller {
             $teacherStats = Teacher::selectRaw("COUNT(*) as total, SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active, SUM(CASE WHEN status = 'inactive' THEN 1 ELSE 0 END) as inactive")
                 ->first();
 
+            // ✅ OPTIMIZED: Get all counts in parallel (1 query per table max)
+            $ufrCount = Ufr::count();
+            $subjectCount = Subject::count();
+            $classroomCount = Classroom::count();
+            $pendingHomeworks = Homework::where('status', 'planned')->count();
+
             Log::info('[Dashboard] Admin stats loaded', [
                 'total_users' => $totalUsers,
                 'total_teachers' => (int)($teacherStats->total ?? 0),
@@ -140,10 +146,10 @@ class DashboardController extends Controller {
                 'active_teachers' => (int)($teacherStats->active ?? 0),
                 'teachers_on_leave' => 0,
                 'teachers_inactive' => (int)($teacherStats->inactive ?? 0),
-                'total_ufrs' => Ufr::count(),
-                'total_subjects' => Subject::count(),
-                'total_classrooms' => Classroom::count(),
-                'pending_homeworks' => Homework::where('status', 'planned')->count(),
+                'total_ufrs' => $ufrCount,
+                'total_subjects' => $subjectCount,
+                'total_classrooms' => $classroomCount,
+                'pending_homeworks' => $pendingHomeworks,
                 'today_present' => $todayPresent,
                 'today_late' => $todayLate,
                 'today_absent' => $todayAbsent,
@@ -167,7 +173,7 @@ class DashboardController extends Controller {
                 ]
             ];
 
-            Cache::put($cacheKey, $data, now()->addSeconds(config('cache_durations.dashboard', 120)));
+            Cache::put($cacheKey, $data, now()->addMinutes(config('cache_durations.dashboard', 5)));
             return response()->json($data);
         } catch (\Throwable $e) {
             Log::error('[Dashboard] AdminStats error', [
@@ -290,7 +296,7 @@ class DashboardController extends Controller {
                 ]
             ];
 
-            Cache::put($cacheKey, $data, now()->addSeconds(config('cache_durations.dashboard', 120)));
+            Cache::put($cacheKey, $data, now()->addMinutes(config('cache_durations.dashboard', 5)));
             return response()->json($data);
         } catch (\Throwable $e) {
             Log::error('[Dashboard] HrStats error', [
@@ -447,7 +453,7 @@ class DashboardController extends Controller {
                 'next_course' => $nextCourse,
             ];
 
-            Cache::put($cacheKey, $data, now()->addSeconds(config('cache_durations.dashboard', 120)));
+            Cache::put($cacheKey, $data, now()->addMinutes(config('cache_durations.dashboard', 5)));
             return response()->json($data);
         } catch (\Throwable $e) {
             Log::error('[Dashboard] TeacherStats error', [
@@ -540,7 +546,7 @@ class DashboardController extends Controller {
                 ]
             ];
 
-            Cache::put($cacheKey, $data, now()->addSeconds(config('cache_durations.dashboard', 120)));
+            Cache::put($cacheKey, $data, now()->addMinutes(config('cache_durations.dashboard', 5)));
             return response()->json($data);
         } catch (\Throwable $e) {
             Log::error('[Dashboard] AccountantStats error', [

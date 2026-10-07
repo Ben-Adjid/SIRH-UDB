@@ -68,7 +68,7 @@ const TempTokenRoute = ({ children, tokenKey }) => {
 
 function AppContent() {
     return (
-        <Router>
+        <Router basename="/">
             <NavigateSetter />
             <ToastContainer />
             <ErrorBoundary>

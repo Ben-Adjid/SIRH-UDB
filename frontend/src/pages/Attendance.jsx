@@ -723,7 +723,9 @@ const Attendance = () => {
                     </div>
 
                     {(() => {
-                        const attendanceList = isManagement && selfAttendance ? [selfAttendance, ...allAttendance] : allAttendance;
+                        const attendanceList = isManagement && selfAttendance
+                            ? [selfAttendance, ...allAttendance.filter(att => att.id !== selfAttendance.id)]
+                            : allAttendance;
                         return attendanceList.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-24">
                                 <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4"><Clock size={28} className="text-slate-300" /></div>
